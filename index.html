@@ -1,0 +1,4739 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservation Sport - BBZO</title>
+
+   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+ 
+
+<style>
+
+
+
+/* 1. GLOBALE EINSTELLUNGEN & FONTS */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Oswald:wght@300;400;700&display=swap');
+
+
+/* Globale Basis für einen cleanen Icon-Look */
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 300,
+  'GRAD' 0,
+  'opsz' 24;
+  vertical-align: middle;
+  margin-right: 8px; /* Sorgt für den sauberen Abstand zum Text */
+  font-size: 20px;
+}
+
+
+/* ============================================================
+   1. BASIS & GRID-STRUKTUR (Bild 2 Look)
+   ============================================================ */
+body { 
+    font-family: 'Segoe UI', 'Oswald', sans-serif; 
+    background: #1a1a1a; 
+    color: white; 
+    padding: 20px; 
+    margin: 0;
+}
+
+:root {
+    --accent-color: #e67e22;
+    --highlight-orange: #ff8c00;
+    --bg-dark: #1a1a1a;
+    --card-bg: #262626;
+}
+
+/* Das Haupt-Grid */
+#plan-container, .grid { 
+    display: grid; 
+    grid-template-columns: 120px repeat(5, 1fr); 
+    gap: 2px; 
+    max-width: 1000px; 
+    margin: auto;
+    pointer-events: auto;
+}
+
+
+/* ============================================================
+   2. NAVIGATION & STICKY CONTROLS (CLEAN LOOK - FINAL)
+   ============================================================ */
+.date-control {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 10px 0;
+    background: #1a1a1a;
+    position: sticky;
+    top: 0;
+    z-index: 1100;
+}
+
+.nav-section { display: flex; align-items: center; gap: 10px; }
+.nav-left { flex: 1; justify-content: flex-start; }
+.nav-center { flex: 2; justify-content: center; gap: 8px; }
+.nav-right { flex: 1; justify-content: flex-end; }
+.nav-group { display: flex; gap: 5px; }
+
+/* Buttons & Container - Clean & Uniform */
+.nav-btn, .refresh-btn, .date-container { 
+    height: 40px; 
+    background: #262626; 
+    border: 1px solid #333; 
+    color: #e67e22;
+    border-radius: 8px; 
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.nav-btn, .refresh-btn { width: 40px; }
+.nav-btn:hover, .refresh-btn:hover, .date-container:hover { 
+    background: #2d2d2d; 
+    border-color: #e67e22; 
+}
+
+/* Spezielles Styling für den neuen Datum-Button */
+.date-container {
+    padding: 0 15px;
+    gap: 8px;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.date-container span:first-child {
+    color: #eee; /* Datumstext in hellem Grau/Weiß */
+    font-weight: 500;
+}
+
+/* Zentrierung aller Icons */
+.nav-btn .material-symbols-outlined, 
+.refresh-btn .material-symbols-outlined,
+.date-container .material-symbols-outlined,
+.news-btn-premium .material-symbols-outlined {
+    font-size: 22px;
+    color: #e67e22;
+    margin: 0;
+    transition: color 0.2s;
+}
+
+/* Der alte DatePicker-Indicator (versteckt, da Button jetzt alles macht) */
+#datePicker { 
+    display: none; 
+    pointer-events: none; /* Verhindert Interaktion komplett */
+}
+
+/* News Button Premium Style */
+.news-btn-premium {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #262626;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 0 15px;
+    cursor: pointer;
+    height: 40px;
+    position: relative;
+    transition: all 0.2s;
+}
+.news-btn-premium:hover { background: #2d2d2d; border-color: #e67e22; }
+
+.news-btn-premium .btn-text {
+    color: #eee; 
+    font-size: 13px; 
+    letter-spacing: 1px; 
+    margin-right: 8px; 
+    font-weight: 400;
+}
+
+.news-btn-premium .badge {
+    position: absolute; top: -3px; right: -3px; width: 9px; height: 9px;
+    background: #e67e22; border-radius: 50%; border: 2px solid #1a1a1a;
+    box-shadow: 0 0 8px rgba(230, 126, 34, 0.6);
+}
+
+
+/* ============================================================
+   KALENDER MODAL DESIGN (FINAL MIT NAVIGATION)
+   ============================================================ */
+.cal-modal-backdrop {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 9999;
+}
+.cal-modal-container {
+    background: #1a1a1a; border: 1px solid #333;
+    border-radius: 12px; width: 90%; max-width: 400px; padding: 20px;
+}
+.cal-modal-title { color: #e67e22; text-align: center; margin: 0 0 15px 0; font-size: 16px; }
+
+/* Monat Navigation */
+.cal-month-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    margin: 10px 0 20px 0;
+}
+.cal-month-nav button {
+    background: #262626; border: 1px solid #333; color: #e67e22;
+    border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 16px;
+    transition: 0.2s;
+}
+.cal-month-nav button:hover { background: #333; }
+.cal-month-title { color: #eee; font-size: 14px; font-weight: bold; }
+
+/* Layout für 7 Spalten (Mon-So) */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-top: 15px;
+}
+
+.cal-weekday {
+    text-align: center; color: #888; font-size: 11px;
+    font-weight: bold; padding-bottom: 5px; text-transform: uppercase;
+}
+
+.cal-day {
+    padding: 8px 0; background: #262626; color: #eee;
+    border-radius: 4px; text-align: center; cursor: pointer; font-size: 13px;
+    transition: 0.2s;
+}
+
+/* Wochenende ausgegraut */
+.cal-day.weekend { color: #666; }
+
+/* Markierung für das aktuell gewählte Datum */
+.cal-day.selected {
+    background: #e67e22 !important;
+    color: #fff !important;
+    border: 2px solid #fff; /* Zusätzlicher weißer Rahmen */
+}
+
+/* Heute-Markierung (nur Outline, falls es nicht gewählt ist) */
+.cal-day.today {
+    border: 1px solid #e67e22;
+    color: #e67e22;
+}
+
+/* Heute-Markierung WENN es auch das gewählte Datum ist */
+.cal-day.today.selected {
+    border: 2px solid #fff;
+    color: #fff;
+}
+
+.cal-day:hover { background: #e67e22; color: #fff; }
+.cal-day.disabled { opacity: 0.1; cursor: not-allowed; pointer-events: none; }
+.cal-day.empty { background: transparent; cursor: default; }
+
+/* Dezenter Abbrechen Button */
+.cal-modal-cancel {
+    background: transparent; border: 1px solid #333;
+    color: #666; padding: 8px; border-radius: 6px;
+    cursor: pointer; width: 100%; margin-top: 20px; font-size: 12px;
+    transition: 0.2s;
+}
+.cal-modal-cancel:hover { background: #333; color: #eee; }
+    
+/* ============================================================
+   3. BOXEN & ZELLEN-DESIGN
+   ============================================================ */
+/* 1. Die GRUND-BOX (Belegte Boxen) - etwas heller */
+.box { 
+    border: 1px solid #444; 
+    padding: 5px; 
+    background: #262626; /* Dein bisheriger "belegter" Ton */
+    min-height: 50px; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    text-align: center; 
+    font-size: 11px; 
+    position: relative; 
+    cursor: default; 
+    overflow: hidden;
+    transition: none !important;
+    pointer-events: auto !important;
+}
+
+/* 2. Die LEERE BOX - jetzt DEUTLICH DUNKLER */
+.box.empty { 
+    background-color: #1a1a1a !important; /* Hier ein noch dunklerer Ton (fast Schwarz) */
+    opacity: 1 !important; 
+    pointer-events: auto !important; 
+    border: 1px solid #333 !important;   /* Auch den Rand etwas dezenter für den Dark-Look */
+}
+    
+.zeit-box {
+    background: #333;
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border: 1px solid #444;
+}
+
+.header-row { 
+    grid-column: span 6; 
+    background: #333; 
+    font-size: 14px; 
+    font-weight: bold; 
+    position: sticky; 
+    top: 60px; 
+    z-index: 1090; 
+    height: 50px;
+}
+
+/* EIGENE BOXEN: Erlauben Klicks, da diese im JS via setBoxClick gesteuert werden */
+.box.is-mine { 
+    border: 1px solid #e67e22 !important; 
+    z-index: 10; 
+    cursor: pointer !important; 
+}
+.box.is-mine:hover {
+    background-color: rgba(230, 126, 34, 0.2) !important;
+    box-shadow: inset 0 0 15px rgba(255, 159, 67, 0.4), 0 0 20px rgba(230, 126, 34, 0.3);
+    transition: transform 0.2s ease;
+    transform: scale(1.03);
+    z-index: 100;
+}
+
+/* FREMDE BOXEN: Pointer-Events sind jetzt 'auto', 
+   damit sie als Container existieren, aber der Klick-Schutz kommt aus dem JS. */
+.box.not-mine {
+    cursor: default !important;
+}
+    
+.material-indicator {
+    transition: transform 0.2s ease; /* Macht den Übergang weich */
+}
+
+.material-indicator:hover {
+    transform: scale(1.2); /* Vergrößert das Icon leicht */
+}
+
+    
+/* 🔥 NEU: Das Notiz-Icon oben links in der Box (Gegenspieler zum Material-Paket) */
+.box-notiz-icon {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    font-size: 1.35rem; /* 🔥 Deutlich größer (vorher 11px) */
+    line-height: 1;
+    z-index: 15;
+    cursor: pointer; /* 🔥 Verwandelt das Fragezeichen in eine Klick-Hand */
+    transition: transform 0.2s ease;
+}
+
+/* Wenn man direkt mit der Maus auf das Icon zeigt, wird es noch ein Stück größer */
+.box-notiz-icon:hover {
+    transform: scale(1.25) !important;
+}
+
+/* Lässt das Icon dezent mitreagieren, wenn die gesamte Box gehovertt wird */
+.box.is-mine:hover .box-notiz-icon {
+    transform: scale(1.1);
+}
+
+/* Inhalt der Boxen */
+/* Klassenname */
+.klasse-label { 
+    font-weight: bold; 
+    font-size: 14px; 
+    color: #ffffff; 
+}
+
+/* Lehrer-Kürzel */
+.lehrer-info { 
+    font-size: 10px; 
+    color: #bbbbbb; 
+}
+
+/* Hallen-Name */
+.halle-label { 
+    font-size: 10px; 
+    color: #e67e22; 
+    font-style: italic;
+}
+
+/* ============================================================
+   4. TRENNLINIEN, LOADER & SPEZIAL-MODI
+   ============================================================ */
+.divider-thin { grid-column: 1 / span 6; height: 1px; background: #444; margin: 2px 0; }
+.divider-thick { grid-column: 1 / span 6; height: 4px; background: #444; margin: 5px 0; }
+
+.box.ausfall-mode { 
+    background-color: #000 !important; 
+    color: #777 !important; 
+    background-image: linear-gradient(to top right, transparent calc(50% - 1px), #444, transparent calc(50% + 1px)), 
+                      linear-gradient(to top left, transparent calc(50% - 1px), #444, transparent calc(50% + 1px)); 
+}
+
+.info-box {
+    grid-column: span 6; font-size: 20px !important; padding: 40px !important;
+    text-align: center; line-height: 1.5; color: #888; font-style: italic;
+}
+
+.global-loader { 
+    position: fixed; left: 15px; top: 15px; width: 25px; height: 25px; 
+    border: 3px solid #444; border-top: 3px solid #e67e22; border-radius: 50%; 
+    animation: spin 1s linear infinite; display: none; z-index: 9999; 
+}
+
+/* ============================================================
+   5. LOGIN-OVERLAY & CARD-DESIGN
+   ============================================================ */
+#loginOverlay { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: radial-gradient(circle at center, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 100%), 
+                url('https://raw.githubusercontent.com/ReservationSport/ReservationSport/refs/heads/main/Logo.png');
+    background-size: cover; background-position: center; z-index: 20000; 
+    display: flex; justify-content: center; align-items: center; 
+    font-family: 'Inter', sans-serif; backdrop-filter: blur(18px); 
+}
+
+#loginOverlay.fade-out {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+}
+
+.login-card {
+    background: rgba(20, 20, 20, 0.7); padding: 50px 40px; border-radius: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5); 
+    width: 100%; max-width: 360px; text-align: center;
+}
+
+.login-card h2 { 
+    color: #ffffff; font-size: 30px; margin-bottom: 35px; font-weight: 800; 
+    letter-spacing: -1.5px; text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); 
+}
+
+.login-card input { 
+    padding: 16px 20px; margin: 10px 0; background: rgba(0, 0, 0, 0.4); 
+    border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; border-radius: 14px; 
+    width: 100%; font-size: 16px; outline: none; box-sizing: border-box; 
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.login-card input:focus { 
+    border-color: #e67e22; background: rgba(0, 0, 0, 0.6); 
+    box-shadow: 0 0 20px rgba(230, 126, 34, 0.2); 
+}
+
+/* ============================================================
+   6. LOGIN-BUTTON (MORPHING-VERSION)
+   ============================================================ */
+.button-wrapper {
+    height: 85px; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    margin-top: 25px;
+}
+
+#loginBtn { 
+    padding: 18px; 
+    background: linear-gradient(180deg, #ff9f43 0%, #e67e22 100%); 
+    color: white; border: none; border-radius: 16px; cursor: pointer; width: 100%; 
+    font-family: 'Oswald', sans-serif; font-size: 20px; font-weight: 700; 
+    text-transform: uppercase; letter-spacing: 1.5px;
+    box-shadow: 0 10px 20px -5px rgba(230, 126, 34, 0.5);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: absolute; 
+    z-index: 1;
+    overflow: hidden;
+}
+
+#loginBtn:hover { transform: translateY(-3px); filter: brightness(1.1); }
+
+/* Blitz-Effekt bleibt im Button */
+#loginBtn::after {
+    content: ''; position: absolute; top: 0; left: -150%; width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transform: skewX(-25deg); transition: 0.6s ease-in-out; z-index: 3;
+}
+#loginBtn:hover::after { left: 150%; }
+
+/* DER MORPH-EFFEKT: Wird zum Spinner */
+#loginBtn.is-loading {
+    width: 60px !important;
+    height: 60px;
+    border-radius: 50% !important;
+    color: transparent !important;
+    pointer-events: none;
+    background: #e67e22 !important;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    border-top: 4px solid #fff;
+    animation: spin 0.8s linear infinite;
+    box-shadow: none;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Fehlertext Styling */
+#loginError {
+    color: #ff4757;
+    font-size: 14px;
+    margin-top: 15px;
+    min-height: 20px;
+    font-weight: 600;
+}
+
+
+/* ============================================================
+   6. SIDEBAR & 8. NEWS-SIDEBAR (Von Links)
+   ============================================================ */
+
+#newsSidebar {
+    position: fixed;
+    top: 0;
+    left: -350px;
+    width: 320px;
+    height: 100%;
+    background: #111;
+    border-right: 1px solid #333;
+    z-index: 12000;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+    padding: 20px;
+    box-sizing: border-box;
+    display: none;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto; 
+}
+
+#newsSidebar.active { left: 0; }
+
+/* Basis-Stile für die Karten */
+.news-item {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+/* 📥 UNGELESEN (news-unread) */
+.news-item.news-unread {
+    border-left: 4px solid #e67e22;
+    background: #221a12;
+}
+.news-item.news-unread .status-icon { color: #e67e22; font-weight: bold; }
+
+/* ⚪ GELESEN (news-gelesen) - Die graue Optik */
+.news-item.news-gelesen {
+    background: #151515 !important;
+    border-left: 4px solid #444 !important;
+    opacity: 0.7;
+}
+.news-item.news-gelesen .status-icon { color: #888; font-weight: normal; }
+
+/* Hover-Effekt */
+.news-item:hover { 
+    border-color: #555;
+    background: #222; 
+}
+
+.news-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.8em; }
+.status-icon { font-size: 0.9em; text-transform: uppercase; letter-spacing: 0.5px; }
+.news-text { margin: 6px 0; font-size: 0.95em; color: #eee; line-height: 1.4; }
+    
+
+
+
+/* ============================================================
+   ANIMATIONEN & EFFEKTE
+   ============================================================ */
+
+/* Pulsieren des Benachrichtigungs-Punkts */
+@keyframes pulseDot {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.6; }
+    100% { transform: scale(1); opacity: 1; }
+}
+.pulse-animation {
+    animation: pulseDot 1.5s infinite ease-in-out;
+}
+
+
+    /* Blinken bei News-Sprung im Stundenplan */
+@keyframes highlightBlink {
+    0% { box-shadow: 0 0 0px #e67e22; border-color: transparent; }
+    50% { box-shadow: 0 0 20px #e67e22; border-color: #e67e22; background-color: rgba(230, 126, 34, 0.2); }
+    100% { box-shadow: 0 0 0px #e67e22; border-color: transparent; }
+}
+
+.blink-animation { 
+    animation: highlightBlink 0.8s ease-in-out 4; 
+}
+
+
+
+
+/* ============================================================
+   9. EIGENES MENÜ - ZENTRALES STYLING
+   ============================================================ */
+
+/* --- BACKDROP & CONTAINER --- */
+.eigenesmenu-backdrop {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); z-index: 10000;
+    display: flex; justify-content: center; align-items: center;
+    backdrop-filter: blur(8px); padding: 15px;
+    opacity: 0; transition: opacity 0.3s ease;
+}
+
+.eigenesmenu-container {
+    width: 100%; max-width: 380px; max-height: 90vh; 
+    display: flex; flex-direction: column;
+    background: #1a1a1a; border: 1px solid #333;
+    border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+    overflow: hidden; transform: translateY(20px); transition: transform 0.3s ease-out;
+}
+
+/* --- HEADER & ICON --- */
+.eigenesmenu-header {
+    position: relative;
+    padding: 15px 60px 15px 15px; 
+    background: #1a1a1a; border-bottom: 1px solid #333;
+    flex-shrink: 0; /* Header soll nicht schrumpfen */
+}
+
+.header-icon {
+    position: absolute !important;
+    top: 10px !important; right: 15px !important;
+    font-size: 50px !important; color: #e67e22 !important;
+    opacity: 0.3; pointer-events: none;
+}
+
+.eigenesmenu-header h3 {
+    color: #e67e22; margin: 0; font-size: 1.1em;
+    text-transform: uppercase; letter-spacing: 1px; line-height: 1.2;
+}
+
+.eigenesmenu-header p {
+    color: #999; font-size: 12px; margin: 8px 0 0 0; line-height: 1.4;
+}
+
+/* --- LISTE & SCROLLING --- */
+.eigenesmenu-liste {
+    padding: 15px; overflow-y: auto; 
+    flex-grow: 1; /* Nimmt den restlichen Platz ein */
+    display: flex; flex-direction: column; 
+    gap: 10px; box-sizing: border-box;
+}
+
+/* --- BUTTONS: UNIVERSAL (Doppel-Btn & Taskmanager-Item) --- */
+.doppel-btn, .eigenesmenu-item {
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 20px; 
+    width: 100%; 
+    height: 60px; /* Fixe Höhe */
+    min-height: 60px; /* WICHTIG: Verhindert Stauchung bei Platzmangel */
+    flex-shrink: 0; /* Verhindert Stauchung */
+    cursor: pointer; border-radius: 12px;
+    background: #262626; color: #eee;
+    border: 1px solid #333;
+    font-size: 14px; 
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+/* Hover-Effekt */
+.doppel-btn:hover, .eigenesmenu-item:hover {
+    border-color: #e67e22;
+    transform: scale(1.02);
+    background: #2d2d2d;
+}
+
+/* Icon-Farbumschlag */
+.doppel-btn .material-symbols-outlined,
+.eigenesmenu-item .material-symbols-outlined {
+    margin-right: 12px; transition: color 0.3s ease;
+}
+.doppel-btn:hover .material-symbols-outlined,
+.eigenesmenu-item:hover .material-symbols-outlined {
+    color: #e67e22;
+}
+
+
+
+/* --- HALLEN-OPTIONEN (70/30 Layout - Konsistent mit Taskmanager) --- */
+.hallen-option-wrapper {
+    width: 100%; 
+    height: 60px;           /* Erhöht auf 60px wie Taskmanager */
+    min-height: 60px;       /* WICHTIG: Verhindert Stauchung */
+    flex-shrink: 0;         /* WICHTIG: Element darf nicht schrumpfen */
+    display: flex;
+    margin-bottom: 10px; 
+    border-radius: 12px;    /* Etwas runder für Konsistenz */
+    border: 1px solid #444;
+    background: #333; 
+    overflow: hidden;
+    transition: all 0.25s ease;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+/* Hover-Effekt nur für nicht-deaktivierte Zeilen */
+.hallen-option-wrapper:not(.disabled):hover {
+    transform: scale(1.02);
+    border-color: #e67e22 !important;
+}
+
+/* Hallen-Icon im Locker-Bereich wird orange bei Wrapper-Hover */
+.hallen-option-wrapper:not(.disabled):hover .opt-locker .material-symbols-outlined {
+    color: #e67e22 !important;
+}
+
+.opt-locker {
+    flex: 1; 
+    display: flex; 
+    align-items: center; 
+    padding-left: 20px; /* Konsistentes Padding */
+    cursor: pointer;
+}
+
+.opt-fix {
+    width: 55px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; /* Perfekte Zentrierung */
+    border-left: 1px solid #444; 
+    background: #2a2a2a;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+/* Schloss-Icon Basis-Style */
+.opt-fix .material-symbols-outlined {
+    font-size: 20px !important;
+    font-weight: 300 !important;
+    transition: color 0.3s ease;
+    color: #eee;
+    display: block;
+    margin-right: 0 !important; 
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+}
+
+/* Schloss wird NUR orange bei direktem Hover (wenn nicht disabled) */
+.hallen-option-wrapper:not(.disabled) .opt-fix:hover .material-symbols-outlined {
+    color: #e67e22 !important;
+}
+
+/* --- ZUSTÄNDE (Active/Selected) --- */
+.opt-locker.active, .hallen-option-wrapper.selected .opt-locker { 
+    background: #442d11 !important; 
+    color: #ffca88 !important; 
+}
+.opt-fix.active, .hallen-option-wrapper.selected .opt-fix { 
+    background: #66441a !important; 
+}
+
+.hallen-option-wrapper.selected .material-symbols-outlined {
+    color: #ffca88 !important;
+}
+
+.hallen-option-wrapper.selected {
+    cursor: default;
+    border-color: #e67e22 !important;
+}
+
+/* --- BESETZT-ZUSTAND --- */
+.hallen-option-wrapper.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none; 
+    filter: grayscale(1);
+}
+
+/* Touch-Geräte-Optimierung */
+@media (hover: hover) {
+  .hallen-option-wrapper:not(.disabled):hover {
+      transform: scale(1.02);
+  }
+}
+
+
+
+    
+
+/* Container für die Buttons im Footer */
+.menu-footer-container {
+    display: flex;
+    border-top: 1px solid #222; /* Übernommen aus deinem alten Style */
+    background: #111;           /* Übernommen aus deinem alten Style */
+}
+
+/* Der neue Button-Style (basiert auf deinem alten .eigenesmenu-cancel) */
+.footer-btn {
+    flex: 1;
+    background: #111;
+    color: #555;
+    border: none;
+    padding: 15px;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.footer-btn:hover {
+    color: #888;
+    background: #161616;
+}
+
+/* Trennlinie zwischen zwei Buttons, falls nötig */
+.footer-btn:not(:last-child) {
+    border-right: 1px solid #222;
+}
+
+/* Spezielle Farbe für Abbrechen, falls gewünscht */
+.footer-btn.cancel:hover {
+    color: #cc5555; /* Ein sanfter roter Ton beim Hover */
+}
+    
+
+/* ============================================================
+   10. MATERIAL BUCHEN
+   ============================================================ */
+
+
+/* Der dynamische Footer */
+#material-fixed-footer {
+    display: none; 
+}
+
+/* Wird per JS hinzugefügt, wenn Auswahl getroffen wurde */
+#material-fixed-footer.is-visible {
+    display: flex !important;
+}
+
+/* Der statische Footer bleibt immer unten */
+#static-std-footer {
+    display: flex !important;
+}
+
+
+
+/* 1. Wenn der User mit der Maus über die Auswahl-Option fährt */
+.material-selectable:hover {
+    border-color: #e67e22 !important; /* Optional: Rand wird auch orange */
+}
+
+/* 2. Hier wird das Icon orange, sobald der übergeordnete Div (der Button) gehovert wird */
+.material-selectable:hover .material-symbols-outlined {
+    color: #e67e22 !important;
+}
+
+
+
+/* Nur für den Custom-Input-Button */
+.custom-material-input-box:hover {
+    border-color: #e67e22; /* Deine gewünschte Farbe beim Hover */
+}
+
+.custom-material-input-box:hover .material-symbols-outlined {
+    color: #e67e22 !important;
+}
+
+/* Wenn du den Fokus-Effekt willst (wenn man reinklickt): */
+.custom-material-input-box:focus-within {
+    border-color: #e67e22;
+}
+.custom-material-input-box:focus-within .material-symbols-outlined {
+    color: #e67e22 !important;
+}
+
+
+
+/* --- 1. ACTION BUTTONS (Standard) --- */
+.menu-action-btn {
+    flex: 1;
+    height: 55px;
+    border-radius: 12px;
+    border: 1px solid #333;
+    background: #1e1e1e;
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Zentrierung */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    padding: 0 15px;
+}
+
+.menu-action-btn:hover {
+    transform: translateY(-2px);
+    background: #2a2a2a;
+    border-color: #e67e22;
+    color: #e67e22;
+}
+
+.menu-action-btn .material-symbols-outlined {
+    font-size: 24px;
+    transition: color 0.25s ease;
+}
+
+.menu-action-btn:hover .material-symbols-outlined {
+    color: #e67e22;
+}
+
+/* --- 2. SPEZIELLE BUTTON-ANPASSUNGEN --- */
+
+/* Spezielle Anpassung NUR für den Speichern-Button im Detail-Fenster */
+.menu-action-btn.save-details {
+    height: 65px !important;       /* Noch etwas höher */
+    font-size: 15px !important;    /* Schrift etwas größer */
+    padding: 0 25px !important;    /* Mehr Luft an den Seiten */
+    margin-top: 20px !important;   /* Mehr Abstand zum Textfeld */
+    flex: 0 0 65px !important;     /* Verhindert das Stauchen durch Flexbox */
+}
+   
+
+.material-icon {
+    position: absolute; /* Absolut innerhalb der .box */
+    top: 5px;
+    right: 5px;
+    color: #e67e22;
+    font-size: 14px;
+    z-index: 10;
+    cursor: pointer !important;    /* FIX 1: Ändert das Fragezeichen zur Klick-Hand */
+    pointer-events: auto !important; /* FIX 2: Garantiert, dass Klicks abgefangen werden */
+    padding: 4px;                  /* Erleichtert das Treffen auf mobilen Geräten */
+}
+
+.material-icon::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    right: 0; /* Rechtsbündig mit dem Icon, damit es nicht links rausragt */
+    background: rgba(40, 40, 40, 0.95);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: pre-wrap; /* Erlaubt Zeilenumbrüche bei langen Kommentaren */
+    width: max-content;
+    max-width: 150px;
+    display: none;
+    z-index: 1000;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    border: 1px solid #e67e22;
+    pointer-events: none; /* Verhindert Flackern beim Drüberfahren */
+}
+
+@media (hover: hover) {
+    .material-icon:hover::after { 
+        display: block; 
+    }
+}
+
+
+
+
+/* --- Material Info-Fenster (Optimiert für Linksbündigkeit) --- */
+.material-info-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 15000;
+    backdrop-filter: blur(5px);
+}
+
+.material-info-content {
+    background: #1a1a1a;
+    border: 1px solid #444;
+    border-radius: 12px;
+    padding: 25px;
+    width: 85%; max-width: 400px;
+    text-align: left; /* ZENTRIERUNG ENTFERNT: Jetzt ist alles standardmäßig links */
+    box-sizing: border-box;
+}
+
+/* --- Spezifische Zentrierung für Elemente, die zentriert bleiben sollen --- */
+/* Dies überschreibt die Linksbündigkeit nur für den Schliessen-Button */
+.material-info-content .eigenesmenu-cancel {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* --- CONTAINER FÜR DIE MITTIGE AUSRICHTUNG --- */
+.details-mengen-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Zentriert die Textarea weiterhin horizontal */
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 0;
+}
+
+/* --- DAS TEXTAREA-KOMMENTARFELD --- */
+.details-mengen-content textarea {
+    width: 100%;
+    max-width: 290px;
+    height: 120px;
+    background: #151515;
+    border: 1px solid #333;
+    color: #fff;
+    border-radius: 8px;
+    padding: 12px;
+    box-sizing: border-box;
+    resize: none;
+    outline: none;
+    font-family: sans-serif;
+    margin: 0 auto 20px auto; 
+    transition: border-color 0.2s ease;
+    text-align: left; /* Text in der Textarea soll auch links starten */
+}
+
+.details-mengen-content textarea:focus {
+    border-color: #d35400;
+}
+
+
+
+
+
+
+
+
+/* --- DER SPEICHER-BUTTON (MATT & DEZENT, RECHTS PLATZ FÜR LOADER) --- */
+#btn-save-reservation,
+.btn-save-reservation {
+    width: 100%;
+    max-width: 290px;
+    padding: 14px 18px; /* Standard-Polsterung */
+    background: #b84a00; /* Sattes, mattes Ziegel-Orange (nicht grell) */
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative; /* Wichtig für die absolute Positionierung des Loaders */
+    transition: all 0.2s ease;
+    margin: 0 auto;
+}
+
+#btn-save-reservation:hover,
+.btn-save-reservation:hover {
+    background: #a04000; /* Etwas dunkler beim Draufzeigen */
+}
+
+/* --- INLINE-LOADER AUS DEINER FUNKTION RECHTS POSITIONIEREN --- */
+.inline-loader-container {
+    position: absolute;
+    right: 18px; /* Fixiert den Loader am rechten Rand des Buttons */
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+}
+
+/* --- DER ZURÜCK-BUTTON --- */
+.btn-back-link {
+    background: none;
+    border: none;
+    color: #666;
+    text-transform: uppercase;
+    font-weight: bold;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: color 0.2s ease;
+}
+
+.btn-back-link:hover {
+    color: #aaa;
+}
+
+
+
+/* ============================================================
+   12. Doppellektions-Abfrage
+   ============================================================ */
+
+/* Container für die Abfrage */
+.doppel-abfrage-container {
+    margin: 15px;
+}
+
+/* Button-Styling - Jetzt zentriert */
+.doppel-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Hier wurde von flex-start auf center gewechselt */
+    padding: 15px 20px;
+    width: 100%;
+    margin-bottom: 12px;
+    cursor: pointer;
+    border-radius: 12px;
+    background: #222;
+    color: #fff;
+    border: 1px solid #444;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.doppel-btn:hover {
+    border-color: #e67e22;
+    transform: scale(1.02);
+    background: #2a2a2a;
+}
+
+.doppel-btn .material-symbols-outlined {
+    color: #fff;
+    margin-right: 12px; /* Etwas kleiner für eine ausgewogenere Zentrierung */
+    transition: color 0.3s ease;
+}
+
+.doppel-btn:hover .material-symbols-outlined {
+    color: #e67e22;
+}
+
+/* Warnmeldung bei Konflikten */
+.doppel-konflikt-box {
+    background: #331111;
+    border: 1px solid #ff4444;
+    color: #ffcccc;
+    padding: 12px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center; /* Zentrierung für das Ausrufezeichen-Icon */
+    justify-content: center;
+}
+
+
+    
+    
+
+  /* ============================================================
+   11. SPEZIAL-MODAL: MODERNES ORANGE-DESIGN FOR RESET
+   ============================================================ */
+
+/* Das Eingabefeld für das Passwort */
+#modal-reset-password {
+    width: 100%;
+    padding: 12px;
+    background: #000 !important;
+    border: 1px solid #ff9800 !important; /* Unser neues Orange */
+    color: #fff !important;
+    border-radius: 8px !important;
+    text-align: center;
+    font-size: 1.1rem !important;
+    letter-spacing: 4px;
+    outline: none;
+    box-sizing: border-box;
+    box-shadow: inset 0 0 10px rgba(255, 152, 0, 0.1);
+    transition: all 0.2s ease-in-out;
+}
+
+#modal-reset-password:focus {
+    border-color: #f57c00 !important;
+    box-shadow: 0 0 12px rgba(255, 152, 0, 0.4), inset 0 0 10px rgba(255, 152, 0, 0.2) !important;
+}
+
+/* Gemeinsame Basis für die Knöpfe im Modal */
+.reset-modal-btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    margin: 0;
+    transition: all 0.2s ease-in-out;
+}
+
+/* ORANGE LOOK: JA, ABKLEBEN */
+#btn-confirm-reset {
+    background: #ff9800;
+    color: #121212;
+}
+
+#btn-confirm-reset:hover {
+    background: #f57c00;
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+    transform: translateY(-1px);
+}
+
+#btn-confirm-reset:active {
+    transform: translateY(1px);
+}
+
+/* DEZENTER LOOK: ABBRECHEN BUTTON */
+#btn-cancel-reset {
+    background: #333;
+    color: #ccc;
+}
+
+/* Reagieren beim Draufzeigen (Hover) */
+#btn-cancel-reset:hover {
+    background: #444 !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+}
+
+#btn-cancel-reset:active {
+    transform: translateY(1px);
+}  
+
+
+  /* ============================================================
+   12. OVERLAY BEIM LADEN
+   ============================================================ */
+    
+
+/* Schwarzer Hintergrund mit leichter Transparenz */
+#loadingOverlay {
+    display: none; 
+    position: fixed; 
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.80); /* Tiefschwarz */
+    z-index: 999999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    color: #e67e22; /* Textfarbe orange */
+    font-family: sans-serif;
+}
+
+/* Sichtbar machen via JS */
+#loadingOverlay.is-visible {
+    display: flex !important;
+}
+
+/* Orange Spinner */
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #333;        /* Dunkler Ring */
+    border-top: 5px solid #e67e22; /* Dein Orange */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+   
+
+
+/* ============================================================
+   13. NOTIZEN
+   ============================================================ */
+
+
+
+/* Ändert die blaue Standard-Umrandung in Orange */
+#notiz-text-feld:focus {
+    outline: 2px solid #e67e22; /* Dein Oranjeton */
+    outline-offset: 0px;        /* Damit die Linie direkt am Feld klebt */
+    border-color: #e67e22 !important; /* Passt bei Bedarf auch den Rand an */
+}
+
+.notiz-save-btn {
+    background: #1a1a1a;
+    border: 2px solid #e67e22;
+    color: #e67e22;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    
+    /* WICHTIG: Sorgt dafür, dass der Button exakt das Textfeld spiegelt */
+    width: 100%; 
+    box-sizing: border-box; 
+}
+
+.notiz-save-btn:hover {
+    transform: scale(1.02); /* Leicht vergrößert */
+    background: #222;
+}
+
+.notiz-save-btn.hidden {
+    display: none !important;
+}
+
+/* ============================================================
+   13. Lektion verschieben (Optimiert)
+   ============================================================ */
+
+/* 1. Die freie Box (Ziel): Pulsieren und Crosshair */
+.is-selectable.move-mode-highlight {
+    border: 2px dashed #ff9800 !important;
+    animation: pulse 1.5s infinite;
+    cursor: crosshair !important;
+    position: relative;
+    z-index: 9999 !important;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* 2. Die aktive Box (Quelle): Glow-Effekt */
+.box.is-being-moved.move-mode-highlight {
+    border: 3px solid #ff9800 !important;
+    box-shadow: 0 0 15px 3px #ff9800 !important;
+    animation: pulse-glow 1.5s infinite;
+    position: relative;
+    z-index: 9999 !important;
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 5px 1px #ff9800; }
+    50% { box-shadow: 0 0 15px 5px #ff9800; }
+}
+
+/* 3. Das globale Overlay: Klicks gehen durch (außer auf das Panel) */
+.move-mode-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 9998;
+    pointer-events: none; /* WICHTIG: Erlaubt das Klicken auf Boxen darunter */
+}
+
+/* 4. Hover-Blockade: Verhindert Standard-Effekte im Modus */
+.move-mode-active *:hover {
+    cursor: default !important;
+    box-shadow: none !important;
+}
+
+/* Freigabe für das Crosshair auf den Ziel-Boxen */
+.move-mode-active .box.move-mode-highlight:hover {
+    cursor: crosshair !important;
+}
+
+/* Abdunkelung aller anderen Boxen */
+.move-mode-active .box:not(.move-mode-highlight) {
+    opacity: 0.3 !important;
+    pointer-events: none !important;
+}
+
+/* Sicherstellen, dass Highlight-Boxen voll sichtbar bleiben */
+.move-mode-highlight {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* Das Panel liegt nun direkt im Body */
+#move-panel-ui {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2147483647; /* Das absolute Maximum für Z-Index */
+    pointer-events: auto;
+    
+    /* Dein bestehendes Design */
+    display: flex;
+    width: 95%;
+    max-width: 1000px;
+    height: 50px;
+    background: #e67e22;
+    color: white;
+    padding: 0 30px;
+    border-radius: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.btn-cancel {
+    background: white; 
+    color: #e67e22; 
+    border: none;
+    /* Etwas kompakterer Button */
+    padding: 6px 20px; 
+    border-radius: 20px; 
+    cursor: pointer; 
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+/* Feedback beim Drüberfahren (Hover) */
+.btn-cancel:hover {
+    background-color: #f8f8f8; /* Sehr helles Grau/Weiß */
+    transform: scale(1.05);    /* Leichter Vergrößerungs-Effekt */
+    transition: all 0.2s ease; /* Weiche Animation */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Feedback beim Klicken (Active) */
+.btn-cancel:active {
+    transform: scale(0.95);    /* Kurzes "Eindrücken" beim Klicken */
+}
+
+    
+/* Wenn der Modus aktiv ist, zeigen wir das Panel */
+.move-mode-active .move-panel {
+    display: flex;
+}
+
+
+
+/* ============================================================
+   14. Zusatz-Menu
+   ============================================================ */
+
+    
+.extra-menu-panel {
+    position: absolute;
+    top: 60px;
+    right: 20px;
+    background: #2c2c2c;
+    color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    z-index: 999999; /* Hier hoch genug ansetzen! */
+    padding: 10px 0;
+    min-width: 180px;
+    transform-origin: top right;
+    animation: menu-unfold 0.2s ease-out forwards;
+}
+
+.menu-item {
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.menu-item:hover {
+    background: #e67e22;
+}
+
+/* Modal Struktur für "Herauswachsen"-Effekt */
+.modal-overlay {
+    display: none; /* Wird per JS auf 'flex' gesetzt */
+    position: fixed;
+    top: 0; left: 0; 
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.7);
+    z-index: 999999;
+    /* Flexbox auf 'flex-start' setzen, um Positionierung via JS zu erlauben */
+    justify-content: flex-end; 
+    align-items: flex-start;
+}
+
+.modal-content {
+    background: #1e1e1e;
+    padding: 25px;
+    border-radius: 12px;
+    width: 300px;
+    color: white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    
+    /* Animation für das Ausklappen */
+    transform-origin: top right;
+    animation: unfold 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+}
+
+@keyframes unfold {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.modal-content input {
+    width: 100%; padding: 10px; margin: 15px 0;
+    border-radius: 5px; border: 1px solid #444;
+    background: #333; color: white;
+    box-sizing: border-box; /* Wichtig für korrekte Breite */
+}
+
+.modal-actions {
+    display: flex; justify-content: space-between;
+    margin-top: 10px;
+}
+
+
+@keyframes menu-unfold {
+    0% { transform: scale(0.9); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+    
+#menu-trigger .material-symbols-outlined {
+    pointer-events: none; /* Das Icon fängt den Klick NICHT ab */
+    display: block;       /* Sorgt für sauberes Layout */
+}
+
+#menu-trigger {
+    cursor: pointer;      /* Zeigt an, dass es klickbar ist */
+    /* Falls dein Button ein Overlay hat oder z-index Probleme */
+    position: relative;
+    z-index: 1001;        /* Muss über dem Plan liegen */
+}
+
+    
+</style>
+
+
+</head>
+
+
+<body>
+
+    <div id="loadingOverlay">
+    <div class="spinner"></div>
+    <p id="loadingText">Stundenplan wird geladen...</p>
+</div>
+    
+    <div id="global-loader" class="global-loader" style="display:none;"></div>
+
+   <div id="loginOverlay">
+    <div class="login-card">
+        <h2>BBZO <span>Sport</span></h2>
+        
+        <input type="text" id="userKuerzel" placeholder="Kürzel" autocomplete="username"
+               onfocus="document.getElementById('loginError').innerText=''"
+               oninput="document.getElementById('loginError').innerText=''">
+        
+        <input type="password" id="pw" placeholder="Passwort" autocomplete="current-password"
+               onfocus="document.getElementById('loginError').innerText=''"
+               oninput="document.getElementById('loginError').innerText=''"
+               onkeydown="if(event.key === 'Enter') { event.preventDefault(); handleLogin(); }">
+        
+        <div class="button-wrapper">
+    <button id="loginBtn" onclick="handleLogin()">ON YOUR MARKS...</button>
+</div>
+        
+        <p id="loginError"></p>
+    </div>
+</div>
+
+    <div class="date-control">
+    <div class="nav-section nav-left">
+        <div id="news-btn-container" style="display: none;">
+            <div class="news-btn-premium" onclick="refreshAndShowNews()">
+                <span class="btn-text">NEWS</span>
+                <span class="material-symbols-outlined bell-icon">notifications</span>
+                <div id="news-dot" class="badge" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-section nav-center">
+        <div class="nav-group">
+            <button class="nav-btn" onclick="changeDate(-7)" title="1 Woche zurück">
+                <span class="material-symbols-outlined">keyboard_double_arrow_left</span>
+            </button>
+            <button id="prev-day" class="nav-btn" onclick="changeDate(-1)" title="1 Tag zurück">
+                <span class="material-symbols-outlined">chevron_left</span>
+            </button>
+        </div>
+        
+        <button class="nav-btn" onclick="goToToday()" title="Heute">
+            <span class="material-symbols-outlined">home</span>
+        </button>
+        
+        <button class="date-container" onclick="openCalendar()">
+            <span id="date-display">...</span>
+            <span class="material-symbols-outlined">calendar_today</span>
+        </button>
+        <input type="date" id="datePicker" onchange="changeDayAndLoad(this.value); updateDateText(this.value)" style="display: none;">
+        
+        <div class="nav-group">
+            <button id="next-day" class="nav-btn" onclick="changeDate(1)" title="1 Tag vor">
+                <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+            <button class="nav-btn" onclick="changeDate(7)" title="1 Woche vor">
+                <span class="material-symbols-outlined">keyboard_double_arrow_right</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="nav-section nav-right">
+        <button class="refresh-btn" id="menu-trigger" onclick="toggleExtraMenu(event)" title="Mehr Optionen">
+    <span class="material-symbols-outlined">menu</span>
+</button>
+
+        <button class="refresh-btn" onclick="changeDayAndLoad(document.getElementById('datePicker').value, 'refresh')" title="Aktualisieren">
+            <span class="material-symbols-outlined">refresh</span>
+        </button>
+    </div>
+</div>
+
+<div id="extra-menu" class="extra-menu-panel" style="display: none;">
+    <div class="menu-item" onclick="startAddMode()">Lektion hinzufügen</div>
+</div>
+
+<div id="plan-container"></div>
+
+
+<div id="calendar-modal" class="cal-modal-backdrop" style="display: none;">
+    <div class="cal-modal-container" onclick="event.stopPropagation()">
+        <h3 class="cal-modal-title">DATUM WÄHLEN</h3>
+        
+        <div id="calendar-nav" class="cal-month-nav"></div>
+        
+        <div id="calendar-grid" class="calendar-grid"></div>
+        
+        <button class="cal-modal-cancel" onclick="closeCalendar()">Abbrechen</button>
+    </div>
+</div>
+
+    <div id="newsSidebar" style="display:none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 10px;">
+            <h2 style="margin: 0; font-size: 1.2em; color: #e67e22;">NEUIGKEITEN</h2>
+            <button onclick="closeNews()" style="background: none; border: none; color: #666; cursor: pointer; font-size: 1.5em;">&times;</button>
+        </div>
+        <div id="newsContent" style="padding: 0 15px;"></div>
+    </div>
+
+
+    <div id="materialInfoOverlay" class="material-info-overlay" style="display: none;" onclick="this.style.display='none'">
+        <div class="material-info-content" onclick="event.stopPropagation()">
+            <div id="materialInfoTitle" class="material-info-title">Gebuchtes Material</div>
+            <div id="materialInfoText" class="material-info-text"></div>
+            <button class="btn-cancel" onclick="document.getElementById('materialInfoOverlay').style.display='none'" style="width:100%; padding: 10px; margin-top: 10px; background: #333; border: none; border-radius: 4px; color: #fff;">Schliessen</button>
+        </div>
+    </div>
+
+
+    <div id="plan-container">
+        <div class="move-overlay"></div> </div>
+
+
+    
+</body>
+
+
+<script>
+
+
+
+    /* ============================================================
+       1. GLOBALE KONFIGURATION & VARIABLEN
+       ============================================================ */
+    const url = "https://script.google.com/macros/s/AKfycbxCHPxDHj0Eoj1NXOgGR85ETN1m-cpRdAC5D1H0Ck27nm--PetaqyUpSbUsWUFUv3dF/exec"; 
+    
+    // Status-Variablen
+    let userPw = "", userKuerzel = "";
+    let currentPlanData = [];      // Speichert die 60 Slots vom Server
+    let configFarben = {};         // Farben für Klassen aus dem Sheet
+    let allClassTeachers = {};     // Zuordnung Klasse -> Kürzel
+    let verfügbareMaterialien = []; // Liste der Materialien aus dem Sheet
+    
+    // UI-Variablen
+    let pendingNews = [];
+    let isSaving = false;          // Status für den Global Loader
+
+/* ============================================================
+   2. INITIALISIERUNG
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Lokales Datum korrekt berechnen
+    const now = new Date();
+    const localDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    
+    const dp = document.getElementById('datePicker');
+    
+    // --- ÄNDERUNG HIER ---
+    // Erzwinge heute beim PC, wenn kein expliziter Grund dagegen spricht.
+    // Wir setzen das Datum immer auf HEUTE, egal was der Browser im Cache hat.
+    dp.value = localDateStr;
+    
+    updateDateText(dp.value);
+    updateNavButtons();
+    changeDayAndLoad(dp.value); 
+});
+
+/* ============================================================
+   3. LOGIN-LOGIK (Optimiert & Sicher)
+   ============================================================ */
+
+async function handleLogin() {
+    const btn = document.getElementById('loginBtn');
+    const errorDiv = document.getElementById('loginError');
+    const dp = document.getElementById('datePicker');
+    const loginOverlay = document.getElementById('loginOverlay');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    
+    const kuerzelVal = document.getElementById('userKuerzel').value.trim().toLowerCase();
+    const pwVal = document.getElementById('pw').value;
+
+    if (!kuerzelVal) { 
+        errorDiv.innerText = "Kürzel fehlt!"; 
+        return; 
+    }
+
+    // 1. Button morpht zum Spinner
+    btn.classList.add('is-loading');
+    errorDiv.innerText = "";
+
+    try {
+        const response = await fetch(`${url}?mode=login&pw=${encodeURIComponent(pwVal)}&kuerzel=${encodeURIComponent(kuerzelVal)}`);
+        const json = await response.json();
+
+        if (json.status !== "success") {
+            errorDiv.innerText = json.msg || "Login fehlgeschlagen!";
+            btn.classList.remove('is-loading');
+            return;
+        }
+
+        // ZUTRITT GEWÄHRT
+        userPw = pwVal;
+        userKuerzel = kuerzelVal;
+        
+        // 2. Overlay zeigen
+        loadingOverlay.classList.add('is-visible');
+        
+        // 3. Login-Karte ausblenden
+        loginOverlay.classList.add('fade-out');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        loginOverlay.style.display = 'none';
+        
+        // 4. UI-Elemente vorbereiten
+        const newsContainer = document.getElementById('news-btn-container');
+        if(newsContainer) newsContainer.style.display = 'block';
+        
+        await initNewsSystem();
+        await changeDayAndLoad(dp.value);
+
+            if (window.lastPlanResponse) {
+                window.hallenConfig = window.lastPlanResponse.hallenConfig;
+            }
+        
+        // Fertig: Loading-Overlay entfernen
+        loadingOverlay.classList.remove('is-visible');
+
+        // 5. Hintergrund-Sync (alle 30s)
+        // 5. Hintergrund-Sync (alle 30s)
+setInterval(async () => {
+    if (document.visibilityState === 'visible') {
+        await syncPlan();
+        await initNewsSystem(); 
+    }
+}, 5000); 
+
+// 6. Automatischer Tageswechsel-Check (nur wenn der User "Heute" betrachtet)
+setInterval(async () => {
+    const jetzt = new Date();
+    const localToday = `${jetzt.getFullYear()}-${String(jetzt.getMonth() + 1).padStart(2, '0')}-${String(jetzt.getDate()).padStart(2, '0')}`;
+    const dp = document.getElementById('datePicker');
+    
+    // Wir speichern den Zustand, ob der User "Heute" aktiv hat
+    // Wenn dp.value dem heutigen Tag entspricht, ist alles gut.
+    // Wenn er NICHT dem heutigen Tag entspricht, lassen wir ihn in Ruhe!
+    
+    // Aber: Wenn wir BEIM LADEN oder BEIM LOGIN "Heute" gewählt hatten
+    // und nun ein Tag vergangen ist, WOLLEN wir das Update.
+    
+    // Neue Logik: Springe nur, wenn der Tag tatsächlich gewechselt hat 
+    // UND der User nicht aktiv an einem anderen Tag arbeitet.
+    
+    // Ein einfacher Weg: Prüfe, ob das Datum im DatePicker veraltet ist,
+    // ABER setze ein Flag, wenn der User den Tag manuell geändert hat.
+    
+    if (dp && dp.value !== localToday) {
+        // Wir fragen den User nicht, wir prüfen: 
+        // Hat der User aktiv ein Datum gewählt, das in der ZUKUNFT liegt?
+        // Wenn der User aktiv den 5. Juni gewählt hat, ist dp.value > localToday.
+        // Dann NICHT zurückspringen!
+        
+        if (dp.value > localToday) {
+            console.log("User arbeitet in der Zukunft, kein automatischer Sprung.");
+            return; 
+        }
+
+        console.log("Neuer Tag erkannt! Synchronisiere auf: " + localToday);
+        dp.value = localToday;
+        updateDateText(localToday);
+        updateNavButtons();
+        await changeDayAndLoad(localToday);
+    }
+}, 60000);
+
+        
+    } catch (e) {
+        errorDiv.innerText = "Verbindung fehlgeschlagen.";
+        btn.classList.remove('is-loading');
+        loadingOverlay.classList.remove('is-visible');
+        loginOverlay.classList.remove('fade-out');
+        loginOverlay.style.display = 'flex';
+        console.error("Login Error:", e);
+    }
+}
+    
+   
+
+ document.getElementById('plan-container').addEventListener('click', function(e) {
+    // Suche das nächste Element mit der Klasse .box
+    const box = e.target.closest('.box');
+    if (!box) return;
+
+    // Hole Daten aus den Attributen
+    const slot = box.getAttribute('data-slot');
+    const klasse = box.querySelector('.klasse-label')?.innerText || "";
+    const zeitStr = box.getAttribute('data-time') || "";
+    
+    // Prüfen, ob die Box editierbar ist (durch die Klasse .is-mine)
+    if (box.classList.contains('is-mine')) {
+        openEditor(box, zeitStr, slot, klasse);
+    }
+});   
+
+
+/* ============================================================
+   HILFSFUNKTION: Slot-Index zu Daten-Mapping
+   ============================================================ */
+function getDataBySlotIndex(index) {
+    // Wir ziehen 1 ab, damit wir intern mit 0-basiertem Index rechnen (1 -> 0)
+    const korrigierterIndex = index - 1;
+
+    // Da wir nur die 5 Wochentage zählen (ohne die Zeitspalte):
+    const spaltenProWoche = 5; 
+    
+    // Berechne die Zeile (Stunde)
+    // Wir addieren 1 bei der Zeile, falls currentPlanData[0] der Header ist
+    const zeile = Math.floor(korrigierterIndex / spaltenProWoche) + 1;
+    
+    // Berechne die Spalte (Tag)
+    // Wir addieren 1, um die Zeitspalte (Index 0) zu überspringen
+    const spalte = (korrigierterIndex % spaltenProWoche) + 1;
+
+    console.log(`Slot ${index} -> Suche in currentPlanData[Zeile ${zeile}][Spalte ${spalte}]`);
+
+    if (currentPlanData[zeile] && currentPlanData[zeile][spalte]) {
+        return currentPlanData[zeile][spalte];
+    }
+    return null;
+}
+    
+    /* ============================================================
+       4. SICHERHEITSABFRAGE (Falls doch mal was hängt)
+       ============================================================ */
+    
+    window.addEventListener('beforeunload', (e) => {
+        if (isSaving) { 
+            e.preventDefault(); 
+            e.returnValue = 'Änderungen werden noch gespeichert...'; 
+        }
+    });
+
+    // Hilfsfunktion: Loader anzeigen/verstecken
+    function toggleLoader(show) {
+        isSaving = show;
+        document.getElementById('global-loader').style.display = show ? 'block' : 'none';
+    }
+
+
+/* ============================================================
+   5. DATUMSSTEUERUNG, NAVIGATION & INITIALISIERUNG
+   ============================================================ */
+
+/* ============================================================
+   ROBUSTE DATUMS-LOGIK
+   ============================================================ */
+
+window.changeDate = (days, mode = 'day') => {
+    const dp = document.getElementById('datePicker');
+    
+    // Wenn der Wert leer ist, nimm heute
+    if (!dp.value) dp.value = new Date().toISOString().split('T')[0];
+
+    // Berechnung
+    let d = new Date(dp.value + 'T12:00:00'); 
+    d.setUTCDate(d.getUTCDate() + days);
+    
+    const newDateStr = d.toISOString().split('T')[0];
+    
+    // UI aktualisieren
+    dp.value = newDateStr;
+    
+    // Laden (Jetzt mit Modus!)
+    changeDayAndLoad(newDateStr, mode); 
+};
+
+
+    
+window.goToToday = (mode = 'day') => {
+    const now = new Date();
+    const localDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    
+    const dp = document.getElementById('datePicker');
+    dp.value = localDateStr;
+    
+    updateDateText(localDateStr);
+    updateNavButtons();
+    
+    // Laden (Jetzt mit Modus!)
+    changeDayAndLoad(localDateStr, mode);
+};
+
+    
+
+// Korrektur: Die Sichtbarkeit im updateNavButtons muss auch auf <= heute prüfen
+function updateNavButtons() {
+    const dp = document.getElementById('datePicker');
+    if (!dp || !dp.value) return;
+
+    // Aktuelles Datum im Picker und Heute (00:00:00)
+    const pickerDate = new Date(dp.value + 'T00:00:00');
+    const heute = new Date();
+    heute.setHours(0, 0, 0, 0);
+
+    // 1. Tag-Buttons (1 Tag zurück)
+    // Erscheint erst, wenn wir weiter als HEUTE sind
+    const prevDayBtn = document.getElementById('prev-day');
+    if (prevDayBtn) {
+        prevDayBtn.style.visibility = (pickerDate > heute) ? 'visible' : 'hidden';
+    }
+
+    // 2. Wochen-Buttons (1 Woche zurück)
+    // Erscheint erst, wenn das Picker-Datum mindestens 7 Tage in der Zukunft liegt
+    const siebenTageInMs = 7 * 24 * 60 * 60 * 1000;
+    const istMindestensEineWocheVor = (pickerDate.getTime() - heute.getTime()) >= siebenTageInMs;
+
+    document.querySelectorAll('.nav-group:first-child .nav-btn').forEach(btn => {
+        const onclickAttr = btn.getAttribute('onclick') || "";
+        if (onclickAttr.includes('-7')) {
+            // Zeige nur, wenn wir mindestens 7 Tage in der Zukunft sind
+            btn.style.visibility = istMindestensEineWocheVor ? 'visible' : 'hidden';
+        }
+    });
+}
+
+/* ============================================================
+   KALENDER MODAL LOGIK
+   ============================================================ */
+
+
+   window.openCalendar = function(offset = 0) {
+    const modal = document.getElementById('calendar-modal');
+    const nav = document.getElementById('calendar-nav');
+    const grid = document.getElementById('calendar-grid');
+    const dp = document.getElementById('datePicker');
+    
+    if (!modal || !nav || !grid) return;
+    
+    modal.style.display = 'flex';
+    nav.innerHTML = '';
+    grid.innerHTML = ''; 
+
+    // 1. Basis-Datum (LOKAL statt UTC)
+    const now = new Date();
+    // Hilfsfunktion für lokales YYYY-MM-DD
+    const getLocalStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    
+    const heuteStr = getLocalStr(now);
+    const gewähltesDatumStr = dp.value;
+    
+    let baseDate = dp.value ? new Date(dp.value + 'T12:00:00') : now;
+    let d = new Date(baseDate.getFullYear(), baseDate.getMonth() + offset, 1);
+    
+    const monatsName = d.toLocaleString('de-DE', { month: 'long', year: 'numeric' });
+    
+    // ... (Navigation & Header bleiben gleich)
+    nav.innerHTML = `
+        <button onclick="openCalendar(${offset - 1})">❮</button>
+        <span class="cal-month-title">${monatsName}</span>
+        <button onclick="openCalendar(${offset + 1})">❯</button>
+    `;
+    const tage = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+    tage.forEach(t => grid.insertAdjacentHTML('beforeend', `<div class="cal-weekday">${t}</div>`));
+
+    // 4. Tage berechnen
+    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    let startDay = (d.getDay() === 0 ? 6 : d.getDay() - 1);
+
+    for (let i = 0; i < startDay; i++) {
+        grid.insertAdjacentHTML('beforeend', `<div class="cal-day empty"></div>`);
+    }
+
+    // 5. Schleife
+    for (let i = 1; i <= lastDay; i++) {
+        let dateObj = new Date(d.getFullYear(), d.getMonth(), i, 12, 0, 0);
+        let dateStr = getLocalStr(dateObj); // LOKAL
+        
+        const dayBtn = document.createElement('div');
+        dayBtn.className = 'cal-day';
+        dayBtn.innerText = i;
+        
+        if (dateStr === heuteStr) dayBtn.classList.add('today');
+        if (dateStr === gewähltesDatumStr) dayBtn.classList.add('selected');
+        if (dateObj.getDay() === 0 || dateObj.getDay() === 6) dayBtn.classList.add('weekend');
+
+        if (dateStr < heuteStr) {
+            dayBtn.classList.add('disabled');
+        } else {
+            dayBtn.onclick = () => {
+                dp.value = dateStr;
+                updateDateText(dateStr);
+                updateNavButtons();
+                changeDayAndLoad(dateStr, 'day');
+                window.closeCalendar();
+            };
+        }
+        grid.appendChild(dayBtn);
+    }
+}; 
+    
+
+
+
+
+        
+window.closeCalendar = function() {
+    const modal = document.getElementById('calendar-modal');
+    if (modal) modal.style.display = 'none';
+};
+
+/**
+ * Aktualisiert den Text im Datum-Button-Container
+ */
+window.updateDateText = (dateValue) => {
+    const display = document.getElementById('date-display');
+    if (display && dateValue) {
+        const [y, m, d] = dateValue.split('-');
+        display.innerText = `${d}.${m}.${y}`;
+    }
+};
+
+    
+
+/* ============================================================
+   ZENTRALE DATENWEICHE... local oder webtool
+   ============================================================ */
+function getFetchUrl(dateVal) {
+    const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+    return isLocal ? 'data.json' : `${url}?date=${dateVal}&pw=${userPw}&kuerzel=${userKuerzel}`;
+}
+
+
+
+
+/* ============================================================
+   LADE-OVERLAY
+   ============================================================ */
+
+    
+window.showLoading = function(mode) {
+    const overlay = document.getElementById('loadingOverlay');
+    const textEl = overlay.querySelector('p');
+    const spinner = overlay.querySelector('.spinner');
+
+    // Mappings für deine vier gewünschten Modi
+    const statusText = {
+        'initial': 'Stundenplan wird geladen...',
+        'refresh': 'Stundenplan wird aktualisiert...',
+        'saving': 'Änderung wird gespeichert...',
+        'day': 'Gewählter Tag wird geladen...'
+    };
+
+    // Text setzen (Fallback auf 'initial', falls Modus unbekannt)
+    textEl.innerText = statusText[mode] || statusText['initial'];
+    
+    // Sicherstellen, dass der Spinner sichtbar ist
+    spinner.style.display = 'block';
+    
+    // Overlay einblenden
+    overlay.classList.add('is-visible');
+};
+
+window.hideLoading = function() {
+    document.getElementById('loadingOverlay').classList.remove('is-visible');
+};
+
+    
+
+/* ============================================================
+   LOAD PLAN - VOLLSTÄNDIGE & ROBUSTE VERSION
+   ============================================================ */
+window.loadPlan = async function() {
+    const dp = document.getElementById('datePicker');
+    const container = document.getElementById('plan-container'); 
+    
+    const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+    const dateVal = dp.value;
+    const fetchUrl = isLocal ? 'data.json' : `${url}?date=${dateVal}&pw=${userPw}&kuerzel=${userKuerzel}`;
+
+    if (!isLocal && (!userPw || !dateVal)) return;
+
+    container.innerHTML = ""; 
+    if (typeof updateNavButtons === 'function') updateNavButtons();
+
+    const dateObj = new Date(dateVal.replace(/-/g, "/")); 
+    if (dateObj.getDay() === 0 || dateObj.getDay() === 6) { 
+        container.innerHTML = `<div class="box info-box" style="grid-column: span 6; background: #333; color: #e67e22; padding: 40px; font-size: 1.2rem;">Mach mal Pause! Es ist Wochenende...</div>`; 
+        return; 
+    }
+
+    try {
+        const res = await fetch(fetchUrl);
+        const json = await res.json();
+        
+        if (json.sperrMsg) {
+            container.innerHTML = `<div class="box info-box" style="grid-column: span 6; background: #333; color: #e67e22; padding: 40px; font-size: 1.2rem;">${json.sperrMsg}</div>`;
+            return; 
+        }
+        
+        if (json.verfügbareMaterialien) verfügbareMaterialien = json.verfügbareMaterialien;
+        window.hallenConfig = json.hallenConfig || {}; 
+        const plan = json.plan || {}; 
+        window.lastPlanData = plan; 
+        myClasses = json.userClasses || [];
+        allClassTeachers = json.allClassTeachers || {};
+        
+        const wtArr = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+        const [y, m, d] = dateVal.split('-').map(Number);
+        const zeiten = ["07:15 - 08:00", "08:05 - 08:50", "08:55 - 09:40", "10:00 - 10:45", "10:50 - 11:35", "11:40 - 12:25", "12:50 - 13:35", "13:40 - 14:25", "14:30 - 15:15", "15:35 - 16:20", "16:25 - 17:10", "17:15 - 18:00"];
+
+        let html = `<div class="box header-row" style="grid-column: span 6;"><span>${wtArr[dateObj.getDay()]}, ${d}.${m}.${y}</span></div>`;
+
+        zeiten.forEach((zeitStr, rowIndex) => {
+            if (rowIndex + 1 === 4 || rowIndex + 1 === 10) html += `<div class="divider-thin" style="grid-column: span 6;"></div>`;
+            if (rowIndex + 1 === 7) html += `<div class="divider-thick" style="grid-column: span 6;"></div>`;
+            html += `<div class="box zeit-box">${zeitStr}</div>`;
+            
+            for(let i = 1; i <= 5; i++) {
+                const absoluteSlot = (rowIndex * 5) + i; 
+                const slotData = plan[absoluteSlot] || {};
+                const klasse = slotData.klasse || "";
+                
+                if (klasse.trim().toLowerCase() === "verschoben") {
+                    html += `<div class="box empty" data-slot="${absoluteSlot}" data-time="${zeitStr}"></div>`;
+                    continue; 
+                }
+
+                const halle = slotData.halle || "";
+                const typ = slotData.typ || ""; 
+                const isAusfall = (halle === "Ausfall");
+                const isKlasseLeer = klasse.trim() === "";
+                
+                // --- NEUE LOGIK: VERFASSER-PRIORITÄT ---
+                // 1. Verfasser (Spalte K) aus Datenbank, falls vorhanden
+                // 2. data.lehrer aus Datenbank
+                // 3. Fallback auf Master-Liste (allClassTeachers)
+                const verfasser = slotData.verfasser || "";
+                const lehrerDaten = slotData.lehrer || "";
+                const lehrer = (verfasser !== "") ? verfasser : (lehrerDaten !== "" ? lehrerDaten : (allClassTeachers[klasse] || ""));
+                
+                const canEdit = !isKlasseLeer && myClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
+                const bgFarbe = (window.hallenConfig[halle] && !isAusfall) ? window.hallenConfig[halle].color : '';
+                
+                const classList = [
+                    "box",
+                    isKlasseLeer ? "empty" : "",
+                    canEdit ? "is-mine" : "not-mine",
+                    isAusfall ? "ausfall-mode" : ""
+                ].filter(Boolean).join(" ");
+                
+                html += `
+                <div class="${classList}" 
+                        data-slot="${absoluteSlot}" data-time="${zeitStr}" 
+                        style="background-color: ${bgFarbe}; cursor: ${canEdit ? 'pointer' : 'default'}">
+                        <div class="klasse-label">${klasse}</div>
+                        <div class="lehrer-info">${lehrer}</div>
+                        <div class="halle-label">${halle}</div>
+                        <div class="lock-icon-container" style="position:absolute; right:-3px; bottom:5px; display:flex; align-items:center;">
+                            ${typ === 'fix' ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : ''}
+                        </div>
+                </div>`;
+            }
+        });
+        container.innerHTML = html;
+
+        // Icons nachladen (Rest wie gehabt...)
+        Object.keys(plan).forEach(slot => {
+            const slotData = plan[slot] || {};
+            if (slotData.klasse && slotData.klasse.trim().toLowerCase() === "verschoben") return;
+            const box = container.querySelector(`[data-slot="${slot}"]`);
+            if (!box) return;
+            if (slotData.material && slotData.material.trim() !== "") markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
+            if (slotData.kommentar && slotData.kommentar.trim() !== "") {
+                const notizElement = document.createElement('span');
+                notizElement.className = 'box-notiz-icon';
+                notizElement.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
+                notizElement.title = slotData.kommentar;
+                Object.assign(notizElement.style, { position: 'absolute', top: '-2px', left: '4px', cursor: 'pointer', zIndex: '5' });
+                notizElement.onclick = (e) => { 
+                    e.stopPropagation(); 
+                    if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(slotData.klasse || "", slotData.kommentar); 
+                };
+                box.appendChild(notizElement);
+            }
+        });
+    } catch(e) { 
+        console.error("Ladefehler:", e); 
+        container.innerHTML = `<div class="box info-box" style="color:red; grid-column: span 6;">Fehler: Daten konnten nicht geladen werden.</div>`;
+    }
+};
+
+
+
+/* ============================================================
+   ZENTRALE KLICK-STEUERUNG
+   ============================================================ */
+// Ändere diese Funktion so um, dass sie nicht mehr die Eigenschaft überschreibt, 
+// sondern eine Ebene tiefer prüft:
+
+window.setBoxClick = function(box, klasse, slot, canEdit) {
+    // Statt box.onclick = ... nutzen wir einen Event-Listener
+    // Wir entfernen den alten, bevor wir den neuen setzen, 
+    // aber wir behalten die Logik in einer geschlossenen Funktion
+    
+    const handler = function(e) {
+        if (window.moveMode) {
+            e.stopPropagation();
+            return;
+        }
+        if (!canEdit) {
+            e.stopPropagation(); // Blockiert Klicks auf "fremde" Boxen
+            return;
+        }
+        openEditor(box, null, slot, klasse);
+    };
+
+    box.replaceWith(box.cloneNode(true)); // Entfernt ALLE alten Listener (Achtung: braucht ggf. Rekonfiguration)
+    // BESSER:
+    box.onclick = handler; 
+};
+
+/* ============================================================
+   SYNC PLAN - ROBUSTE VERSION (MIT ADD-MODE UNTERSTÜTZUNG)
+   ============================================================ */
+window.syncPlan = async function() {
+    if (isSaving) return; 
+
+    const dp = document.getElementById('datePicker');
+    const container = document.getElementById('plan-container'); 
+    
+    const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+    const fetchUrl = isLocal ? 'data.json' : `${url}?date=${dp.value}&pw=${userPw}&kuerzel=${userKuerzel}`;
+    
+    try {
+        const res = await fetch(fetchUrl);
+        const json = await res.json();
+        
+        if (json.sperrMsg || !json.plan) return;
+        
+        window.lastPlanData = json.plan; 
+        if (json.hallenConfig) window.hallenConfig = json.hallenConfig;
+        
+        const userClasses = json.userClasses || [];
+        
+        Object.keys(json.plan).forEach(slot => {
+            if (window.syncBlockierteSlots && window.syncBlockierteSlots[slot]) return;
+
+            const box = container.querySelector(`[data-slot="${slot}"]`);
+            if (box) {
+                const data = json.plan[slot] || {};
+                const klasse = data.klasse || "";
+                const isLeer = (klasse.trim() === "" || klasse.trim().toLowerCase() === "verschoben");
+
+                if (isLeer) {
+                    // LEERE BOX
+                    box.innerHTML = ""; 
+                    box.classList.remove('is-mine', 'not-mine', 'ausfall-mode');
+                    box.classList.add('empty'); 
+                    box.style.backgroundColor = ""; 
+                    box.style.cursor = "default";
+                    box.onclick = null;
+                } else {
+                    // BELEGTE BOX
+                    if (box.classList.contains('empty')) {
+                        box.classList.remove('empty');
+                        box.innerHTML = `
+                            <div class="klasse-label"></div>
+                            <div class="lehrer-info"></div>
+                            <div class="halle-label"></div>
+                        `;
+                    }
+
+                    const canEdit = userClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
+                    
+                    box.classList.remove('is-mine', 'not-mine');
+                    box.classList.add(canEdit ? 'is-mine' : 'not-mine');
+                    box.style.cursor = canEdit ? 'pointer' : 'default';
+
+                    setBoxClick(box, klasse, slot, canEdit);
+
+                    const halle = data.halle || "";
+                    const material = data.material || "";   
+                    const kommentar = data.kommentar || ""; 
+                    const typ = data.typ || ""; 
+
+                    const verfasser = data.verfasser || "";
+                    const lehrerDaten = data.lehrer || "";
+                    const lehrer = (verfasser !== "") ? verfasser : (lehrerDaten !== "" ? lehrerDaten : (allClassTeachers[klasse] || ""));
+
+                    box.querySelector('.klasse-label').innerText = klasse;
+                    box.querySelector('.lehrer-info').innerText = lehrer;
+                    box.querySelector('.halle-label').innerText = halle;
+                    box.setAttribute('data-notiz', kommentar);
+
+                    if (halle === "Ausfall") {
+                        box.classList.add('ausfall-mode');
+                        box.style.backgroundColor = ""; 
+                    } else {
+                        box.classList.remove('ausfall-mode');
+                        box.style.backgroundColor = (window.hallenConfig && window.hallenConfig[halle]) 
+                                                    ? window.hallenConfig[halle].color : "";
+                    }
+
+                    markBoxWithMaterialIcon(box, material, kommentar);
+
+                    let lockIcon = box.querySelector('.lock-icon-container');
+                    if (!lockIcon) {
+                        lockIcon = document.createElement('div');
+                        lockIcon.className = 'lock-icon-container';
+                        Object.assign(lockIcon.style, { position: 'absolute', right: '-3px', bottom: '5px', display: 'flex', alignItems: 'center' });
+                        box.appendChild(lockIcon);
+                    }
+                    lockIcon.innerHTML = (typ === 'fix') ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
+
+                    const altesNotizIcon = box.querySelector('.box-notiz-icon');
+                    if (altesNotizIcon) altesNotizIcon.remove();
+
+                    if (kommentar.trim() !== "") {
+                        const neuesNotizIcon = document.createElement('span');
+                        neuesNotizIcon.className = 'box-notiz-icon';
+                        neuesNotizIcon.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
+                        Object.assign(neuesNotizIcon.style, { position: 'absolute', top: '-2px', left: '4px', cursor: 'pointer', zIndex: '5' });
+                        neuesNotizIcon.onclick = function(e) { 
+                            e.stopPropagation(); 
+                            if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(klasse, kommentar); 
+                        };
+                        box.appendChild(neuesNotizIcon);
+                    }
+                }
+            }
+        });
+
+        // NACH DEM SYNC: Modi & Zustände wiederherstellen
+        // 1. Verschiebe-Modus
+        if (window.moveMode && typeof highlightFreeSlots === 'function') {
+            highlightFreeSlots();
+        } 
+        // 2. Add-Lektion-Modus (CSS-Klassen nach DOM-Refresh wiederherstellen)
+        else if (window.addMode) {
+            document.querySelectorAll('.box.empty:not(.header-row)').forEach(box => {
+                box.classList.add('is-selectable', 'move-mode-highlight');
+            });
+        }
+        
+    } catch(e) {
+        console.error("Sync fehlgeschlagen:", e);
+    }
+};
+
+
+
+
+
+
+    
+
+// Variable außerhalb der Funktion definieren
+let isNavigating = false; 
+
+/* ============================================================
+   ZENTRALER LADE-WRAPPER (OPTIMIERT)
+   ============================================================ */
+
+// Stelle sicher, dass diese Variable global existiert
+window.isNavigating = window.isNavigating || false;
+
+
+    
+async function changeDayAndLoad(zielDatum, mode = 'initial') {
+    // 1. Schutz gegen Doppel-Klicks
+    if (window.isNavigating) return;
+    window.isNavigating = true;
+
+    // UI-Elemente
+    const dp = document.getElementById('datePicker');
+    
+    // Datum setzen
+    if (dp) {
+        dp.value = zielDatum;
+    }
+    
+    // Button-Text synchronisieren
+    if (typeof window.updateDateText === 'function') {
+        window.updateDateText(zielDatum);
+    }
+    
+    // 2. Lotse: Overlay aktivieren (mit dem gewünschten Modus)
+    // Die 300ms-Verzögerung ist hier nicht mehr nötig, da der Lotse direkt reagiert.
+    showLoading(mode);
+    document.body.style.opacity = "0.7"; 
+
+    try {
+        // Sicherstellen, dass loadPlan existiert
+        if (typeof loadPlan === 'function') {
+            await loadPlan(); 
+        } else {
+            console.error("loadPlan ist keine Funktion!");
+        }
+    } catch (e) {
+        console.error("Fehler beim Laden:", e);
+        alert("Der Plan konnte nicht geladen werden. Bitte versuche es erneut.");
+    } finally {
+        // 3. Immer aufräumen
+        hideLoading();
+        document.body.style.opacity = "1";
+        
+        // WICHTIG: Sperre IMMER aufheben, egal was passiert
+        window.isNavigating = false;
+        
+        // Navigation-Buttons nach dem Laden aktualisieren
+        if (typeof updateNavButtons === 'function') {
+            updateNavButtons();
+        }
+    }
+}
+
+    
+/* ============================================================
+   8. HILFSFUNKTIONEN FÜR DATEN-STRINGS & FINDER
+   ============================================================ */
+
+/**
+ * Findet die HTML-Box im Grid basierend auf dem absoluten Slot (1-60).
+ * Der Zeit-String dient als zusätzlicher Sicherheitscheck.
+ */
+function findBoxByTimeAndSlot(time, slot) {
+    // Da die Slot-ID (1-60) eindeutig ist, reicht diese eigentlich aus
+    return document.querySelector(`.box[data-slot="${slot}"]`);
+}
+
+/**
+ * Baut das Daten-Objekt für das Google Sheet Update.
+ * WICHTIG: In der DB-Version schicken wir kein "Klasse | Halle" mehr,
+ * sondern die reinen Werte, die das Backend dann in die richtigen Spalten schreibt.
+ */
+function prepareUpdateData(slotId, neueHalle, neueKlasse, neuesMaterial, neuerKommentar) {
+    // Wir holen uns die Basis-Daten des Slots, falls vorhanden
+    // 'plan' ist das Objekt, das wir beim Laden vom Server erhalten haben
+    const aktuellerSlot = (window.currentPlan && window.currentPlan[slotId]) ? window.currentPlan[slotId] : {};
+
+    // Logik: Nutze den neuen Wert, falls vorhanden, sonst den alten aus dem Speicher
+    const updateObj = {
+        slot: slotId,
+        klasse: (neueKlasse !== undefined) ? neueKlasse : (aktuellerSlot.klasse || ""),
+        halle: (neueHalle !== undefined) ? neueHalle : (aktuellerSlot.halle || ""),
+        material: (neuesMaterial !== undefined) ? neuesMaterial : (aktuellerSlot.material || ""),
+        kommentar: (neuerKommentar !== undefined) ? neuerKommentar : (aktuellerSlot.kommentar || "")
+    };
+
+    console.log(`🛠 Update-Daten für Slot ${slotId} vorbereitet:`, updateObj);
+    return updateObj;
+}
+
+
+/* ============================================================
+   9. KLASSE ABKLEBEN (IDENTISCHES UI-DESIGN - FINAL)
+   ============================================================ */
+
+window.starteAbklebenWorkflow = function(time, slot, klasse) {
+    const modalContainer = document.querySelector('.eigenesmenu-container');
+    if (!modalContainer) return;
+
+    const currentSlot = parseInt(slot);
+    const aktuelleHalle = (window.lastPlanData && window.lastPlanData[currentSlot]?.halle) || "";
+    
+    // Partner-Suche
+    const nextSlot = currentSlot + 5;
+    const prevSlot = currentSlot - 5;
+    const nextSlotData = (window.lastPlanData && window.lastPlanData[nextSlot]) || {};
+    const prevSlotData = (window.lastPlanData && window.lastPlanData[prevSlot]) || {};
+
+    let partnerSlot = null;
+    if (nextSlotData.klasse === klasse && nextSlotData.halle === aktuelleHalle) partnerSlot = nextSlot;
+    else if (prevSlotData.klasse === klasse && prevSlotData.halle === aktuelleHalle) partnerSlot = prevSlot;
+
+    // 1. Direkt zum Security Check, wenn keine Doppellektion
+    if (!partnerSlot) {
+        window.slotsToClear = [currentSlot];
+        window.zeigePasswortFuerAbkleben(klasse, time, slot, false);
+        return;
+    }
+
+    // 2. Header im orangenen "Zielflaggen"-Design
+    const headerHtml = `
+        <div class="eigenesmenu-header">
+            <div id="dynamic-header-title" style="color: #e67e22; font-size: 1.2em; font-weight: bold;">KLASSE ABKLEBEN</div>
+            <div id="dynamic-header-subtitle">Willst du die Aktion für die <b>gesamte Doppellektion</b> durchführen?</div>
+            <span class="material-symbols-outlined header-icon" style="color: #e67e22;">sports_score</span>
+        </div>
+    `;
+
+    // 3. Buttons im einheitlichen Stil
+    let html = `
+        <div class="eigenesmenu-liste" id="menu-options-list">
+            <div class="doppel-abfrage-container" style="padding: 15px; display: flex; flex-direction: column; gap: 10px;">
+                <button id="btn-doppel-beide" class="doppel-btn">
+                    <span class="material-symbols-outlined">group</span> Für beide Lektionen
+                </button>
+                <button id="btn-doppel-einzel" class="doppel-btn">
+                    <span class="material-symbols-outlined">person</span> Nur für eine Lektion
+                </button>
+            </div>
+        </div>
+    `;
+
+    // 4. Standard Footer
+    html += renderFooter([
+        { text: 'ZURÜCK', class: 'back', icon: 'arrow_back', onclick: `window.openEditor(window.currentEditBox, '${time}', '${slot}', '${klasse}')` },
+        { text: 'ABBRECHEN', class: 'cancel', icon: 'close', onclick: 'closeEditor()' }
+    ]);
+
+    modalContainer.innerHTML = headerHtml + html;
+
+    // 5. Events
+    document.getElementById('btn-doppel-beide')?.addEventListener('click', () => {
+        window.slotsToClear = [currentSlot, partnerSlot];
+        window.zeigePasswortFuerAbkleben(klasse, time, slot, true);
+    });
+    
+    document.getElementById('btn-doppel-einzel')?.addEventListener('click', () => {
+        window.slotsToClear = [currentSlot];
+        window.zeigePasswortFuerAbkleben(klasse, time, slot, true);
+    });
+};
+
+
+    
+
+window.zeigePasswortFuerAbkleben = function(klasse, time, slot, isDoppel) {
+    const container = document.querySelector('.eigenesmenu-container');
+    if (!container) return;
+
+    const backAction = isDoppel 
+        ? `window.starteAbklebenWorkflow('${time}', '${slot}', '${klasse}')` 
+        : `window.openEditor(window.currentEditBox, '${time}', '${slot}', '${klasse}')`;
+
+    // 1. Header exakt nach deiner Vorgabe:
+    // Titel in Orange, 1.2em, fett. Untertitel mit orangem Klassennamen.
+    const headerHtml = `
+        <div class="eigenesmenu-header">
+            <div id="dynamic-header-title" style="color: #e67e22; font-size: 1.2em; font-weight: bold;">KLASSE ABKLEBEN</div>
+            <div id="dynamic-header-subtitle">Willst du <span style="color: #e67e22;"><b>${klasse}</b></span> dauerhaft entfernen?</div>
+            <span class="material-symbols-outlined header-icon" style="color: #e67e22; font-size: 24px;">sports_score</span>
+        </div>
+    `;
+
+    // 2. Inhalt
+    let html = `
+        <div class="eigenesmenu-liste" id="menu-options-list">
+            <div style="padding: 15px; display: flex; flex-direction: column; gap: 15px;">
+                <input type="password" id="abkleben-pw-field" placeholder="Passwort eingeben..." 
+                       style="width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 8px; box-sizing: border-box; text-align: center;">
+                
+                <button id="btn-final-perma-delete" class="doppel-btn" style="background: #333;" onclick="window.fuehreAbklebenAus('${klasse}')">
+                    <span class="material-symbols-outlined">lock_open</span> JA, PERMANENT ABKLEBEN
+                </button>
+            </div>
+        </div>
+    `;
+
+    // 3. Footer
+    html += renderFooter([
+        { text: 'ZURÜCK', class: 'back', icon: 'arrow_back', onclick: backAction },
+        { text: 'ABBRECHEN', class: 'cancel', icon: 'close', onclick: 'closeEditor()' }
+    ]);
+
+    container.innerHTML = headerHtml + html;
+    
+    const pwInput = document.getElementById('abkleben-pw-field');
+    pwInput?.focus();
+    pwInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') window.fuehreAbklebenAus(klasse); });
+};
+
+
+
+
+    
+window.fuehreAbklebenAus = async function(klasse) {
+    const pwFeld = document.getElementById('abkleben-pw-field');
+    const deleteBtn = document.getElementById('btn-final-perma-delete');
+    
+    if (!pwFeld?.value.trim()) { alert("Bitte Passwort eingeben!"); return; }
+    if (pwFeld.value.trim() !== userPw) {
+        pwFeld.style.borderColor = "#c0392b";
+        pwFeld.value = "";
+        pwFeld.placeholder = "Falsches Passwort!";
+        return;
+    }
+
+    if (deleteBtn) {
+        deleteBtn.innerHTML = '<div class="eigenesmenu-loader" style="margin: 0 auto;"></div>';
+        deleteBtn.style.pointerEvents = "none";
+    }
+    
+    const gridContainer = document.querySelector('.stundentafel-container') || document.body;
+    gridContainer.style.opacity = "0.6";
+    gridContainer.style.pointerEvents = "none";
+
+    const payload = {
+        action: "permaDelete",
+        pw: pwFeld.value.trim(),
+        kuerzel: userKuerzel,
+        klasse: klasse,
+        slot: window.slotsToClear.join(","), 
+        startDate: document.getElementById('datePicker').value
+    };
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+
+        if (result.status === "success") {
+            // SOFORT-FIX: Boxen über den Selektor .box mit dem passenden data-slot leeren
+            window.slotsToClear.forEach(slot => {
+                const box = document.querySelector(`.box[data-slot="${slot}"]`);
+                if (box) {
+                    box.innerHTML = "";            // Inhalt löschen
+                    box.className = "box empty";   // CSS auf "leer" setzen (macht sie unklickbar)
+                }
+            });
+
+            for (const s of window.slotsToClear) await window.triggerNewsWrapper("Abkleben", s, klasse);
+            
+            closeEditor();
+            if (typeof syncPlan === 'function') syncPlan();
+        } else {
+            throw new Error(result.msg || "Fehler.");
+        }
+    } catch (e) {
+        alert("Löschvorgang fehlgeschlagen: " + e.message);
+        if (deleteBtn) {
+            deleteBtn.innerHTML = '<span class="material-symbols-outlined">lock_open</span> JA, PERMANENT ABKLEBEN';
+            deleteBtn.style.pointerEvents = "auto";
+        }
+    } finally {
+        gridContainer.style.opacity = "1";
+        gridContainer.style.pointerEvents = "auto";
+    }
+};
+
+
+    
+
+/* ============================================================
+   10. NEWS-ZENTRALE & AUTOMATISCHE NOTIFIKATIONEN
+   ============================================================ */
+
+let meineRelevanteNews = []; 
+
+/**
+ * Initialisiert das News-System.
+ */
+async function initNewsSystem() {
+    console.log("🚀 News-System wird initialisiert...");
+    const aktuellerUser = typeof userKuerzel !== 'undefined' ? userKuerzel.toUpperCase().trim() : "";
+    if (!aktuellerUser) return;
+
+    try {
+        const zielUrl = typeof url !== 'undefined' ? url : "";
+        const pw = typeof userPw !== 'undefined' ? userPw : "";
+        
+        const response = await fetch(`${zielUrl}?action=getNews&pw=${encodeURIComponent(pw)}&t=${Date.now()}`);
+        const data = await response.json();
+        
+        const allNews = data.news || (Array.isArray(data) ? data : []);
+
+        meineRelevanteNews = allNews.filter(n => {
+            const empfaenger = (n.empfaenger || "").toUpperCase();
+            return empfaenger.split(',').map(e => e.trim()).includes(aktuellerUser);
+        });
+
+        updateNewsDot();
+        
+    } catch (e) { console.error("Fehler beim Init:", e); }
+}
+
+/**
+ * Aktualisiert den roten Punkt (Badge).
+ */
+function updateNewsDot() {
+    const aktuellerUser = typeof userKuerzel !== 'undefined' ? userKuerzel.toUpperCase().trim() : "";
+    const dot = document.getElementById('news-dot');
+    if (!dot) return;
+
+    // Sicherstellen, dass wir die aktuellsten Daten aus dem Speicher oder der globalen Variable prüfen
+    // Wenn 'meineRelevanteNews' eine globale Variable ist, wird sie hier verwendet:
+    const hatUngelesene = meineRelevanteNews.some(n => {
+        const gelesenListe = (n.gelesen || "").toUpperCase().split(',').map(s => s.trim());
+        return !gelesenListe.includes(aktuellerUser);
+    });
+
+    dot.style.display = hatUngelesene ? 'block' : 'none';
+}
+
+/**
+ * Zeigt die Sidebar sofort an, berechnet die Uhrzeit basierend auf dem Slot.
+ */
+window.showNews = function() {
+    const sidebar = document.getElementById('newsSidebar');
+    const newsContainer = document.getElementById('newsContent');
+    const aktuellerUser = typeof userKuerzel !== 'undefined' ? userKuerzel.toUpperCase().trim() : "";
+    const zeiten = ["07:15 - 08:00", "08:05 - 08:50", "08:55 - 09:40", "10:00 - 10:45", "10:50 - 11:35", "11:40 - 12:25", "12:50 - 13:35", "13:40 - 14:25", "14:30 - 15:15", "15:35 - 16:20", "16:25 - 17:10", "17:15 - 18:00"];
+
+    sidebar.style.display = 'block';
+    newsContainer.innerHTML = "";
+    
+    meineRelevanteNews.forEach(news => {
+        const gelesenListe = (news.gelesen || "").toUpperCase().split(',').map(s => s.trim());
+        const istGelesen = gelesenListe.includes(aktuellerUser);
+        const rowIndex = Math.floor((parseInt(news.slot) - 1) / 5);
+        const uhrzeit = zeiten[rowIndex] || "";
+
+        let formatiertesDatum = news.datum || '';
+        if (formatiertesDatum.includes('-')) {
+            const parts = formatiertesDatum.split('-');
+            if (parts.length === 3) formatiertesDatum = `${parts[2]}.${parts[1]}.${parts[0]}`;
+        }
+
+        const newsTextLower = (news.text || "").toLowerCase();
+        let displayText = "";
+        
+        if (newsTextLower.includes("ausfall")) {
+            displayText = `<b>${news.verfasser || ''}</b> hat einen <b>Ausfall</b> für die Klasse <b>${news.klasse || ''}</b> eingetragen!`;
+        } else if (newsTextLower.includes("outdoor")) {
+            displayText = `<b>${news.verfasser || ''}</b> ist mit der Klasse <b>${news.klasse || ''}</b> "outdoor"!`;
+        } else if (newsTextLower.includes("badi")) { // <-- NEUE LOGIK
+            displayText = `<b>${news.verfasser || ''}</b> ist mit der Klasse <b>${news.klasse || ''}</b> in der <b>Badi</b>!`;
+        } else if (newsTextLower.includes("beendet") || newsTextLower.includes("abgeklebt")) {
+            displayText = `<b>${news.verfasser || ''}</b> hat die Klasse <b>${news.klasse || ''}</b> abgeklebt!`;
+        } else {
+            displayText = news.text || '';
+        }
+
+        // --- ICON LOGIK ---
+        const statusHtml = istGelesen 
+            ? `<span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 5px; color: #27ae60;">mark_email_read</span> Gelesen` 
+            : `<span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 5px; color: #e67e22;">mail</span> Neu`;
+
+        const card = document.createElement('div');
+        card.className = `news-item ${istGelesen ? 'news-gelesen' : 'news-unread'}`;
+        card.innerHTML = `
+            <div class="news-header">
+                <span class="status-icon">${statusHtml}</span>
+            </div>
+            <div style="color: #ff9800; font-weight: bold; margin-bottom: 5px; font-size: 1.05em;">Halle frei!</div>
+            <div class="news-text" style="font-size: 0.95em;">${displayText}</div>
+            <div style="font-size: 0.75rem; color: #888; margin-top: 10px; border-top: 1px solid #333; padding-top: 5px;">
+                ${formatiertesDatum} | ${uhrzeit}
+            </div>
+        `;
+        card.onclick = () => markAsReadAndJump(news);
+        newsContainer.appendChild(card);
+    });
+
+    setTimeout(() => sidebar.classList.add('active'), 10);
+    updateNewsDot();
+};
+
+
+    
+/**
+ * Öffnet die Zentrale und aktualisiert im Hintergrund die Daten.
+ */
+window.refreshAndShowNews = function() {
+    // A: Sofort anzeigen
+    showNews();
+    
+    // B: Hintergrund-Sync
+    fetch(`${url}?action=getNews&pw=${encodeURIComponent(userPw)}&t=${Date.now()}`)
+        .then(res => res.json())
+        .then(data => {
+            const allNews = data.news || (Array.isArray(data) ? data : []);
+            const aktuellerUser = userKuerzel.toUpperCase().trim();
+            meineRelevanteNews = allNews.filter(n => {
+                const empfaenger = (n.empfaenger || "").toUpperCase();
+                return empfaenger.split(',').map(e => e.trim()).includes(aktuellerUser);
+            });
+            
+            // Falls Sidebar noch offen ist, neu rendern
+            if(document.getElementById('newsSidebar').classList.contains('active')) {
+                showNews();
+            }
+            updateNewsDot();
+        })
+        .catch(e => console.error("Hintergrund-Update fehlgeschlagen:", e));
+};
+
+async function markAsReadAndJump(news) {
+    const user = typeof userKuerzel !== 'undefined' ? userKuerzel.toUpperCase().trim() : "";
+    
+    // 1. LOKALES DATEN-UPDATE
+    const newsInListe = meineRelevanteNews.find(n => n.id === news.id);
+    if (newsInListe) {
+        if (!newsInListe.gelesen) newsInListe.gelesen = "";
+        if (!newsInListe.gelesen.includes(user)) {
+            newsInListe.gelesen = newsInListe.gelesen ? `${newsInListe.gelesen},${user}` : user;
+        }
+    }
+    
+    // 2. Sofortige UI-Reaktion
+    const clickedCard = event.currentTarget;
+    clickedCard.style.opacity = "0.4";
+    clickedCard.style.pointerEvents = "none";
+    clickedCard.querySelector('.status-icon').innerHTML = 
+        `<span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 5px; color: #27ae60;">mark_email_read</span> Gelesen`;
+
+    // 3. UI-Badge sofort aktualisieren
+    updateNewsDot(); 
+
+    // 4. Server-Update im Hintergrund
+    fetch(url, {
+        method: "POST",
+        body: JSON.stringify({ action: "markAsRead", id: news.id, user: user, pw: userPw })
+    }).catch(e => console.error("Fehler beim Markieren:", e));
+
+    window.closeNews();
+
+    // 5. Bedingte Navigation (Hier wird das Datum frisch aus dem DOM geholt)
+    if (news.datum) {
+        const pickerValue = document.getElementById('datePicker').value;
+        if (pickerValue !== news.datum) {
+            await changeDayAndLoad(news.datum, 'day');
+        }
+    }
+
+    // 6. Scrollen & Blinken
+    setTimeout(() => {
+        const box = document.querySelector(`[data-slot="${news.slot}"]`); 
+        if (box) {
+            box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            box.classList.add('blink-animation');
+            setTimeout(() => box.classList.remove('blink-animation'), 4000);
+        }
+    }, 200); 
+}
+
+    
+window.closeNews = () => {
+    const sidebar = document.getElementById('newsSidebar');
+    sidebar.classList.remove('active');
+    setTimeout(() => {
+        sidebar.style.display = 'none';
+        updateNewsDot();
+    }, 300);
+};
+
+/**
+ * Wrapper für den News-Trigger
+ * Nimmt nun optional das kuerzel entgegen, um es an triggerNews weiterzureichen.
+ */
+window.triggerNewsWrapper = async function(aktion, slot, klasse, kuerzel) {
+    if (typeof triggerNews !== "function") return;
+    
+    try {
+        const aktionLower = aktion.toLowerCase();
+        let newsTyp = "";
+
+        if (aktionLower.includes("outdoor")) {
+            newsTyp = "outdoor";
+        } else if (aktionLower.includes("badi")) {
+            newsTyp = "badi";
+        } else if (aktionLower === "beendet" || aktionLower === "abgeklebt") {
+            newsTyp = "beendet";
+        }
+
+        // Wir übergeben das Kürzel als 4. Argument an die Funktion triggerNews
+        await triggerNews(newsTyp, parseInt(slot), klasse, kuerzel);
+    } catch (error) { 
+        console.error("Fehler im News-Ablauf:", error); 
+    }
+};
+    
+
+
+
+/* ============================================================
+   10. TASK MANAGER
+   ============================================================ */
+    
+
+    
+window.openEditor = function(el, time, slot, klasse) {
+    // --- NEUER TÜRSTEHER ---
+    // Wenn der Verschiebemodus aktiv ist, darf sich der Editor für NICHTS öffnen!
+    if (window.moveMode) {
+        console.log("Verschiebemodus aktiv: Editor blockiert.");
+        return; 
+    }
+    // -----------------------
+
+    closeEditor();
+    // ... restlicher Code ...
+
+    const absoluteSlot = el.getAttribute('data-slot') || slot;
+    window.currentEditSlot = absoluteSlot;
+    window.currentEditBox = el;
+
+    const isAusfall = el.classList.contains('ausfall-mode');
+    const halleLabel = el.querySelector('.halle-label')?.innerText.trim() || "";
+    const hatReservierung = !isAusfall && halleLabel !== "";
+
+    const slotData = (window.lastPlanData && window.lastPlanData[absoluteSlot]) || {};
+    const hatMaterial = slotData.material && slotData.material.trim() !== "";
+    const hatNotiz = slotData.kommentar && slotData.kommentar.trim() !== "";
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'eigenesmenu-backdrop';
+    backdrop.id = 'eigenesmenu-modal';
+    backdrop.onclick = closeEditor;
+
+    backdrop.innerHTML = `
+        <div class="eigenesmenu-container" onclick="event.stopPropagation()">
+            <div class="eigenesmenu-header">
+                <h3 class="eigenesmenu-title" style="margin:0; font-size: 1.1em; color: #e67e22; letter-spacing: 1px;">TASK MANAGER</h3>
+                <p class="eigenesmenu-subtitle" id="dynamic-header-subtitle" style="color: #fff; margin: 5px 0 0 0; font-size: 0.9em; opacity: 0.8;">
+                    Wähle eine Aktion für <span style="color: #ff8c00; font-weight: bold;">${klasse}</span> 
+                </p>
+                <span class="material-symbols-outlined header-icon" id="dynamic-header-icon">settings</span>
+            </div>
+
+            <div class="eigenesmenu-liste" id="menu-options-list">
+                <button class="eigenesmenu-item" data-action="reservation" data-icon="room_preferences" data-title="Welche Räumlichkeit willst du für <span style='color: #ff8c00; font-weight: bold;'>${klasse}</span> reservieren?">
+                    <span class="material-symbols-outlined">room_preferences</span>
+                    <span class="btn-text">${hatReservierung ? 'HALLE ÄNDERN' : 'HALLE RESERVIEREN'}</span>
+                </button>
+                <button class="eigenesmenu-item" data-action="material" data-icon="trolley" data-title="Aktion: Material für <span style='color: #ff8c00; font-weight: bold;'>${klasse}</span>">
+                    <span class="material-symbols-outlined">trolley</span>
+                    <span class="btn-text">${hatMaterial ? 'MATERIAL ÄNDERN' : 'MATERIAL BUCHEN'}</span>
+                </button>
+                <button class="eigenesmenu-item" data-action="nachricht" data-icon="stylus_note" data-title="Erfasse eine Notiz für die Klasse <span style='color: #ff8c00; font-weight: bold;'>${klasse}</span>">
+                    <span class="material-symbols-outlined">stylus_note</span>
+                    <span class="btn-text">${hatNotiz ? 'NOTIZ BEARBEITEN' : 'NOTIZ HINZUFÜGEN'}</span>
+                </button>
+                <button class="eigenesmenu-item" data-action="verschieben" data-icon="swap_horiz" data-title="Verschiebe <span style='color: #ff8c00; font-weight: bold;'>${klasse}</span> auf ein neues Zeitfenster">
+                    <span class="material-symbols-outlined">move_item</span>
+                    <span class="btn-text">LEKTION VERSCHIEBEN</span>
+                </button>
+                <button class="eigenesmenu-item" data-action="ausfall" data-icon="${isAusfall ? 'settings_backup_restore' : 'block'}" data-title="Aktion: Ausfall für <span style='color: #ff8c00; font-weight: bold;'>${klasse}</span>">
+                    <span class="material-symbols-outlined">${isAusfall ? 'settings_backup_restore' : 'block'}</span>
+                    <span class="btn-text">${isAusfall ? 'AUSFALL AUFHEBEN' : 'AUSFALL EINTRAGEN'}</span>
+                </button>
+                <button class="eigenesmenu-item" data-action="beendet" data-icon="sports_score" data-title="Aktion: Abschluss für <span style='color: #ff8c00; font-weight: bold;'>${klasse}</span>">
+                    <span class="material-symbols-outlined">sports_score</span>
+                    <span class="btn-text">KLASSE ABKLEBEN</span>
+                </button>
+            </div>
+            ${renderFooter([{ text: 'ABBRECHEN', class: 'cancel', icon: 'close', onclick: 'closeEditor()' }])}
+        </div>
+    `;
+
+    // Event Delegation...
+    backdrop.querySelector('.eigenesmenu-liste').addEventListener('click', (e) => {
+        const btn = e.target.closest('.eigenesmenu-item');
+        if (!btn) return;
+        window.updateHeader(btn.getAttribute('data-icon'), btn.getAttribute('data-title'));
+        window.handleMenuChoice(btn.getAttribute('data-action'), time, absoluteSlot, klasse);
+    });
+
+    document.body.appendChild(backdrop);
+    requestAnimationFrame(() => {
+        backdrop.style.opacity = "1";
+        backdrop.querySelector('.eigenesmenu-container').style.transform = "translateY(0)";
+    });
+};
+    
+
+window.updateHeader = function(iconName, subtitleText) {
+    const iconEl = document.getElementById('dynamic-header-icon');
+    const subEl = document.getElementById('dynamic-header-subtitle');
+    
+    if (iconEl) iconEl.innerText = iconName;
+    
+    // NEU: Wenn ein Element mit der Klasse 'doppel-abfrage-container' existiert, 
+    // dann blockieren wir das Update des Untertitels.
+    const isDoppelAbfrage = document.querySelector('.doppel-abfrage-container');
+    
+    if (subEl && !isDoppelAbfrage) {
+        subEl.innerHTML = subtitleText;
+    }
+};
+
+
+
+
+function renderFooter(buttons) {
+    let html = `<div class="menu-footer-container">`;
+    buttons.forEach(btn => {
+        html += `<button class="footer-btn ${btn.class}" onclick="${btn.onclick}">
+                    ${btn.icon ? `<span class="material-symbols-outlined">${btn.icon}</span>` : ''}
+                    ${btn.text}
+                 </button>`;
+    });
+    html += `</div>`;
+    return html;
+}
+    
+
+    
+function handleMaterialUI(time, slot, klasse, modalElement) {
+    const root = modalElement || document.getElementById('eigenesmenu-modal');
+    if (!root) return;
+    root.style.pointerEvents = "auto";
+
+    // 1. "GEISTER-FOOTER" ENTFERNEN
+    const existingFooter = root.querySelector('.modal-footer') || root.querySelector('.menu-footer-container');
+    if (existingFooter) { existingFooter.remove(); }
+
+  // 2. Datenquelle: Nutzt deine existierende globale Variable
+let materialQuelle = (typeof verfügbareMaterialien !== 'undefined' && Array.isArray(verfügbareMaterialien)) 
+                     ? verfügbareMaterialien 
+                     : [];
+
+    // 3. Container-Struktur sicherstellen
+    let liste = root.querySelector('#menu-options-list') || root.querySelector('.eigenesmenu-liste');
+    if (!liste) {
+        liste = document.createElement('div');
+        liste.className = 'eigenesmenu-liste';
+        liste.id = 'menu-options-list';
+        root.appendChild(liste);
+    }
+    liste.style.display = "flex";
+    liste.style.flexDirection = "column";
+    liste.style.height = "100%";
+
+    const title = root.querySelector('.eigenesmenu-title');
+    const subtitle = root.querySelector('#menu-subtitle') || root.querySelector('.eigenesmenu-subtitle');
+
+    if (title) { title.innerText = "MATERIAL WÄHLEN"; title.style.color = "#e67e22"; }
+    if (subtitle) { subtitle.innerHTML = `Welches Material für <span style="color:#e67e22; font-weight: bold;">${klasse}</span>?`; }
+
+    // 4. Daten-Logik
+    const currentSlot = slot || window.currentEditSlot;
+    const slotData = (window.lastPlanData && window.lastPlanData[currentSlot]) || {};
+    const hatBereitsMaterial = slotData.material && slotData.material.trim() !== "";
+    window.selectedMaterials = []; 
+
+    // 5. HTML Aufbau (Listenbereich)
+    let html = `<div class="eigenesmenu-liste-scroll" style="flex-grow: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px;">`;
+
+    if (hatBereitsMaterial) {
+        html += `<div class="hallen-option-wrapper" style="display: flex; height: 50px; margin-bottom: 15px; background: #332222; border: 1px solid #553333; border-radius: 8px; cursor: pointer; align-items: center; justify-content: center; color: #ffaaaa;" onclick="applyMaterialDelete('${time}', '${currentSlot}', '${klasse}', this)">
+                <span class="material-symbols-outlined" style="margin-right: 10px;">delete</span> MATERIALBUCHUNG LÖSCHEN</div>`;
+    }
+
+    html += `<div id="custom-material-wrapper" class="hallen-option-wrapper" style="display: flex; height: 50px; background: #222; border: 1px solid #444; border-radius: 8px; align-items: center; padding: 0 15px; cursor: text;" onclick="this.querySelector('input').focus();">
+            <span class="material-symbols-outlined" style="margin-right: 12px; color: #fff;">deployed_code_update</span>
+            <input type="text" id="customMaterialInput" placeholder="Eigenes Material eintragen..." style="background: transparent; border: none; color: white; width: 100%; outline: none; font-size: 14px;" oninput="handleCustomMaterialInput(this.value)">
+            <span id="custom-check" class="check-indicator" style="margin-left: auto; color: #666; font-size: 20px;">○</span>
+            </div>`;
+
+    materialQuelle.forEach(mat => {
+        const matClean = mat ? mat.toString().trim() : "";
+        if (matClean === "") return;
+        html += `<div class="hallen-option-wrapper material-selectable" style="display: flex; height: 50px; background: #222; border: 1px solid #444; border-radius: 8px; cursor: pointer; align-items: center; padding: 0 15px;" onclick="toggleMaterialSelection('${matClean}', this)">
+                <span class="material-symbols-outlined" style="margin-right: 12px; color: #fff;">deployed_code</span> 
+                <span class="btn-text" style="color: #fff;">${matClean}</span>
+                <span class="check-indicator" style="margin-left: auto; color: #666; font-size: 20px;">○</span>
+                </div>`;
+    });
+    html += `</div>`; 
+
+    // 6. DYNAMISCHER ACTION-FOOTER
+    html += `
+    <div id="material-fixed-footer" style="display: none; padding: 15px; border-top: 1px solid #333; background: #1a1a1a; gap: 10px;">
+        <button class="menu-action-btn save" style="flex: 1; height: 55px; cursor: pointer;" onclick="saveMaterialSelection(window.selectedMaterials.join(', '), '', '${time}', '${currentSlot}', '${klasse}')">
+            <span class="material-symbols-outlined">trolley</span> MATERIAL BUCHEN
+        </button>
+        <button class="menu-action-btn details" style="flex: 1; height: 55px; cursor: pointer;" onclick="openMaterialDetail(window.selectedMaterials.join(', '), '${time}', '${currentSlot}', '${klasse}')">
+            <span class="material-symbols-outlined">edit_note</span> DETAILS
+        </button>
+    </div>`;
+
+    // 7. STATISCHER STANDARD-FOOTER
+    const staticButtons = [
+        { text: "ZURÜCK", icon: "arrow_back", class: "back", onclick: `window.openEditor(window.currentEditBox, '${time}', '${slot}', '${klasse}')` },
+        { text: "ABBRECHEN", icon: "close", class: "cancel", onclick: "closeEditor()" }
+    ];
+    html += renderFooter(staticButtons);
+
+    liste.innerHTML = html;
+
+    const footer = root.querySelector('#material-fixed-footer');
+    if (footer && (window.selectedMaterials.length > 0 || (document.getElementById('customMaterialInput')?.value.trim().length > 0))) {
+        footer.classList.add('is-visible');
+    }
+}
+
+
+    
+/**
+ * Logik für eigenen Input: Verhindert Mehrfacheinträge
+ */
+window.lastCustomMaterial = ""; 
+
+function handleCustomMaterialInput(val) {
+    const wrapper = document.getElementById('custom-material-wrapper');
+    const check = document.getElementById('custom-check');
+    const footer = document.getElementById('material-fixed-footer');
+
+    // 1. Entferne altes eigenes Material aus der Auswahl-Liste
+    if (window.lastCustomMaterial !== "") {
+        window.selectedMaterials = window.selectedMaterials.filter(m => m !== window.lastCustomMaterial);
+    }
+
+    const currentVal = val.trim();
+
+    if (currentVal !== "") {
+        // 2. Füge neues Material hinzu
+        window.selectedMaterials.push(currentVal);
+        window.lastCustomMaterial = currentVal;
+
+        // UI-Feedback
+        wrapper.style.backgroundColor = "#4a2d0a";
+        wrapper.style.borderColor = "#e67e22";
+        check.innerText = "●";
+        check.style.color = "#e67e22";
+    } else {
+        // Leeres Feld
+        window.lastCustomMaterial = "";
+        wrapper.style.backgroundColor = "#222";
+        wrapper.style.borderColor = "#444";
+        check.innerText = "○";
+        check.style.color = "#666";
+    }
+
+    // Footer Steuerung: Einblenden wenn Auswahl existiert
+    if (footer) {
+        footer.style.display = window.selectedMaterials.length > 0 ? 'flex' : 'none';
+    }
+}
+
+
+    
+/**
+ * Logik für Standard-Button-Auswahl
+ * Steuert die Markierung der Materialien und die Sichtbarkeit des dynamischen Footers
+ */
+function toggleMaterialSelection(mat, btn) {
+    // 1. Kontext finden: Suche das Modal sicher
+    const modal = btn.closest('#eigenesmenu-modal');
+    const footer = modal ? modal.querySelector('#material-fixed-footer') : document.getElementById('material-fixed-footer');
+    const customInput = modal ? modal.querySelector('#customMaterialInput') : document.getElementById('customMaterialInput');
+    
+    // 2. Button-Element und Check-Indikator
+    const check = btn.querySelector('.check-indicator');
+    
+    // 3. Klasse "selected" umschalten
+    const isSelected = btn.classList.toggle('selected');
+    
+    // 4. Auswahl-Array aktualisieren
+    if (isSelected) {
+        // Hinzufügen (mit Duplikat-Schutz)
+        if (!window.selectedMaterials.includes(mat)) {
+            window.selectedMaterials.push(mat);
+        }
+        if (check) {
+            check.innerText = "●";
+            check.style.color = "#e67e22";
+        }
+        btn.style.borderColor = "#e67e22";
+        btn.style.backgroundColor = "#2d2015"; // Optional: Leichtes Highlight für den Button
+    } else {
+        // Entfernen
+        window.selectedMaterials = window.selectedMaterials.filter(m => m !== mat);
+        if (check) {
+            check.innerText = "○";
+            check.style.color = "#666";
+        }
+        btn.style.borderColor = "#444";
+        btn.style.backgroundColor = "#222"; // Zurück auf Standard
+    }
+
+    // 5. Footer Steuerung
+    // Wir prüfen explizit die Längen und den Input-Wert
+    if (footer) {
+        const hasCustomInput = customInput && customInput.value.trim().length > 0;
+        const shouldShow = (window.selectedMaterials.length > 0 || hasCustomInput);
+        
+        // Toggle der Klasse für die CSS-Sichtbarkeit
+        footer.classList.toggle('is-visible', shouldShow);
+        
+        // Debug
+        console.log("Toggle Status - Sichtbar:", shouldShow, "Materialien:", window.selectedMaterials);
+    }
+}
+    
+
+
+/**
+ * 2. UI: Detail-Eingabe Maske
+ */
+function openMaterialDetail(materialString, time, slot, klasse) {
+    const root = document.getElementById('eigenesmenu-modal');
+    if (!root) return;
+    
+    const liste = root.querySelector('#menu-options-list') || root.querySelector('.eigenesmenu-liste');
+    const header = root.querySelector('.eigenesmenu-header');
+
+    // 1. Header aktualisieren
+    if (header) {
+        header.innerHTML = `
+            <h3 class="eigenesmenu-title" style="margin: 0; font-size: 1.1em; color: #e67e22;">DETAILS ERFASSEN</h3>
+            <p class="eigenesmenu-subtitle" style="color: #888; margin: 2px 0 0 0; font-size: 0.85em;">Nenne die Details deiner Materialbuchung</p>
+            <span class="material-symbols-outlined header-icon">trolley</span>`;
+    }
+
+    // 2. Body-Inhalt mit Textarea und Action-Button
+    // Hinweis: Die Klasse "save-details" sorgt für das Layout aus deinem CSS
+    let html = `
+        <div style="padding: 15px; display: flex; flex-direction: column; gap: 15px; flex-grow: 1;">
+            <textarea id="material-detail-input" 
+                      style="width: 100%; height: 140px; padding: 12px; border-radius: 12px; border: 1px solid #444; background: #222; color: white; resize: none; box-sizing: border-box; font-size: 14px;" 
+                      placeholder="Details..."></textarea>
+            
+            <button class="menu-action-btn save-details" 
+                    onclick="saveMaterialSelection('${materialString}', document.getElementById('material-detail-input').value, '${time}', '${slot}', '${klasse}', this)">
+                <span class="material-symbols-outlined">trolley</span> MATERIAL BUCHEN
+            </button>
+        </div>`;
+
+    // 3. Standard-Footer (ZURÜCK / ABBRECHEN) über deine renderFooter Funktion
+    const staticButtons = [
+        { text: "ZURÜCK", icon: "arrow_back", class: "back", onclick: `handleMaterialUI('${time}', '${slot}', '${klasse}')` },
+        { text: "ABBRECHEN", icon: "close", class: "cancel", onclick: "closeEditor()" }
+    ];
+    
+    html += renderFooter(staticButtons);
+
+    // 4. In das Modal einfügen
+    liste.innerHTML = html;
+}
+
+
+
+
+    
+
+/* ==========================================================================
+   MATERIAL-LOGIK: MIT MERGE-PRINZIP GEGEN DATENVERLUST ABGESICHERT
+   ========================================================================== */
+
+async function saveMaterialSelection(mat, detail, time, slot, klasse, btn) {
+    // 1. Gezielte Button-Blockierung statt Fenster-Blockierung
+    if (btn) {
+        btn.style.pointerEvents = "none";
+        btn.style.opacity = "0.6";
+        btn.innerHTML = `<span class="material-symbols-outlined">trolley</span> Speichere...`;
+    }
+
+    // 2. Hole den aktuellen Stand des Slots
+    const currentSlotData = (window.lastPlanData && window.lastPlanData[slot]) ? window.lastPlanData[slot] : {};
+
+    // 3. Erstelle das Payload
+    const payload = {
+        action: "saveBooking",
+        pw: typeof userPw !== 'undefined' ? userPw : "",
+        id: `${document.getElementById('datePicker')?.value}_${slot}`,
+        date: document.getElementById('datePicker')?.value,
+        slot: slot,
+        klasse: klasse || "",
+        ...currentSlotData, 
+        material: mat,
+        materialDetail: detail || "",
+        halle: currentSlotData.halle || ""
+    };
+
+    const onCompleteVisuals = (p) => {
+        // Button wieder freigeben
+        if (btn) {
+            btn.style.pointerEvents = "auto";
+            btn.style.opacity = "1";
+        }
+
+        const s = p.slot;
+        
+        // Lokale Datenstruktur aktualisieren
+        if (window.lastPlanData) {
+            if (!window.lastPlanData[s]) window.lastPlanData[s] = {};
+            window.lastPlanData[s] = {
+                ...window.lastPlanData[s],
+                material: p.material,
+                materialDetail: p.materialDetail
+            };
+        }
+
+        const box = document.querySelector(`[data-slot="${s}"]`);
+        if (box) markBoxWithMaterialIcon(box, p.material, p.materialDetail);
+        
+        if (s === slot && typeof closeEditor === 'function') closeEditor();
+    };
+
+    if (typeof window.prozessiereAktion === 'function') {
+        window.prozessiereAktion(payload, onCompleteVisuals);
+    } else {
+        onCompleteVisuals(payload);
+    }
+}
+
+async function applyMaterialDelete(time, slot, klasse, btn) {
+    // Gezielte Button-Blockierung
+    if (btn) {
+        btn.style.pointerEvents = "none";
+        btn.style.opacity = "0.6";
+    }
+
+    const currentSlotData = (window.lastPlanData && window.lastPlanData[slot]) ? window.lastPlanData[slot] : {};
+
+    const payload = {
+        action: "saveBooking",
+        pw: typeof userPw !== 'undefined' ? userPw : "",
+        id: `${document.getElementById('datePicker')?.value}_${slot}`,
+        date: document.getElementById('datePicker')?.value,
+        slot: slot,
+        klasse: klasse || "",
+        ...currentSlotData,
+        material: "",
+        materialDetail: ""
+    };
+
+    const onCompleteVisuals = (p) => {
+        // Button wieder freigeben
+        if (btn) {
+            btn.style.pointerEvents = "auto";
+            btn.style.opacity = "1";
+        }
+
+        const s = p.slot;
+        
+        if (window.lastPlanData?.[s]) {
+            window.lastPlanData[s] = {
+                ...window.lastPlanData[s],
+                material: "",
+                materialDetail: ""
+            };
+        }
+        
+        const box = document.querySelector(`[data-slot="${s}"]`);
+        if (box) markBoxWithMaterialIcon(box, "", "");
+        
+        if (s === slot && typeof closeEditor === 'function') closeEditor();
+    };
+
+    if (typeof window.prozessiereAktion === 'function') {
+        window.prozessiereAktion(payload, onCompleteVisuals);
+    } else {
+        onCompleteVisuals(payload);
+    }
+}
+    
+
+
+function markBoxWithMaterialIcon(box, material, detail) {
+    if (!box) return;
+
+    // Wir holen den Klassennamen direkt aus dem Text des Labels innerhalb der Box
+    const labelEl = box.querySelector('.klasse-label');
+    const klasse = labelEl ? labelEl.innerText.trim() : "Unbekannt";
+
+    const oldIcon = box.querySelector('.material-indicator');
+    if (oldIcon) oldIcon.remove();
+
+    if (!material || material.trim() === "") return;
+
+    const badge = document.createElement('div');
+    badge.className = 'material-indicator';
+    badge.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; vertical-align: middle;">trolley</span>';
+
+    Object.assign(badge.style, {
+        position: 'absolute',
+        top: '2px',
+        right: '-4px',  
+        zIndex: '10',
+        cursor: 'pointer'
+    });
+
+    badge.onclick = (e) => {
+        e.stopPropagation();
+        // Hier übergeben wir jetzt das frisch ausgelesene 'klasse'
+        showMaterialDetailPopup(klasse, material, detail);
+    };
+
+    box.appendChild(badge);
+}
+    
+
+    
+function showMaterialDetailPopup(klasse, material, detail) {
+    const overlay = document.createElement('div');
+    overlay.className = 'material-info-overlay';
+    overlay.onclick = () => overlay.remove();
+
+    overlay.innerHTML = `
+    <div class="material-info-content" onclick="event.stopPropagation()" style="width: 400px; border: 1px solid #ff9800; background: #222; padding: 25px; border-radius: 12px; color: #fff; font-family: sans-serif;">
+        
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; overflow: hidden;">
+            <span class="material-symbols-outlined" style="font-size: 28px; color: #ff9800; flex-shrink: 0;">trolley</span> 
+            <span style="font-size: 1.1rem; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                Materialbuchung für <span style="color: #ff9800;">${klasse}</span>
+            </span>
+        </div>
+        
+        <div style="background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #444; text-align: left;">
+            <div style="font-size: 0.85rem; color: #ff9800; font-weight: bold; margin-bottom: 2px;">Material:</div>
+            <div style="font-size: 1rem; color: #fff; margin-bottom: 12px; word-wrap: break-word;">${material.split(', ').join('<br>')}</div>
+            
+            <div style="font-size: 0.85rem; color: #ff9800; font-weight: bold; margin-bottom: 2px;">Details:</div>
+            <div style="font-size: 1rem; color: #fff; word-wrap: break-word;">${detail || "Keine"}</div>
+        </div>
+
+        <div style="height: 50px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 8px; border: 1px solid #444; background: #222; color: #aaa; transition: all 0.2s ease; margin-top: 20px;"
+             onclick="this.closest('.material-info-overlay').remove()"
+             onmouseover="this.style.borderColor='#777'; this.style.color='#fff'; this.style.background='#333';"
+             onmouseout="this.style.borderColor='#444'; this.style.color='#aaa'; this.style.background='#222';">
+            <span class="material-symbols-outlined" style="margin-right: 8px;">close</span> SCHLIESSEN
+        </div>
+    </div>
+    `;
+    
+    document.body.appendChild(overlay);
+}
+
+
+
+
+    
+
+/* ============================================================
+   14. MENÜ-STEUERUNG & WEICHENSTELLUNG
+   ============================================================ */
+
+/**
+ * Schließt das Menü und bereinigt den Status
+ */
+function closeEditor() {
+    const modal = document.getElementById('eigenesmenu-modal');
+    if (modal) {
+        modal.remove();
+    }
+    // Wichtig: Auswahl-Array für Materialien leeren, wenn das Menü schließt
+    if (typeof selectedMaterials !== 'undefined') {
+        selectedMaterials = [];
+    }
+}
+
+
+
+/**
+ * Verarbeitet die Wahl aus dem Task Manager (Haupt-Weiche)
+ */
+window.handleMenuChoice = function(action, time, slot, klasse) {
+    console.log("Aktion gewählt:", action); 
+
+    switch(action) {
+        case 'reservation':
+            // Öffnet die Hallenauswahl direkt im bestehenden Menü-Container
+            handleReservationUI(time, slot, klasse);
+            break;
+            
+        case 'material':
+            const activeModal = document.getElementById('eigenesmenu-modal');
+            if (typeof handleMaterialUI === 'function') {
+                handleMaterialUI(time, slot, klasse, activeModal);
+            }
+            break;
+
+        case 'ausfall':
+            // Wir prüfen den aktuellen Status direkt an der Box
+            const istBereitsAusfall = window.currentEditBox ? window.currentEditBox.classList.contains('ausfall-mode') : false;
+            // Wir nutzen den Button-Trigger aus dem DOM für den Loader
+            const btn = document.querySelector('.eigenesmenu-item:nth-child(3)'); 
+            if (typeof handleAusfallClick === 'function') {
+                handleAusfallClick(istBereitsAusfall ? 'LOESCHEN' : 'SETZEN', time, slot, klasse, btn);
+            }
+            break;
+
+       case 'beendet':
+            // 🔥 NEU: Kein separates Modal mehr aufwerfen!
+            // Wir starten direkt den einheitlichen Dynamic-Workflow im selben Taskmanager-Modal
+            window.starteAbklebenWorkflow(time, slot, klasse);
+            break;
+
+        case 'verschieben':
+    // Wir holen uns die aktuellen Daten der Box, die wir verschieben wollen
+    // Gehe davon aus, dass du das Box-Element oder die Daten dazu hast:
+    const boxElement = document.querySelector(`[data-slot="${slot}"]`);
+    
+    window.moveMode = { 
+        sourceSlot: slot, 
+        klasse: klasse, 
+        verfasser: userKuerzel, 
+        date: document.getElementById('datePicker').value,
+        // HIER DIE DATEN RETTEN:
+        halle: boxElement.dataset.halle || "",
+        lehrer: boxElement.dataset.lehrer || "",
+        material: boxElement.dataset.material || "",
+        kommentar: boxElement.dataset.kommentar || "",
+        typ: boxElement.dataset.typ || ""
+    };
+    
+    document.getElementById('plan-container').classList.add('move-mode-active');
+    closeEditor();
+    highlightFreeSlots();
+    break;
+            
+        case 'nachricht':
+            // 🔥 NEU: Kein prompt() mehr! Wir laden das UI direkt ins Modal
+            window.handleNotizUI(time, slot, klasse);
+            break;
+            
+        default:
+            console.warn("Unbekannte Aktion im Task Manager:", action);
+    }
+};
+    
+
+window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
+    console.log("handleAusfallClick getriggert. Modus:", mode);
+
+    const zielHalle = (mode === 'LOESCHEN') ? "" : "Ausfall";
+    
+    const payload = {
+        action: "saveBooking",
+        pw: userPw,
+        kuerzel: userKuerzel,
+        date: document.getElementById('datePicker').value,
+        slot: slot,
+        klasse: klasse,
+        halle: zielHalle
+    };
+
+    // Callback: Wird aufgerufen, wenn der Server die Änderung bestätigt hat
+    const visuelleAktualisierung = function(p) {
+        // Sicherstellen, dass das UI wieder freigegeben wird
+        if (btn) {
+            btn.style.pointerEvents = "auto";
+            btn.style.opacity = "1";
+        }
+        
+        const s = p.slot;
+        const h = p.halle;
+        
+        const targetBox = document.querySelector(`[data-slot="${s}"]`);
+        
+        // 1. Lokalen Datenspeicher synchron halten
+        if (window.lastPlanData && window.lastPlanData[s]) {
+            window.lastPlanData[s].halle = h;
+        }
+
+        // 2. UI sofort aktualisieren
+        if (targetBox) {
+            const label = targetBox.querySelector('.halle-label');
+            if (label) label.innerText = h;
+            
+            if (h === "Ausfall") {
+                targetBox.classList.add('ausfall-mode');
+                targetBox.style.backgroundColor = ""; 
+            } else {
+                targetBox.classList.remove('ausfall-mode');
+                // Nutze deine globale Konfigurationsvariable
+                if (typeof hallenConfig !== 'undefined' && hallenConfig[h]) {
+                    targetBox.style.backgroundColor = hallenConfig[h].color;
+                } else {
+                    targetBox.style.backgroundColor = "";
+                }
+            }
+        }
+    };
+
+    // UI-Loader & Button-Blockierung statt Fenster-Blockierung
+    if (btn) {
+        btn.style.pointerEvents = "none"; // Nur diesen Button kurzzeitig sperren
+        btn.style.opacity = "0.6";
+        const originalText = btn.querySelector('.btn-text')?.innerText || btn.innerText;
+        btn.innerHTML = `<span class="btn-text">${originalText}</span> <div class="inline-loader-container"><div class="eigenesmenu-loader" style="width:14px; height:14px; border-width:2px;"></div></div>`;
+    }
+
+    // Übergabe an die Weiche
+    window.prozessiereAktion(payload, visuelleAktualisierung);
+};
+    
+
+function handleReservationUI(time, slot, klasse) {
+    const modalContainer = document.querySelector('.eigenesmenu-container');
+    const subtitle = document.getElementById('menu-subtitle');
+    const titleEl = modalContainer ? modalContainer.querySelector('.eigenesmenu-title') : null;
+    
+    if (!modalContainer) return;
+
+    // Header aktualisieren
+    if (titleEl) {
+        titleEl.innerText = "HALLE/RAUM WÄHLEN";
+        titleEl.style.color = "#e67e22";
+    }
+    if (subtitle) {
+        subtitle.innerHTML = `Reservierung für: <b>${klasse}</b>`;
+    }
+
+    const aktuelleHalleInBox = window.currentEditBox?.querySelector('.halle-label')?.innerText.trim() || "";
+    
+    // Logik für besetzte Hallen
+const currentSlot = parseInt(slot);
+const rowIndex = Math.floor((currentSlot - 1) / 5);
+const startSlot = (rowIndex * 5) + 1;
+const endSlot = startSlot + 4;
+let besetzteHallen = [];
+
+for (let s = startSlot; s <= endSlot; s++) {
+    if (s === currentSlot) continue;
+    
+    const data = window.lastPlanData ? window.lastPlanData[s] : null;
+    if (data && data.halle && data.halle !== "Ausfall") {
+        const hName = data.halle.trim();
+        const lowerName = hName.toLowerCase();
+        
+        // "outdoor" und "badi" werden ignoriert (nicht als besetzt gezählt)
+        if (lowerName.includes("outdoor") || lowerName.includes("badi")) {
+            continue;
+        }
+        
+        besetzteHallen.push(hName);
+    }
+}
+
+    let html = `
+        <div class="eigenesmenu-liste" id="menu-options-list">
+            <div class="scroll-wrapper">`;
+
+    // Löschen Button
+    if (aktuelleHalleInBox !== "" && aktuelleHalleInBox !== "---") {
+        html += `
+            <div class="hallen-option-wrapper" 
+                 style="display: flex; height: 50px; margin-bottom: 15px; background: #332222; border: 1px solid #553333; border-radius: 8px; cursor: pointer; align-items: center; justify-content: center; color: #ffaaaa;"
+                 onclick="applyHalleSelection('', '${time}', '${slot}', '${klasse}', this, '')">
+                <span class="material-symbols-outlined" style="margin-right: 10px;">delete</span>
+                RESERVIERUNG LÖSCHEN
+            </div>`;
+    }
+
+    const hallen = window.hallenConfig ? Object.keys(window.hallenConfig) : [];
+    hallen.forEach(h => {
+        const istGesperrt = besetzteHallen.some(b => b.toLowerCase().includes(h.trim().toLowerCase()) || h.trim().toLowerCase().includes(b.toLowerCase()));
+        const istAktiv = (h.trim() === aktuelleHalleInBox);
+        
+        // Wir setzen die Klassen basierend auf dem Status
+        const wrapperClass = `hallen-option-wrapper ${istGesperrt ? 'disabled' : ''} ${istAktiv ? 'selected' : ''}`;
+
+        if (istGesperrt) {
+            html += `
+                <div class="${wrapperClass}">
+                    <div class="opt-locker" style="display: flex; align-items: center; padding-left: 15px; color: #fff;">
+                        <span class="material-symbols-outlined" style="margin-right:12px;">${window.hallenConfig[h]?.icon || "meeting_room"}</span>${h}
+                    </div>
+                </div>`;
+        } else {
+            html += `
+                <div class="${wrapperClass}">
+                    <div class="opt-locker ${istAktiv ? 'active' : ''}" 
+                         onclick="applyHalleSelection('${h}', '${time}', '${slot}', '${klasse}', this, '')">
+                        <span class="material-symbols-outlined" style="margin-right: 12px;">${window.hallenConfig[h]?.icon || "meeting_room"}</span> <span>${h}</span>
+                    </div>
+                    <div class="opt-fix ${istAktiv ? 'active' : ''}" 
+                         onclick="applyHalleSelection('${h}', '${time}', '${slot}', '${klasse}', this, 'fix')">
+                        <span class="material-symbols-outlined">lock</span>
+                    </div>
+                </div>`;
+        }
+    });
+
+    html += `</div></div>`;
+
+    html += renderFooter([
+        { text: 'ZURÜCK', class: 'back', icon: 'arrow_back', onclick: `window.openEditor(window.currentEditBox, '${time}', '${slot}', '${klasse}')` },
+        { text: 'ABBRECHEN', class: 'cancel', icon: 'close', onclick: 'closeEditor()' }
+    ]);
+
+    const header = modalContainer.querySelector('.eigenesmenu-header');
+    modalContainer.innerHTML = '';
+    modalContainer.appendChild(header);
+    modalContainer.insertAdjacentHTML('beforeend', html);
+}
+                         
+
+
+
+
+    
+// --- GLOBALE VARIABLEN UND FUNKTIONEN (AUẞERHALB DER FUNKTIONEN) ---
+window.currentSaveController = null;
+window.syncBlockierteSlots = window.syncBlockierteSlots || {};
+
+
+
+    
+window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
+    if (!btn) return;
+    const payload = {
+        action: "saveBooking",
+        pw: userPw,
+        kuerzel: userKuerzel,
+        date: document.getElementById('datePicker').value,
+        slot: slot,
+        klasse: klasse,
+        origin: 'handleReservationUI',
+        halle: neueHalle,
+        typ: typ || ""
+    };
+
+    const visuelleAktualisierung = function(p) {
+        const h = p.halle;
+        const s = p.slot;
+        const t = p.typ;
+        const targetBox = document.querySelector(`[data-slot="${s}"]`);
+        
+        if (window.lastPlanData && window.lastPlanData[s]) {
+            window.lastPlanData[s].halle = h;
+            window.lastPlanData[s].typ = t;
+        }
+
+        if (targetBox) {
+            const label = targetBox.querySelector('.halle-label');
+            if (label) label.innerText = h;
+            targetBox.classList.remove('ausfall-mode');
+            
+            // --- HIER DIE ANPASSUNG: Zugriff auf window.hallenConfig ---
+            const farbe = (h !== "" && window.hallenConfig && window.hallenConfig[h]) 
+                          ? window.hallenConfig[h].color 
+                          : "";
+            targetBox.style.backgroundColor = farbe;
+            // ----------------------------------------------------------
+            
+            if (h === "Ausfall") targetBox.classList.add('ausfall-mode');
+
+            // 🔥 UI: Schloss-Icon bei Fix-Buchung anzeigen
+            let lockIcon = targetBox.querySelector('.lock-icon-container');
+            if (!lockIcon) {
+                lockIcon = document.createElement('div');
+                lockIcon.className = 'lock-icon-container';
+                Object.assign(lockIcon.style, {
+                    position: 'absolute',
+                    right: '-3px',
+                    bottom: '5px',
+                    display: 'flex',
+                    alignItems: 'center'
+                });
+                targetBox.appendChild(lockIcon);
+            }
+            
+            lockIcon.innerHTML = (t === "fix") 
+                ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' 
+                : '';
+        }
+    };
+
+    if (typeof window.prozessiereAktion === 'function') {
+        window.prozessiereAktion(payload, visuelleAktualisierung);
+    }
+    if (typeof closeModal === 'function') closeModal();
+};
+
+
+
+window.handleNotizUI = function(time, slot, klasse) {
+    const modalContainer = document.querySelector('.eigenesmenu-container');
+    const header = modalContainer ? modalContainer.querySelector('.eigenesmenu-header') : null;
+    
+    if (!modalContainer || !header) return;
+
+    // Header Texte
+    const titleEl = modalContainer.querySelector('.eigenesmenu-title');
+    const subtitle = document.getElementById('menu-subtitle');
+    
+    if (titleEl) { 
+        titleEl.innerText = "NOTIZ ERFASSEN"; 
+        titleEl.style.color = "#e67e22"; 
+    }
+    
+    if (subtitle) { 
+        // Untertitel als Block, damit er bei langen Namen sauber umbricht
+        subtitle.style.display = "block";
+        subtitle.style.width = "100%";
+        subtitle.style.marginBottom = "10px";
+        subtitle.innerHTML = `Notiz für Klasse <b>${klasse}</b>:`; 
+    }
+
+    const bestehendeNotiz = window.currentEditBox ? (window.currentEditBox.getAttribute('data-notiz') || "") : "";
+    const hatBestehendeNotiz = bestehendeNotiz.trim() !== "";
+
+    // Basis-Style für beide Buttons (Höhe 60px, dezent, einheitlich)
+    const btnCommon = "height: 60px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 8px; box-sizing: border-box; margin: 0; padding: 0 15px; border: 2px solid; transition: all 0.2s ease;";
+
+    // 1. Inhalt bauen
+    let html = `
+        <div class="eigenesmenu-liste" id="menu-options-list">
+            <div class="scroll-wrapper" style="padding: 15px; display: flex; flex-direction: column; gap: 15px;">
+                <textarea id="notiz-text-feld" placeholder="Notiz hier eingeben..." rows="5"
+                          style="width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; font-family: inherit; font-size: 14px; border-radius: 8px; box-sizing: border-box; resize: vertical; outline: none; transition: border 0.2s;">${bestehendeNotiz}</textarea>
+                
+                <div id="save-btn-container" style="display: none; width: 100%;">
+                    <div class="notiz-save-btn" 
+                         style="${btnCommon} border-color: #444; background: #1a1a1a; color: #666; font-weight: bold;"
+                         onclick="window.speichereNotizVomModal('${slot}', '${klasse}')"
+                         onmouseover="this.style.transform='scale(1.02)'; this.style.borderColor='#e67e22'; this.style.color='#e67e22'; this.style.background='#222';"
+                         onmouseout="this.style.transform='scale(1)'; this.style.borderColor='#444'; this.style.color='#666'; this.style.background='#1a1a1a';">
+                        <span class="material-symbols-outlined" style="margin-right: 10px;">save</span> SPEICHERN
+                    </div>
+                </div>
+    `;
+
+    // Löschen Button: Rand #4a1c1c, Hover dezent rot, Schrift normal
+    if (hatBestehendeNotiz) {
+        html += `
+                <div class="delete-btn" 
+                     style="${btnCommon} border-color: #4a1c1c; background: #2a1a1a; color: #ffaaaa; font-weight: normal;" 
+                     onclick="window.loescheNotizVomModal('${slot}', '${klasse}')"
+                     onmouseover="this.style.transform='scale(1.02)'; this.style.borderColor='#7a2a2a';"
+                     onmouseout="this.style.transform='scale(1)'; this.style.borderColor='#4a1c1c';">
+                    <span class="material-symbols-outlined" style="margin-right: 10px;">delete</span> NOTIZ LÖSCHEN
+                </div>`;
+    }
+
+    html += `</div></div>`; 
+
+    // 2. Footer
+    html += renderFooter([
+        { text: 'ZURÜCK', class: 'back', icon: 'arrow_back', onclick: `window.openEditor(window.currentEditBox, '${time}', '${slot}', '${klasse}')` },
+        { text: 'ABBRECHEN', class: 'cancel', icon: 'close', onclick: 'closeEditor()' }
+    ]);
+
+    // 3. Modal aufbauen
+    modalContainer.innerHTML = '';
+    modalContainer.appendChild(header);
+    modalContainer.insertAdjacentHTML('beforeend', html);
+
+    // 4. Logik für Button-Sichtbarkeit
+    const textFeld = document.getElementById('notiz-text-feld');
+    const saveContainer = document.getElementById('save-btn-container');
+    
+    if (textFeld.value.trim().length > 0) {
+        saveContainer.style.display = 'block';
+    }
+
+    textFeld.addEventListener('input', () => {
+        saveContainer.style.display = (textFeld.value.trim().length > 0) ? 'block' : 'none';
+    });
+
+    setTimeout(() => { textFeld.focus(); }, 50);
+};
+
+
+
+
+
+/**
+ * 🔥 Hilfsfunktion für den Lösch-Button
+ */
+window.loescheNotizVomModal = function(slot, klasse) {
+    const textFeld = document.getElementById('notiz-text-feld');
+    if (textFeld) {
+        textFeld.value = ""; 
+    }
+    window.speichereNotizVomModal(slot, klasse);
+};
+
+
+    
+/**
+ * 🔥 Phase 2: Korrigierte Klammerstruktur & Daten-Merge zur Wahrung bestehender Felder
+ */
+window.speichereNotizVomModal = async function(slot, klasse) {
+    const textFeld = document.getElementById('notiz-text-feld');
+    const saveBtn = document.getElementById('btn-save-notiz');
+    if (!textFeld) return;
+
+    const notizText = textFeld.value.trim();
+    const dateVal = document.getElementById('datePicker').value;
+
+    if (saveBtn) {
+        saveBtn.innerHTML = '<div class="eigenesmenu-loader" style="margin: 0 auto;"></div>';
+        saveBtn.style.pointerEvents = "none";
+    }
+
+    // 1. Hole das existierende Datenobjekt des Slots, um existierende Felder (wie "fix") zu erhalten
+    const currentSlotData = (window.lastPlanData && window.lastPlanData[slot]) ? window.lastPlanData[slot] : {};
+
+    // 2. Erstelle das Payload als Merge aus bestehenden Daten und den neuen Änderungen
+    const payload = {
+        action: "saveBooking",
+        pw: userPw,
+        kuerzel: userKuerzel,
+        date: dateVal,
+        slot: slot.toString(),
+        klasse: klasse,
+        ...currentSlotData,    // <--- WICHTIG: Erhält existierende Felder wie 'fix' (Spalte J)
+        kommentar: notizText   // <--- Überschreibt/setzt nur den Kommentar neu
+    };
+
+    const onCompleteVisuals = function(p) {
+        const n = p.kommentar;
+        const s = p.slot;
+        
+        console.log("Triggere Sofort-Update für Notiz in Slot:", s);
+        
+        const box = document.querySelector(`[data-slot="${s}"]`);
+        if (box) {
+            box.setAttribute('data-notiz', n);
+
+            const altesIcon = box.querySelector('.box-notiz-icon');
+            if (altesIcon) altesIcon.remove();
+
+            if (n !== "") {
+                const neuesNotizIcon = document.createElement('span');
+                neuesNotizIcon.className = 'box-notiz-icon';
+                neuesNotizIcon.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
+                neuesNotizIcon.title = n;
+                
+                Object.assign(neuesNotizIcon.style, {
+                    position: 'absolute',
+                    top: '-2px',
+                    left: '4px',
+                    cursor: 'pointer',
+                    zIndex: '5'
+                });
+                
+                neuesNotizIcon.onclick = function(event) {
+                    event.stopPropagation();
+                    if (typeof showNotizDetailPopup === "function") {
+                        showNotizDetailPopup(box.querySelector('.klasse-label')?.innerText || "", n);
+                    }
+                };
+                box.appendChild(neuesNotizIcon);
+            }
+        }
+
+        // Update der lokalen Datenstruktur unter Erhalt anderer Felder
+        if (window.lastPlanData) {
+            if (!window.lastPlanData[s]) window.lastPlanData[s] = {};
+            // Auch hier nutzen wir den Merge für das lokale Objekt
+            window.lastPlanData[s] = {
+                ...window.lastPlanData[s],
+                kommentar: n
+            };
+        }
+
+        if (s === slot.toString() && typeof closeEditor === 'function') {
+            closeEditor();
+        }
+    };
+
+    if (typeof window.prozessiereAktion === "function") {
+        window.prozessiereAktion(payload, onCompleteVisuals);
+    }
+};
+    
+
+    
+
+/**
+ * Erzeugt die In-App-Abfrage direkt im Modal-Inhalt
+ */
+window.zeigeDoppellektionNotizAbfrage = function(slot, klasse) {
+    const modalContainer = document.querySelector('.eigenesmenu-container');
+    const header = modalContainer ? modalContainer.querySelector('.eigenesmenu-header') : null;
+    if (!modalContainer || !header) return;
+
+    // Header aktualisieren
+    const titleEl = modalContainer.querySelector('.eigenesmenu-title');
+    const subtitle = document.getElementById('menu-subtitle');
+    if (titleEl) { titleEl.innerText = "🔁 DOPPELLEKTION DETEKTIERT"; titleEl.style.color = "#e67e22"; }
+    if (subtitle) { subtitle.innerHTML = `Möchtest du die Notiz für beide Stunden übernehmen?`; }
+
+    // 1. Inhalt bauen (Scrollbarer Bereich)
+    let html = `
+        <div class="eigenesmenu-liste" id="menu-options-list">
+            <div class="scroll-wrapper" style="padding: 15px; display: flex; flex-direction: column; gap: 15px;">
+                <div class="doppel-btn" style="background: #e67e22; border: none; justify-content: center;" 
+                     onclick="window.speichereNotizVomModal('${slot}', '${klasse}', true)">
+                    <span class="material-symbols-outlined">double_arrow</span> Für beide Stunden übernehmen
+                </div>
+                
+                <div class="doppel-btn" style="background: #333; border: 1px solid #444; justify-content: center;" 
+                     onclick="window.speichereNotizVomModal('${slot}', '${klasse}', false)">
+                    <span class="material-symbols-outlined">arrow_right</span> Nur für diese Stunde
+                </div>
+            </div>
+        </div>`;
+
+    // 2. Footer (Standard-Footer mit Zurück)
+    html += renderFooter([
+        { 
+            text: 'ZURÜCK', 
+            class: 'back', 
+            icon: 'arrow_back', 
+            onclick: `window.handleNotizUI(window.currentEditBox.getAttribute('data-time'), '${slot}', '${klasse}')` 
+        },
+        { 
+            text: 'ABBRECHEN', 
+            class: 'cancel', 
+            icon: 'close', 
+            onclick: 'closeEditor()' 
+        }
+    ]);
+
+    // 3. Container neu aufbauen
+    modalContainer.innerHTML = '';
+    modalContainer.appendChild(header);
+    modalContainer.insertAdjacentHTML('beforeend', html);
+};
+
+
+
+
+function showNotizDetailPopup(klasse, notizText) {
+    const overlay = document.createElement('div');
+    overlay.className = 'material-info-overlay';
+    overlay.onclick = () => overlay.remove();
+
+    // Den Text mit .trim() bereinigen
+    const saubererText = (notizText || '').trim();
+
+    overlay.innerHTML = `
+    <div class="material-info-content" onclick="event.stopPropagation()" 
+         style="width: 400px; border: 1px solid #ff9800; background: #222; padding: 25px; border-radius: 12px; color: #fff; text-align: left !important;">
+        
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+            <span class="material-symbols-outlined" style="font-size: 28px; color: #ff9800;">stylus_note</span> 
+            <span style="font-size: 1.1rem; font-weight: bold;">Notiz für <span style="color: #ff9800;">${klasse}</span></span>
+        </div>
+        
+        <div style="background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #444; border-left: 3px solid #ff9800; text-align: left !important;">
+            <div style="font-size: 1rem; color: #fff; word-wrap: break-word; white-space: pre-wrap; text-align: left !important; display: block;">${saubererText}</div>
+        </div>
+
+        <div style="height: 50px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 8px; border: 1px solid #444; background: #222; color: #aaa; margin-top: 20px;"
+             onclick="this.closest('.material-info-overlay').remove()">
+            <span class="material-symbols-outlined" style="margin-right: 8px;">close</span> SCHLIESSEN
+        </div>
+    </div>
+    `;
+    document.body.appendChild(overlay);
+}
+    
+    
+
+/**
+ * Der "Postbote": Sendet Daten an das Google Apps Script
+ * Inklusive lokaler Entwicklungs-Weiche für VS Code (localhost)
+ */
+window.saveImmediately = async function(payload, options = {}) {
+    const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+
+    // 1. LOKALER MODUS (Simuliert den Erfolg ohne Server-Call)
+    if (isLocal) {
+        console.log("🎯 LOKALER MODUS: Speicherbefehl simuliert:", payload);
+        
+        // Führe News-Trigger lokal aus, damit das UI sofort reagiert
+        runNewsTriggerLogic(payload);
+        
+        return { status: "success", msg: "Lokal erfolgreich simuliert" };
+    }
+
+    // 2. ONLINE-MODUS (Dein bestehender Produktions-Code)
+    if (typeof url === 'undefined') {
+        console.error("❌ saveImmediately abgebrochen: Die Variable 'url' ist nicht definiert!");
+        return { status: "error", msg: "Skript-URL fehlt" };
+    }
+
+    if (!payload) {
+        console.error("❌ saveImmediately abgebrochen: Kein Payload übergeben!");
+        return { status: "error", msg: "Keine Daten übergeben" };
+    }
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            body: JSON.stringify(payload),
+            signal: options.signal
+        });
+
+        if (!response.ok) throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+
+        const result = await response.json();
+
+        if (result.status === "success") {
+            console.log("🎯 Speicherbefehl erfolgreich ausgeführt:", payload);
+            runNewsTriggerLogic(payload);
+            return result;
+        } else {
+            console.error("❌ Server meldete einen Fehler:", result.msg);
+            return result;
+        }
+    } catch (e) {
+        if (e.name === 'AbortError') throw e;
+        console.error("❌ Kritischer Fehler:", e);
+        return { status: "error", msg: e.toString() };
+    }
+};
+   
+
+
+/**
+ * Mischt bestehende Daten mit neuen Änderungen
+ * @param {string} slotID - Der Slot, der geändert wird
+ * @param {object} newData - Nur die Felder, die sich ändern (z.B. { material: "..." })
+ */
+window.getMergedPayload = function(slotID, newData) {
+    // 1. Hole das existierende Objekt (oder leeres Objekt als Fallback)
+    const currentData = window.lastPlanData[slotID] || {};
+    
+    // 2. Mische alt und neu
+    const mergedData = {
+        ...currentData, // Nimmt alles, was schon da war (auch fix, klasse, time, etc.)
+        ...newData      // Überschreibt nur die spezifischen neuen Felder
+    };
+    
+    // 3. Gib das komplette Objekt zurück
+    return {
+        slot: slotID,
+        data: mergedData
+    };
+};
+
+    
+
+/**
+ * Interne Hilfsfunktion: Hält die News-Logik sauber
+ */
+function runNewsTriggerLogic(payload) {
+    const action = payload.action || payload.mode;
+    
+    if (action === "saveBooking" && typeof triggerNews === "function") {
+        const slotIndex = parseInt(payload.slot);
+        const klasseName = payload.klasse || "";
+        const halleWert = payload.halle ? payload.halle.toString().trim() : "";
+        const userKuerzelInput = payload.kuerzel || (typeof userKuerzel !== 'undefined' ? userKuerzel : "System");
+
+        if (halleWert === "") {
+            triggerNews("", slotIndex, klasseName);
+        } 
+        else if (halleWert.includes("Outdoor")) {
+            triggerNews("outdoor", slotIndex, klasseName);
+        }
+        else if (halleWert === "Beendet" || halleWert === "beendet") {
+            console.log(`📢 AUTOMATISCHER NEWS-TRIGGER: Beendet durch ${userKuerzelInput} erkannt.`);
+            triggerNews("beendet", slotIndex, klasseName, userKuerzelInput);
+        }
+    }
+}
+
+
+
+
+
+
+
+
+// Hilfsfunktion: Erkennt, ob der Partner-Slot dieselbe Klasse hat (JETZT ALS ECHTE ZAHLEN)
+function getDoppellektionPartnerSlot(currentSlot) {
+    const slot = parseInt(currentSlot, 10);
+    if (isNaN(slot) || !window.lastPlanData) {
+        console.warn("❌ Doppellektion-Abbruch: lastPlanData fehlt oder Slot ist NaN");
+        return null;
+    }
+    
+    // Tippfehler korrigiert: Variable heißt jetzt durchgehend "aktuellerDatenSatz"
+    const aktuellerDatenSatz = window.lastPlanData[slot] || window.lastPlanData[slot.toString()];
+    if (!aktuellerDatenSatz) {
+        console.warn(`❌ Doppellektion-Abbruch: Keine Daten für Slot ${slot} in lastPlanData gefunden.`);
+        return null;
+    }
+    
+    const aktuelleKlasse = aktuellerDatenSatz.klasse ? aktuellerDatenSatz.klasse.toString().trim() : "";
+    if (aktuelleKlasse === "" || aktuelleKlasse === "---") return null;
+
+    const slotDanach = slot + 5;
+    const slotDavor = slot - 5;
+
+    const datenDanach = window.lastPlanData[slotDanach] || window.lastPlanData[slotDanach.toString()];
+    const datenDavor = window.lastPlanData[slotDavor] || window.lastPlanData[slotDavor.toString()];
+
+    const klasseDanach = (datenDanach && datenDanach.klasse) ? datenDanach.klasse.toString().trim() : "";
+    const klasseDavor = (datenDavor && datenDavor.klasse) ? datenDavor.klasse.toString().trim() : "";
+
+    console.group(`📊 Doppellektions-Analyse für Slot ${slot} (${aktuelleKlasse})`);
+    console.log(`Prüfe Slot danach (+5 = ${slotDanach}): Gefundene Klasse: "${klasseDanach}"`);
+    console.log(`Prüfe Slot davor (-5 = ${slotDavor}): Gefundene Klasse: "${klasseDavor}"`);
+    console.groupEnd();
+
+    if (klasseDanach === aktuelleKlasse) {
+        console.log(`🎯 MATCH! Slot ${slotDanach} ist der Partner (Stunde danach).`);
+        return slotDanach;
+    }
+    if (klasseDavor === aktuelleKlasse) {
+        console.log(`🎯 MATCH! Slot ${slotDavor} ist der Partner (Stunde davor).`);
+        return slotDavor;
+    }
+
+    return null;
+}
+
+
+
+
+/* ============================================================
+   11. DOPPELLEKTIONS-ABFRAGE (Bereinigt, CSS-basiert & Echtzeit-Sync)
+   ============================================================ */
+
+window.prozessiereAktion = function(payload, onCompleteVisuals) {
+    const partnerSlot = getDoppellektionPartnerSlot(payload.slot);
+    const modalContainer = document.querySelector('.eigenesmenu-container');
+    const subtitle = document.getElementById('dynamic-header-subtitle');
+
+    // 1. Wenn kein Partner-Slot existiert oder Modal fehlt, direkt ausführen
+    if (!partnerSlot || !modalContainer) {
+        executePayloads([payload], (p) => {
+            if (onCompleteVisuals) onCompleteVisuals(p);
+            if (typeof syncPlan === 'function') syncPlan();
+        });
+        if (typeof closeEditor === "function") closeEditor();
+        return;
+    }
+
+    // 2. Konflikt-Logik
+    let partnerKonfliktKlasse = null;
+    if (payload.halle && payload.halle.trim() !== "") {
+        const rowIndex = Math.floor((partnerSlot - 1) / 5);
+        const startSlot = (rowIndex * 5) + 1;
+        const endSlot = startSlot + 4;
+
+        for (let s = startSlot; s <= endSlot; s++) {
+            if (s === partnerSlot) continue;
+            const data = window.lastPlanData ? window.lastPlanData[s] : null;
+            if (data && data.halle && data.halle.trim() !== "") {
+                const belegte = data.halle.toLowerCase();
+                const wunsch = payload.halle.toLowerCase();
+                if (wunsch !== "" && (belegte.includes(wunsch) || wunsch.includes(belegte))) {
+                    partnerKonfliktKlasse = data.klasse || "andere Belegung";
+                    break;
+                }
+            }
+        }
+    }
+
+    // 3. Untertitel aktualisieren
+    if (subtitle) {
+        subtitle.innerHTML = `Willst du die Aktion für die <b>gesamte Doppellektion</b> durchführen?`;
+    }
+
+    // 4. DOM-Säuberung & UI Aufbau
+    const header = modalContainer.querySelector('.eigenesmenu-header');
+    modalContainer.innerHTML = '';
+    modalContainer.appendChild(header);
+
+    let html = `
+        <div class="eigenesmenu-liste" id="menu-options-list">
+            <div class="doppel-abfrage-container">
+                ${partnerKonfliktKlasse ? `
+                    <div class="doppel-konflikt-box">
+                        <span class="material-symbols-outlined">exclamation</span>
+                        <div><strong>Auswahl für Doppellektion nicht möglich!</strong></div>
+                    </div>
+                ` : `
+                    <button id="btn-doppel-beide" class="doppel-btn">
+                        <span class="material-symbols-outlined">group</span> Für beide Lektionen
+                    </button>
+                `}
+                <button id="btn-doppel-einzel" class="doppel-btn">
+                    <span class="material-symbols-outlined">person</span> Nur für eine Lektion
+                </button>
+            </div>
+        </div>
+    `;
+
+    const backFn = (payload.origin === 'handleReservationUI') 
+        ? `window.handleReservationUI('${payload.time}', '${payload.slot}', '${payload.klasse}')` 
+        : `window.openEditor(window.currentEditBox, '${payload.time}', '${payload.slot}', '${payload.klasse}')`;
+
+    html += renderFooter([
+        { text: 'ZURÜCK', class: 'back', icon: 'arrow_back', onclick: backFn },
+        { text: 'ABBRECHEN', class: 'cancel', icon: 'close', onclick: 'closeEditor()' }
+    ]);
+
+    modalContainer.insertAdjacentHTML('beforeend', html);
+
+    // 5. Wrapper für die Ausführung inkl. Echtzeit-Sync
+    const executeMitSync = (payloads) => {
+        executePayloads(payloads, (p) => {
+            // Erst lokales UI-Update für den geklickten Slot
+            if (onCompleteVisuals) onCompleteVisuals(p);
+            // Danach Sofort-Sync für alle Nutzer im Plan
+            if (typeof syncPlan === 'function') syncPlan();
+        });
+        if (typeof closeEditor === "function") closeEditor();
+    };
+
+    // 6. Event Listener
+    const btnBeide = document.getElementById('btn-doppel-beide');
+    if (btnBeide) {
+        btnBeide.onclick = () => executeMitSync([payload, { ...payload, slot: partnerSlot.toString() }]);
+    }
+    
+    const btnEinzel = document.getElementById('btn-doppel-einzel');
+    if (btnEinzel) {
+        btnEinzel.onclick = () => executeMitSync([payload]);
+    }
+};
+
+
+
+    
+    
+// Interne Hilfsfunktion, die die Payloads nacheinander an saveImmediately übergibt
+function executePayloads(payloadArray, onCompleteVisuals) {
+    payloadArray.forEach(p => {
+        // Sync-Schutz
+        if (window.syncBlockierteSlots) {
+            window.syncBlockierteSlots[p.slot] = true;
+        }
+
+        // Visuelles UI-Update sofort triggern
+        if (typeof onCompleteVisuals === "function") {
+            onCompleteVisuals(p); 
+        }
+
+        // 3. Abschicken
+        saveImmediately(p)
+            .then(result => {
+                if (result && result.status === "success") {
+                    // --- HIER: NEWS NUR BEI ERFOLG AUSLÖSEN ---
+                    // Wir prüfen, ob im Payload eine Hallen-Info steckt, die News auslöst
+                    if (p.halle === "Ausfall" || (p.halle && p.halle.includes("Outdoor"))) {
+                        window.triggerNewsWrapper(p.halle, p.slot, p.klasse);
+                    }
+                    
+                    setTimeout(() => {
+                        if (window.syncBlockierteSlots) delete window.syncBlockierteSlots[p.slot];
+                    }, 2500);
+                } else {
+                    if (window.syncBlockierteSlots) delete window.syncBlockierteSlots[p.slot];
+                    if (typeof syncPlan === "function") syncPlan();
+                }
+            })
+            .catch(() => {
+                if (window.syncBlockierteSlots) delete window.syncBlockierteSlots[p.slot];
+                if (typeof syncPlan === "function") syncPlan();
+            });
+    });
+}
+
+
+/* ============================================================
+   15. Lektion verschieben (Optimiert & Vollständig)
+   ============================================================ */
+
+function createMoveOverlay() {
+    // 1. Overlay (für die Verdunkelung)
+    if (!document.getElementById('move-overlay')) {
+        const overlay = document.createElement('div');
+        overlay.className = 'move-mode-overlay';
+        overlay.id = 'move-overlay';
+        document.body.appendChild(overlay);
+    }
+    
+    // 2. Panel (direkt in den Body, damit es immer ganz oben liegt)
+    if (!document.getElementById('move-panel-ui')) {
+        const panel = document.createElement('div');
+        panel.id = 'move-panel-ui'; // Neue ID für direktes Ansprechen
+        panel.className = 'move-panel';
+        panel.innerHTML = `
+            <span>Verschiebe-Modus aktiv: Wähle ein freies Feld!</span>
+            <button onclick="cancelMoveMode()" class="btn-cancel">Abbrechen</button>
+        `;
+        document.body.appendChild(panel);
+    }
+}
+
+/* ============================================================
+   15. Lektion verschieben
+   ============================================================ */
+
+window.cancelMoveMode = function() {
+    console.log("Starte radikalen Abbruch...");
+    
+    // 1. Modus zurücksetzen
+    window.moveMode = null;
+    
+    // 2. Alle UI-Elemente entfernen (Overlay & das neue Panel)
+    const overlay = document.getElementById('move-overlay');
+    if (overlay) overlay.remove();
+    
+    const panel = document.getElementById('move-panel-ui');
+    if (panel) panel.remove();
+    
+    // 3. Alle Klassen-Blockaden im Dokument entfernen
+    document.querySelectorAll('.move-mode-active').forEach(el => el.classList.remove('move-mode-active'));
+    document.body.classList.remove('move-mode-active');
+    
+    // 4. Reset aller Boxen
+    const boxes = document.querySelectorAll('.box');
+    boxes.forEach(box => {
+        // Style-Erzwingung entfernen
+        box.style.pointerEvents = ''; 
+        
+        // Klassen entfernen
+        box.classList.remove('is-selectable', 'is-being-moved', 'move-mode-highlight');
+        
+        // Klick-Logik wiederherstellen
+        const slot = box.getAttribute('data-slot');
+        const klasse = box.querySelector('.klasse-label')?.innerText || "";
+        const isMine = box.classList.contains('is-mine');
+        
+        if (box.classList.contains('empty')) {
+            box.onclick = null;
+        } else {
+            // Stelle sicher, dass setBoxClick global verfügbar ist
+            setBoxClick(box, klasse, slot, isMine);
+        }
+    });
+    
+    console.log("Alle Boxen und UI-Elemente zurückgesetzt.");
+};
+
+window.highlightFreeSlots = function() {
+    const boxes = document.querySelectorAll('.box');
+
+   // 1. ABBRUCH-LOGIK (Reset)
+if (!window.moveMode) {
+    // A. Overlay sicher entfernen
+    const existingOverlay = document.getElementById('move-overlay');
+    if (existingOverlay) {
+        existingOverlay.remove();
+    }
+    
+    // B. CSS-Klasse global entfernen
+    document.body.classList.remove('move-mode-active');
+    
+    // C. Alle Boxen zurücksetzen
+    boxes.forEach(box => {
+        box.classList.remove('is-selectable', 'is-being-moved', 'move-mode-highlight');
+        
+        const slot = box.getAttribute('data-slot');
+        const klasse = box.querySelector('.klasse-label')?.innerText || "";
+        const isMine = box.classList.contains('is-mine');
+        
+        if (box.classList.contains('empty')) {
+            box.onclick = null;
+        } else {
+            setBoxClick(box, klasse, slot, isMine);
+        }
+    });
+    return;
+}
+
+    // 2. AKTIVIERUNGS-LOGIK
+    document.body.classList.add('move-mode-active');
+    createMoveOverlay(); 
+    const sourceSlot = window.moveMode.sourceSlot;
+
+    boxes.forEach(box => {
+        const isHeaderOrDivider = box.classList.contains('header-row') || 
+                                  box.classList.contains('divider-thin') || 
+                                  box.classList.contains('divider-thick');
+        
+        // Quelle markieren
+        if (box.getAttribute('data-slot') == sourceSlot) {
+            box.classList.add('is-being-moved', 'move-mode-highlight');
+            box.onclick = null; // Während Verschieben nicht erneut anklickbar
+        } 
+        // Ziel-Slots als wählbar markieren
+        else if (box.classList.contains('empty') && !isHeaderOrDivider) {
+            box.classList.add('is-selectable', 'move-mode-highlight');
+            box.onclick = function() {
+                handleMoveConfirm(box.getAttribute('data-slot'));
+            };
+        }
+        // Andere Boxen im Verschiebemodus komplett sperren
+        else {
+            box.classList.remove('move-mode-highlight');
+            box.onclick = null; 
+        }
+    });
+};
+    
+
+window.handleMoveConfirm = async function(targetSlot) {
+    if (!window.moveMode) return;
+
+    // 1. Sofortiges Flag setzen, um zu verhindern, dass loadPlan() den Modus neu startet
+    const tempMoveMode = window.moveMode;
+    window.moveMode = null; 
+
+    // 2. Overlay mit dem Status 'saving' starten
+    showLoading('saving');
+
+    // 3. Sofortige UI-Bereinigung
+    const panel = document.getElementById('move-panel-ui');
+    if (panel) panel.remove();
+    const overlay = document.getElementById('move-overlay');
+    if (overlay) overlay.remove();
+
+    // A. Ziel vorbereiten (alles leer machen)
+    const payloadClear = {
+        action: "saveBooking",
+        date: tempMoveMode.date,
+        slot: targetSlot,
+        klasse: "", halle: "", lehrer: "", material: "", kommentar: "", typ: "",
+        pw: userPw
+    };
+
+    // B. Quell-Slot leeren
+    const payloadOld = { 
+        ...payloadClear, 
+        slot: tempMoveMode.sourceSlot,
+        klasse: "verschoben" 
+    };
+
+    // C. Ziel-Slot belegen
+    const payloadNew = {
+        ...tempMoveMode, 
+        action: "saveBooking",
+        slot: targetSlot,  
+        pw: userPw
+    };
+
+    try {
+        await fetch(url, { method: "POST", body: JSON.stringify(payloadOld) });
+        await fetch(url, { method: "POST", body: JSON.stringify(payloadClear) });
+        await fetch(url, { method: "POST", body: JSON.stringify(payloadNew) });
+
+        // Finales Laden
+        await loadPlan(); 
+        
+    } catch (err) {
+        console.error("Fehler beim Verschieben:", err);
+        // Bei Fehler Modus wiederherstellen, falls nötig
+        window.moveMode = tempMoveMode;
+        await loadPlan();
+    } finally {
+        // UI Aufräumarbeiten nach dem Laden
+        document.getElementById('plan-container')?.classList.remove('move-mode-active');
+        document.querySelectorAll('.move-mode-active').forEach(el => el.classList.remove('move-mode-active'));
+        
+        // Letzte Instanz: Panel entfernen falls es durch loadPlan() wieder entstand
+        document.getElementById('move-panel-ui')?.remove();
+        document.getElementById('move-overlay')?.remove();
+        
+        hideLoading();
+    }
+};
+    
+
+
+
+/* ============================================================
+   14. Zusatz-Menu
+   ============================================================ */
+
+
+    window.toggleExtraMenu = function() {
+    const menu = document.getElementById('extra-menu');
+    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+};
+
+// Schließt das Menü, wenn man woanders hinklickt
+window.addEventListener('click', function(e) {
+    const menu = document.getElementById('extra-menu');
+    const trigger = document.getElementById('menu-trigger');
+    if (!menu.contains(e.target) && e.target !== trigger) {
+        menu.style.display = 'none';
+    }
+});
+    
+
+window.openExtraLessonModal = function(event) {
+    document.getElementById('extra-menu').style.display = 'none';
+    
+    const modal = document.getElementById('modal-overlay');
+    const modalContent = modal.querySelector('.modal-content');
+    const btn = document.getElementById('menu-trigger');
+    const rect = btn.getBoundingClientRect();
+    
+    // Positionierung: Direkt unter dem Button
+    modalContent.style.marginTop = (rect.bottom + 10) + 'px';
+    modalContent.style.marginRight = '20px';
+    
+    modal.style.display = 'flex';
+};
+
+    
+// Schließt das Modale Fenster
+function closeModal() {
+    document.getElementById('modal-overlay').style.display = 'none';
+}
+
+
+
+window.startAddMode = function() {
+    document.getElementById('extra-menu').style.display = 'none';
+    window.addMode = { date: document.getElementById('datePicker')?.value || "" };
+    document.body.classList.add('move-mode-active');
+    
+    // Panel oben anzeigen
+    const panel = document.createElement('div');
+    panel.id = 'move-panel-ui'; 
+    panel.className = 'move-panel';
+    panel.innerHTML = `
+        <span>Wähle ein freies Feld...</span>
+        <button onclick="cancelAddMode()" class="btn-cancel">Abbrechen</button>
+    `;
+    document.body.appendChild(panel);
+
+    // 1. Klasse für CSS-Highlighting hinzufügen
+    document.getElementById('plan-container').classList.add('move-mode-active');
+
+    // 2. Event-Delegation am Container: Überlebt jeden Sync/Refresh
+    const container = document.getElementById('plan-container');
+    container.onclick = function(e) {
+        if (!window.addMode) return;
+        
+        const box = e.target.closest('.box.empty');
+        if (box && !box.classList.contains('header-row')) {
+            showInlineInput(box);
+        }
+    };
+
+    // 3. Optisches Highlight für leere Boxen (wird ggf. bei jedem Sync neu gerufen)
+    // Damit die User sehen, was klickbar ist
+    const applyHighlights = () => {
+        document.querySelectorAll('.box.empty:not(.header-row)').forEach(box => {
+            box.classList.add('is-selectable', 'move-mode-highlight');
+        });
+    };
+    applyHighlights();
+};
+
+function showInlineInput(box) {
+    // Falls schon ein Input existiert, entfernen
+    document.getElementById('inline-input-panel')?.remove();
+
+    const rect = box.getBoundingClientRect();
+    const inputPanel = document.createElement('div');
+    inputPanel.id = 'inline-input-panel';
+    inputPanel.style.position = 'fixed';
+    inputPanel.style.top = (rect.top + window.scrollY + 50) + 'px';
+    inputPanel.style.left = (rect.left + window.scrollX) + 'px';
+    inputPanel.style.zIndex = '9999999';
+    inputPanel.style.background = '#2c2c2c';
+    inputPanel.style.padding = '10px';
+    inputPanel.style.borderRadius = '8px';
+    inputPanel.style.border = '1px solid #e67e22';
+
+    inputPanel.innerHTML = `
+        <input type="text" id="inline-klasse-name" placeholder="Klassenname..." autofocus>
+        <button onclick="confirmInlineAdd('${box.getAttribute('data-slot')}')">OK</button>
+    `;
+    document.body.appendChild(inputPanel);
+}
+
+window.confirmInlineAdd = async function(targetSlot) {
+    const name = document.getElementById('inline-klasse-name').value;
+    if (!name) return alert("Bitte Namen eingeben!");
+
+    document.getElementById('inline-input-panel').remove();
+    showLoading('saving');
+
+    const payload = {
+        action: "saveBooking",
+        date: window.addMode.date,
+        slot: targetSlot,
+        klasse: name,
+        halle: "", lehrer: "", material: "", kommentar: "", typ: "Zusatz",
+        pw: userPw
+    };
+
+    try {
+        await fetch(url, { method: "POST", body: JSON.stringify(payload) });
+        cancelAddMode(); // Alles aufräumen und neu laden
+    } catch (err) {
+        console.error("Fehler:", err);
+    } finally {
+        hideLoading();
+    }
+};
+
+window.cancelAddMode = function() {
+    window.addMode = null;
+    document.getElementById('move-panel-ui')?.remove();
+    document.getElementById('inline-input-panel')?.remove();
+    document.body.classList.remove('move-mode-active');
+    loadPlan();
+};
+    
+
+    
+</script>
+
+
+
+</html>
