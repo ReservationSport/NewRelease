@@ -4644,7 +4644,7 @@ window.startAddMode = function() {
     panel.id = 'move-panel-ui'; 
     panel.className = 'move-panel';
     panel.innerHTML = `
-        <span>Wähle ein freies Feld...</span>
+        <span>Wähle ein freies Feld, um eine Lektion hinzuzufügen...</span>
         <button onclick="cancelAddMode()" class="btn-cancel">Abbrechen</button>
     `;
     document.body.appendChild(panel);
@@ -4722,12 +4722,42 @@ window.confirmInlineAdd = async function(targetSlot) {
     }
 };
 
+
+    
 window.cancelAddMode = function() {
+    console.log("Add-Mode wird sauber beendet...");
+
+    // 1. Modus-Flag zurücksetzen
     window.addMode = null;
-    document.getElementById('move-panel-ui')?.remove();
-    document.getElementById('inline-input-panel')?.remove();
+    window.pendingTargetSlot = null;
+    
+    // 2. UI-Panels entfernen
+    const panel = document.getElementById('move-panel-ui');
+    if (panel) panel.remove();
+    
+    const inlineInput = document.getElementById('inline-input-panel');
+    if (inlineInput) inlineInput.remove();
+    
+    // 3. WICHTIG: Overlay entfernen (falls du eines hast)
+    // Wenn dein "blasser Plan" ein Overlay-Element ist, muss es hier weg
+    const overlay = document.getElementById('move-overlay'); // Falls du eins nutzt
+    if (overlay) overlay.remove();
+    
+    // 4. CSS-Klassen entfernen (das macht den Plan wieder "hell")
     document.body.classList.remove('move-mode-active');
-    loadPlan();
+    const container = document.getElementById('plan-container');
+    if (container) {
+        container.classList.remove('move-mode-active');
+        container.onclick = null; // Den Event-Delegation-Handler entfernen!
+    }
+    
+    // 5. Alle Boxen von Highlight-Klassen befreien
+    document.querySelectorAll('.box').forEach(box => {
+        box.classList.remove('is-selectable', 'move-mode-highlight');
+    });
+
+    // 6. Optional: Sync erzwingen, um alles in den Normalzustand zu bringen
+    syncPlan(); 
 };
     
 
