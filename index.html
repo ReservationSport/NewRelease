@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOsdfgdgjgfhk</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1445,17 +1445,16 @@ body {
 
     
 .extra-menu-panel {
-    position: absolute;
-    top: 60px;
-    right: 20px;
-    background: #2c2c2c;
+    position: fixed; /* Jetzt bleibt es beim Scrollen am Bildschirm kleben */
+    background: #1a1a1a; /* Dein Stil: Dunkel */
+    border: 2px solid #e67e22; /* Dein Stil: Orange */
     color: white;
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    z-index: 999999; /* Hier hoch genug ansetzen! */
+    z-index: 999999; 
     padding: 10px 0;
     min-width: 180px;
-    transform-origin: top right;
+    /* Animation beibehalten */
     animation: menu-unfold 0.2s ease-out forwards;
 }
 
@@ -1469,28 +1468,28 @@ body {
     background: #e67e22;
 }
 
-/* Modal Struktur für "Herauswachsen"-Effekt */
+/* Das Overlay bleibt ein fixer Layer über allem */
 .modal-overlay {
-    display: none; /* Wird per JS auf 'flex' gesetzt */
+    display: none;
     position: fixed;
     top: 0; left: 0; 
     width: 100vw; height: 100vh;
     background: rgba(0,0,0,0.7);
     z-index: 999999;
-    /* Flexbox auf 'flex-start' setzen, um Positionierung via JS zu erlauben */
-    justify-content: flex-end; 
-    align-items: flex-start;
 }
 
+/* Der Content wird nun relativ zum Viewport absolut positioniert */
 .modal-content {
+    position: fixed; /* Fixiert im Viewport, ignoriert Scroll-Position */
     background: #1e1e1e;
     padding: 25px;
     border-radius: 12px;
     width: 300px;
     color: white;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    z-index: 1000000;
     
-    /* Animation für das Ausklappen */
+    /* Animation beibehalten */
     transform-origin: top right;
     animation: unfold 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
 }
@@ -1531,7 +1530,11 @@ body {
 }
 
 
-/* Das Panel selbst im Look deiner Notizen */
+/* ============================================================
+   15. Lektion hinzufügen
+   ============================================================ */
+    
+
 .inline-input-panel {
     position: fixed;
     top: 50%;
@@ -4661,12 +4664,19 @@ window.handleMoveConfirm = async function(targetSlot) {
 
 
 /* ============================================================
-   14. Zusatz-Menu
+   14. Zusatz-Menu (ROBUST & VIEWPORT-STABIL)
    ============================================================ */
 
-
-    window.toggleExtraMenu = function() {
+window.toggleExtraMenu = function() {
     const menu = document.getElementById('extra-menu');
+    const trigger = document.getElementById('menu-trigger');
+    const rect = trigger.getBoundingClientRect();
+    
+    // Menü fixiert positionieren
+    menu.style.position = 'fixed';
+    menu.style.top = (rect.bottom + 10) + 'px';
+    menu.style.right = '20px';
+    
     menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
 };
 
@@ -4674,34 +4684,39 @@ window.handleMoveConfirm = async function(targetSlot) {
 window.addEventListener('click', function(e) {
     const menu = document.getElementById('extra-menu');
     const trigger = document.getElementById('menu-trigger');
-    if (!menu.contains(e.target) && e.target !== trigger) {
+    if (menu && !menu.contains(e.target) && e.target !== trigger) {
         menu.style.display = 'none';
     }
 });
-    
 
 window.openExtraLessonModal = function(event) {
-    document.getElementById('extra-menu').style.display = 'none';
+    const menu = document.getElementById('extra-menu');
+    if (menu) menu.style.display = 'none';
     
     const modal = document.getElementById('modal-overlay');
     const modalContent = modal.querySelector('.modal-content');
     const btn = document.getElementById('menu-trigger');
     const rect = btn.getBoundingClientRect();
     
-    // Positionierung: Direkt unter dem Button
-    modalContent.style.marginTop = (rect.bottom + 10) + 'px';
-    modalContent.style.marginRight = '20px';
+    // Positionierung: Direkt unter dem Button im Viewport
+    modalContent.style.marginTop = '0'; // Reset, da wir mit top arbeiten
+    modalContent.style.top = (rect.bottom + 10) + 'px';
+    modalContent.style.right = '20px';
+    modalContent.style.left = 'auto'; 
     
     modal.style.display = 'flex';
 };
 
-    
 // Schließt das Modale Fenster
-function closeModal() {
+window.closeModal = function() {
     document.getElementById('modal-overlay').style.display = 'none';
-}
+};
 
 
+/* ============================================================
+   15. Lektion hinzufügen
+   ============================================================ */
+    
 
 window.startAddMode = function() {
     document.getElementById('extra-menu').style.display = 'none';
