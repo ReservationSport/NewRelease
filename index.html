@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOsdsdfsdf</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1531,70 +1531,69 @@ body {
 }
 
 
-/* Eindeutige Benennung .inline-input- | Z-INDEX AUF 9999 ERHÖHT */
+/* Das Panel selbst im Look deiner Notizen */
 .inline-input-panel {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: #2c3e50;
+    background: #1a1a1a; 
+    border: 2px solid #e67e22;
     padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-    z-index: 9999; /* Wichtig: Liegt über allen Boxen/Highlights */
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.8);
+    z-index: 9999;
     width: 320px;
-    border: 1px solid #3e5871;
-    pointer-events: auto; /* Stellt sicher, dass Klicks hier landen */
+    color: #e67e22; /* Textfarbe in deiner Akzentfarbe */
+    font-family: sans-serif;
 }
 
+/* Das Eingabefeld analog zum Notiz-Feld */
 #inline-klasse-name {
     width: 100%;
     padding: 12px;
     margin-bottom: 20px;
-    border: 1px solid #1a252f;
-    border-radius: 6px;
-    background: #1a252f;
-    color: #ffffff;
-    font-size: 1rem;
+    background: #333;
+    border: 2px solid #555;
+    color: white;
     box-sizing: border-box;
-    outline: none;
+    border-radius: 8px;
+    font-size: 1rem;
 }
 
 #inline-klasse-name:focus {
-    border-color: #3498db;
+    outline: 2px solid #e67e22;
+    border-color: #e67e22 !important;
 }
 
+/* Die Buttons im Look deiner .notiz-save-btn */
 .inline-input-actions {
     display: flex;
-    justify-content: flex-end; /* Buttons rechtsbündig für saubere Optik */
-    gap: 12px;
+    gap: 10px;
 }
 
-.inline-input-btn-save {
-    background: #27ae60;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
+.inline-input-btn-save, .inline-input-btn-cancel {
+    flex: 1;
+    background: #1a1a1a;
+    border: 2px solid #e67e22;
+    color: #e67e22;
+    padding: 12px;
+    border-radius: 8px;
     cursor: pointer;
-    font-weight: 600;
-    transition: background 0.2s;
+    font-weight: bold;
+    transition: all 0.2s ease;
 }
 
-.inline-input-btn-save:hover { background: #219150; }
+.inline-input-btn-save:hover, .inline-input-btn-cancel:hover {
+    background: #222;
+    transform: scale(1.02);
+}
 
+/* Wenn du den Cancel-Button etwas dezenter willst */
 .inline-input-btn-cancel {
-    background: #7f8c8d; /* Neutraler/dezenter als das schreiende Rot */
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background 0.2s;
+    border-color: #555;
+    color: #999;
 }
-
-.inline-input-btn-cancel:hover { background: #626d6e; }
 
 
 
@@ -4753,10 +4752,11 @@ window.showInlineInput = function(box) {
     panel.id = 'inline-input-panel';
     panel.className = 'inline-input-panel';
     
-    // 3. HIER GEHÖRT DER BLOCK HIN:
+    // 3. Inhalt im passenden Style
     panel.innerHTML = `
         <div class="inline-content">
-            <input type="text" id="inline-klasse-name" placeholder="Klassenname..." autofocus>
+            <div style="margin-bottom: 15px; font-weight: bold; text-align: center;">Klasse hinzufügen</div>
+            <input type="text" id="inline-klasse-name" placeholder="Name eingeben..." autofocus>
             <div class="inline-input-actions">
                 <button onclick="cancelAddMode()" class="inline-input-btn-cancel">Abbrechen</button>
                 <button onclick="confirmInlineAdd(${box.dataset.slot})" class="inline-input-btn-save">OK</button>
@@ -4767,10 +4767,16 @@ window.showInlineInput = function(box) {
     // 4. Panel dem Body hinzufügen
     document.body.appendChild(panel);
 
-    // Optional: Enter-Taste zum Bestätigen aktivieren
+    // 5. Enter-Taste zum Bestätigen aktivieren
     panel.querySelector('#inline-klasse-name').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') confirmInlineAdd(box.dataset.slot);
     });
+
+    // 6. Sicherstellen, dass das Feld sofort den Fokus erhält
+    setTimeout(() => {
+        const input = document.getElementById('inline-klasse-name');
+        if (input) input.focus();
+    }, 50);
 };
 
     
