@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO11111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2257,7 +2257,7 @@ window.setBoxClick = function(box, klasse, slot, canEdit) {
 };
 
 /* ============================================================
-   SYNC PLAN - ROBUSTE VERSION (MIT ADD-MODE UNTERSTÜTZUNG)
+   SYNC PLAN - ROBUSTE VERSION (MIT ADD-MODE & EIGEN-CHECK)
    ============================================================ */
 window.syncPlan = async function() {
     if (isSaving) return; 
@@ -2286,6 +2286,7 @@ window.syncPlan = async function() {
             if (box) {
                 const data = json.plan[slot] || {};
                 const klasse = data.klasse || "";
+                const verfasser = data.verfasser || ""; // Dein Kürzel aus Spalte 11
                 const isLeer = (klasse.trim() === "" || klasse.trim().toLowerCase() === "verschoben");
 
                 if (isLeer) {
@@ -2307,7 +2308,10 @@ window.syncPlan = async function() {
                         `;
                     }
 
-                    const canEdit = userClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
+                    // --- ERWEITERTER EDIT-CHECK ---
+                    const isMyClass = userClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
+                    const isMyBooking = (verfasser.trim().toLowerCase() === userKuerzel.toLowerCase());
+                    const canEdit = isMyClass || isMyBooking; // Erlaubt, wenn Klasse in Liste ODER Kürzel passt
                     
                     box.classList.remove('is-mine', 'not-mine');
                     box.classList.add(canEdit ? 'is-mine' : 'not-mine');
@@ -2315,12 +2319,11 @@ window.syncPlan = async function() {
 
                     setBoxClick(box, klasse, slot, canEdit);
 
+                    // --- DATENBEFÜLLUNG ---
                     const halle = data.halle || "";
                     const material = data.material || "";   
                     const kommentar = data.kommentar || ""; 
                     const typ = data.typ || ""; 
-
-                    const verfasser = data.verfasser || "";
                     const lehrerDaten = data.lehrer || "";
                     const lehrer = (verfasser !== "") ? verfasser : (lehrerDaten !== "" ? lehrerDaten : (allClassTeachers[klasse] || ""));
 
@@ -2340,6 +2343,7 @@ window.syncPlan = async function() {
 
                     markBoxWithMaterialIcon(box, material, kommentar);
 
+                    // Icons
                     let lockIcon = box.querySelector('.lock-icon-container');
                     if (!lockIcon) {
                         lockIcon = document.createElement('div');
@@ -2368,12 +2372,9 @@ window.syncPlan = async function() {
         });
 
         // NACH DEM SYNC: Modi & Zustände wiederherstellen
-        // 1. Verschiebe-Modus
         if (window.moveMode && typeof highlightFreeSlots === 'function') {
             highlightFreeSlots();
-        } 
-        // 2. Add-Lektion-Modus (CSS-Klassen nach DOM-Refresh wiederherstellen)
-        else if (window.addMode) {
+        } else if (window.addMode) {
             document.querySelectorAll('.box.empty:not(.header-row)').forEach(box => {
                 box.classList.add('is-selectable', 'move-mode-highlight');
             });
@@ -2383,7 +2384,6 @@ window.syncPlan = async function() {
         console.error("Sync fehlgeschlagen:", e);
     }
 };
-
 
 
 
