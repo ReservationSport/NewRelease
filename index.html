@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO11111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1711,17 +1711,7 @@ body {
     <div id="plan-container">
         <div class="move-overlay"></div> </div>
 
-
-panel.innerHTML = `
-    <div class="inline-content">
-        <input type="text" id="inline-klasse-name" placeholder="Klassenname..." autofocus>
-        <div class="inline-input-actions">
-            <button onclick="cancelAddMode()" class="inline-input-btn-cancel">Abbrechen</button>
-            <button onclick="confirmInlineAdd(${box.dataset.slot})" class="inline-input-btn-save">OK</button>
-        </div>
-    </div>
-`;
-    
+ 
 
     
 </body>
@@ -4738,25 +4728,33 @@ window.startAddMode = function() {
 };
 
 window.showInlineInput = function(box) {
-    // Entferne altes Panel, falls vorhanden
+    // 1. Altes Panel entfernen, falls vorhanden
     const existing = document.getElementById('inline-input-panel');
     if (existing) existing.remove();
 
+    // 2. Panel-Element erstellen
     const panel = document.createElement('div');
     panel.id = 'inline-input-panel';
-    panel.className = 'inline-input-panel'; // CSS-Klasse für Styling
+    panel.className = 'inline-input-panel';
     
-    // Wir nutzen hier Klassen, die du vielleicht schon hast (z.B. für das move-panel)
+    // 3. HIER GEHÖRT DER BLOCK HIN:
     panel.innerHTML = `
         <div class="inline-content">
             <input type="text" id="inline-klasse-name" placeholder="Klassenname..." autofocus>
-            <div class="inline-actions">
-                <button onclick="cancelAddMode()" class="btn-cancel">Abbrechen</button>
-                <button onclick="confirmInlineAdd(${box.dataset.slot})" class="btn-save">OK</button>
+            <div class="inline-input-actions">
+                <button onclick="cancelAddMode()" class="inline-input-btn-cancel">Abbrechen</button>
+                <button onclick="confirmInlineAdd(${box.dataset.slot})" class="inline-input-btn-save">OK</button>
             </div>
         </div>
     `;
+
+    // 4. Panel dem Body hinzufügen
     document.body.appendChild(panel);
+
+    // Optional: Enter-Taste zum Bestätigen aktivieren
+    panel.querySelector('#inline-klasse-name').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') confirmInlineAdd(box.dataset.slot);
+    });
 };
 
     
