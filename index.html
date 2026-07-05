@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO11111dfsdf</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1531,7 +1531,7 @@ body {
 }
 
 
-/* Eindeutige Benennung durch Präfix .inline-input- */
+/* Eindeutige Benennung .inline-input- | Z-INDEX AUF 9999 ERHÖHT */
 .inline-input-panel {
     position: fixed;
     top: 50%;
@@ -1539,46 +1539,62 @@ body {
     transform: translate(-50%, -50%);
     background: #2c3e50;
     padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-    z-index: 1000;
-    width: 300px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    z-index: 9999; /* Wichtig: Liegt über allen Boxen/Highlights */
+    width: 320px;
+    border: 1px solid #3e5871;
+    pointer-events: auto; /* Stellt sicher, dass Klicks hier landen */
 }
 
 #inline-klasse-name {
     width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #34495e;
-    border-radius: 4px;
+    padding: 12px;
+    margin-bottom: 20px;
+    border: 1px solid #1a252f;
+    border-radius: 6px;
     background: #1a252f;
-    color: white;
+    color: #ffffff;
+    font-size: 1rem;
     box-sizing: border-box;
+    outline: none;
+}
+
+#inline-klasse-name:focus {
+    border-color: #3498db;
 }
 
 .inline-input-actions {
     display: flex;
-    justify-content: space-between;
-    gap: 10px;
+    justify-content: flex-end; /* Buttons rechtsbündig für saubere Optik */
+    gap: 12px;
 }
 
 .inline-input-btn-save {
     background: #27ae60;
     color: white;
     border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
+    padding: 10px 20px;
+    border-radius: 6px;
     cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s;
 }
 
+.inline-input-btn-save:hover { background: #219150; }
+
 .inline-input-btn-cancel {
-    background: #c0392b;
+    background: #7f8c8d; /* Neutraler/dezenter als das schreiende Rot */
     color: white;
     border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
+    padding: 10px 20px;
+    border-radius: 6px;
     cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s;
 }
+
+.inline-input-btn-cancel:hover { background: #626d6e; }
 
 
 
