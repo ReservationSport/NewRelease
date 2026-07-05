@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOsdfgdgjgfhk</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1440,22 +1440,23 @@ body {
 
 
 /* ============================================================
-   14. Zusatz-Menu
+   14. ZUSATZ-MENU & MODAL
    ============================================================ */
 
-    
+/* Das Panel (Wird via JS positioniert) */
 .extra-menu-panel {
-    position: fixed; /* Jetzt bleibt es beim Scrollen am Bildschirm kleben */
-    background: #1a1a1a; /* Dein Stil: Dunkel */
-    border: 2px solid #e67e22; /* Dein Stil: Orange */
+    position: fixed;
+    background: #1a1a1a;
+    border: 2px solid #e67e22;
     color: white;
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    z-index: 999999; 
+    z-index: 999999;
     padding: 10px 0;
     min-width: 180px;
-    /* Animation beibehalten */
+    transform-origin: top right;
     animation: menu-unfold 0.2s ease-out forwards;
+    display: none;
 }
 
 .menu-item {
@@ -1468,30 +1469,56 @@ body {
     background: #e67e22;
 }
 
-/* Das Overlay bleibt ein fixer Layer über allem */
+/* Modal Overlay */
 .modal-overlay {
     display: none;
     position: fixed;
-    top: 0; left: 0; 
-    width: 100vw; height: 100vh;
+    top: 0; 
+    left: 0; 
+    width: 100vw; 
+    height: 100vh;
     background: rgba(0,0,0,0.7);
     z-index: 999999;
+    align-items: flex-start;
+    justify-content: flex-end;
 }
 
-/* Der Content wird nun relativ zum Viewport absolut positioniert */
+/* Modal Content */
 .modal-content {
-    position: fixed; /* Fixiert im Viewport, ignoriert Scroll-Position */
+    position: fixed;
     background: #1e1e1e;
+    border: 2px solid #e67e22;
     padding: 25px;
     border-radius: 12px;
     width: 300px;
     color: white;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     z-index: 1000000;
-    
-    /* Animation beibehalten */
     transform-origin: top right;
     animation: unfold 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+}
+
+.modal-content input {
+    width: 100%; 
+    padding: 10px; 
+    margin: 15px 0;
+    border-radius: 5px; 
+    border: 1px solid #444;
+    background: #333; 
+    color: white;
+    box-sizing: border-box;
+}
+
+.modal-actions {
+    display: flex; 
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+/* Animationen */
+@keyframes menu-unfold {
+    0% { transform: scale(0.9); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 @keyframes unfold {
@@ -1499,34 +1526,16 @@ body {
     100% { transform: scale(1); opacity: 1; }
 }
 
-.modal-content input {
-    width: 100%; padding: 10px; margin: 15px 0;
-    border-radius: 5px; border: 1px solid #444;
-    background: #333; color: white;
-    box-sizing: border-box; /* Wichtig für korrekte Breite */
-}
-
-.modal-actions {
-    display: flex; justify-content: space-between;
-    margin-top: 10px;
-}
-
-
-@keyframes menu-unfold {
-    0% { transform: scale(0.9); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-}
-    
-#menu-trigger .material-symbols-outlined {
-    pointer-events: none; /* Das Icon fängt den Klick NICHT ab */
-    display: block;       /* Sorgt für sauberes Layout */
-}
-
+/* Trigger Button */
 #menu-trigger {
-    cursor: pointer;      /* Zeigt an, dass es klickbar ist */
-    /* Falls dein Button ein Overlay hat oder z-index Probleme */
+    cursor: pointer;
     position: relative;
-    z-index: 1001;        /* Muss über dem Plan liegen */
+    z-index: 1001;
+}
+
+#menu-trigger .material-symbols-outlined {
+    pointer-events: none;
+    display: block;
 }
 
 
@@ -4670,14 +4679,24 @@ window.handleMoveConfirm = async function(targetSlot) {
 window.toggleExtraMenu = function() {
     const menu = document.getElementById('extra-menu');
     const trigger = document.getElementById('menu-trigger');
-    const rect = trigger.getBoundingClientRect();
+    const rect = trigger.getBoundingClientRect(); // Position des Buttons
     
-    // Menü fixiert positionieren
-    menu.style.position = 'fixed';
-    menu.style.top = (rect.bottom + 10) + 'px';
-    menu.style.right = '20px';
+    // Button-Breite für Rechtsbündigkeit berechnen
+    // Das Menü soll rechtsbündig mit dem Button abschließen
+    const menuWidth = 180; // Dein min-width Wert
     
-    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+    if (menu.style.display === 'block') {
+        menu.style.display = 'none';
+    } else {
+        // Positionierung: Direkt unter der Unterkante des Buttons
+        menu.style.top = (rect.bottom + 5) + 'px'; // +5px Abstand für Optik
+        
+        // Rechtsbündig am Button: 
+        // Wir nehmen den Abstand vom rechten Fensterrand (window.innerWidth - rect.right)
+        menu.style.right = (window.innerWidth - rect.right) + 'px';
+        
+        menu.style.display = 'block';
+    }
 };
 
 // Schließt das Menü, wenn man woanders hinklickt
