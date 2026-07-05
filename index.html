@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO11111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2104,7 +2104,7 @@ window.hideLoading = function() {
     
 
 /* ============================================================
-   LOAD PLAN - VOLLSTÄNDIGE & ROBUSTE VERSION
+   LOAD PLAN - VOLLSTÄNDIGE & ROBUSTE VERSION (MIT EIGEN-CHECK)
    ============================================================ */
 window.loadPlan = async function() {
     const dp = document.getElementById('datePicker');
@@ -2167,15 +2167,16 @@ window.loadPlan = async function() {
                 const isAusfall = (halle === "Ausfall");
                 const isKlasseLeer = klasse.trim() === "";
                 
-                // --- NEUE LOGIK: VERFASSER-PRIORITÄT ---
-                // 1. Verfasser (Spalte K) aus Datenbank, falls vorhanden
-                // 2. data.lehrer aus Datenbank
-                // 3. Fallback auf Master-Liste (allClassTeachers)
+                // --- KÜRZEL/VERFASSER LOGIK ---
                 const verfasser = slotData.verfasser || "";
                 const lehrerDaten = slotData.lehrer || "";
                 const lehrer = (verfasser !== "") ? verfasser : (lehrerDaten !== "" ? lehrerDaten : (allClassTeachers[klasse] || ""));
                 
-                const canEdit = !isKlasseLeer && myClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
+                // --- ERWEITERTER EDIT-CHECK ---
+                const isMyClass = !isKlasseLeer && myClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
+                const isMyBooking = (verfasser.trim().toLowerCase() === userKuerzel.toLowerCase());
+                const canEdit = isMyClass || isMyBooking;
+
                 const bgFarbe = (window.hallenConfig[halle] && !isAusfall) ? window.hallenConfig[halle].color : '';
                 
                 const classList = [
@@ -2200,7 +2201,7 @@ window.loadPlan = async function() {
         });
         container.innerHTML = html;
 
-        // Icons nachladen (Rest wie gehabt...)
+        // Icons nachladen
         Object.keys(plan).forEach(slot => {
             const slotData = plan[slot] || {};
             if (slotData.klasse && slotData.klasse.trim().toLowerCase() === "verschoben") return;
