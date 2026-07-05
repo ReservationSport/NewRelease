@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO11111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -4674,29 +4674,29 @@ window.startAddMode = function() {
     applyHighlights();
 };
 
-function showInlineInput(box) {
-    // Falls schon ein Input existiert, entfernen
-    document.getElementById('inline-input-panel')?.remove();
+window.showInlineInput = function(box) {
+    // Entferne altes Panel, falls vorhanden
+    const existing = document.getElementById('inline-input-panel');
+    if (existing) existing.remove();
 
-    const rect = box.getBoundingClientRect();
-    const inputPanel = document.createElement('div');
-    inputPanel.id = 'inline-input-panel';
-    inputPanel.style.position = 'fixed';
-    inputPanel.style.top = (rect.top + window.scrollY + 50) + 'px';
-    inputPanel.style.left = (rect.left + window.scrollX) + 'px';
-    inputPanel.style.zIndex = '9999999';
-    inputPanel.style.background = '#2c2c2c';
-    inputPanel.style.padding = '10px';
-    inputPanel.style.borderRadius = '8px';
-    inputPanel.style.border = '1px solid #e67e22';
-
-    inputPanel.innerHTML = `
-        <input type="text" id="inline-klasse-name" placeholder="Klassenname..." autofocus>
-        <button onclick="confirmInlineAdd('${box.getAttribute('data-slot')}')">OK</button>
+    const panel = document.createElement('div');
+    panel.id = 'inline-input-panel';
+    panel.className = 'inline-input-panel'; // CSS-Klasse für Styling
+    
+    // Wir nutzen hier Klassen, die du vielleicht schon hast (z.B. für das move-panel)
+    panel.innerHTML = `
+        <div class="inline-content">
+            <input type="text" id="inline-klasse-name" placeholder="Klassenname..." autofocus>
+            <div class="inline-actions">
+                <button onclick="cancelAddMode()" class="btn-cancel">Abbrechen</button>
+                <button onclick="confirmInlineAdd(${box.dataset.slot})" class="btn-save">OK</button>
+            </div>
+        </div>
     `;
-    document.body.appendChild(inputPanel);
-}
+    document.body.appendChild(panel);
+};
 
+    
 window.confirmInlineAdd = async function(targetSlot) {
     const name = document.getElementById('inline-klasse-name').value;
     if (!name) return alert("Bitte Namen eingeben!");
