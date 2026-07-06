@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOyxcyxcsycy</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -5201,23 +5201,23 @@ window.renderMeldungen = function() {
     
 
 window.markAsResolved = function(id) {
-    // Optional: Visuelles Feedback geben (z.B. Button ausgrauen/Lade-Icon)
-    
-    // API-Aufruf zum Markieren als erledigt
-    fetch(`${url}?action=markResolved&id=${encodeURIComponent(id)}&pw=${encodeURIComponent(userPw)}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                // Liste neu laden, um den erledigten Eintrag zu entfernen
-                renderMeldungen();
-            } else {
-                alert("Fehler beim Markieren: " + (data.message || "Unbekannter Fehler"));
-            }
+    fetch(url, {
+        method: 'POST',
+        body: JSON.stringify({
+            action: 'markResolved',
+            id: id,
+            pw: userPw
         })
-        .catch(e => {
-            console.error("Fehler:", e);
-            alert("Verbindungsfehler. Bitte erneut versuchen.");
-        });
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            renderMeldungen();
+        } else {
+            alert("Fehler: " + data.msg);
+        }
+    })
+    .catch(e => console.error("Error:", e));
 };
 
 
