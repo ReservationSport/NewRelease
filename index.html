@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO111111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1607,7 +1607,45 @@ body {
     color: #999;
 }
 
+/* ============================================================
+   16. Meldungen
+   ============================================================ */
 
+
+.meldungen-list {
+    margin: 20px 0;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.meldung-item {
+    background: #2c2c2c;
+    border-left: 4px solid #e67e22;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    color: white;
+}
+
+.meldung-meta {
+    font-size: 0.75em;
+    color: #888;
+    margin-top: 5px;
+    display: block;
+}
+
+.btn-erledigt {
+    background: #27ae60;
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+
+    
 
     
 </style>
@@ -1738,7 +1776,31 @@ body {
     <div id="plan-container">
         <div class="move-overlay"></div> </div>
 
- 
+<!-- Meldungen-Overlay -->
+<div id="meldungen-overlay" class="modal-overlay">
+    <div class="modal-content" style="width: 500px;">
+        <h2>Defekt-Meldungen</h2>
+        <div id="meldungen-container" class="meldungen-list">
+            <!-- Hier werden die Meldungen dynamisch eingefügt -->
+        </div>
+        <div class="modal-actions">
+            <button onclick="openNewMeldungModal()">+ Neue Meldung</button>
+            <button onclick="closeModal('meldungen-overlay')">Schließen</button>
+        </div>
+    </div>
+</div>
+
+<!-- Neue Meldung Modal -->
+<div id="new-meldung-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Defekt melden</h3>
+        <input type="text" id="meldung-text" placeholder="Was ist defekt?">
+        <div class="modal-actions">
+            <button onclick="saveMeldung()">An Team senden</button>
+            <button onclick="closeModal('new-meldung-modal')">Abbrechen</button>
+        </div>
+    </div>
+</div>
 
     
 </body>
@@ -2851,8 +2913,11 @@ window.showNews = function() {
             displayText = `<b>${news.verfasser || ''}</b> hat die Klasse <b>${news.klasse || ''}</b> abgeklebt!`;
         } else {
             displayText = news.text || '';
+        } else if (newsTextLower.includes("defekt")) {
+            displayText = `⚠️ <b>${news.verfasser || ''}</b> hat einen <b>Defekt</b> gemeldet: <i>${news.text || ''}</i>`;
         }
 
+        
         // --- ICON LOGIK ---
         const statusHtml = istGelesen 
             ? `<span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 5px; color: #27ae60;">mark_email_read</span> Gelesen` 
@@ -2983,6 +3048,8 @@ window.triggerNewsWrapper = async function(aktion, slot, klasse, kuerzel) {
             newsTyp = "badi";
         } else if (aktionLower === "beendet" || aktionLower === "abgeklebt") {
             newsTyp = "beendet";
+       } else if (aktionLower === "defekt") {
+            newsTyp = "defekt";
         }
 
         // Wir übergeben das Kürzel als 4. Argument an die Funktion triggerNews
@@ -4901,6 +4968,66 @@ window.cancelAddMode = function() {
 };
     
 
+/* ============================================================
+   16. Defekt-Meldungen
+   ============================================================ */
+
+window.openMeldungen = function() {
+    document.getElementById('meldungen-overlay').style.display = 'flex';
+    renderMeldungen();
+};
+
+window.saveMeldung = function() {
+    const text = document.getElementById('meldung-text').value;
+    if (!text.trim()) return;
+
+    // 1. Speichern (hier im localStorage, idealerweise über triggerNews an Server)
+    const neueMeldung = {
+        id: Date.now(),
+        text: text,
+        verfasser: typeof userKuerzel !== 'undefined' ? userKuerzel : "Unbekannt",
+        date: new Date().toLocaleDateString()
+    };
+    
+    let meldungen = JSON.parse(localStorage.getItem('sportMeldungen') || '[]');
+    meldungen.push(neueMeldung);
+    localStorage.setItem('sportMeldungen', JSON.stringify(meldungen));
+
+    // 2. News-System informieren (Benachrichtigung an alle LPs)
+    // Wir nutzen dein bestehendes System: 'defekt' wird vom Wrapper abgefangen
+    if (typeof triggerNewsWrapper === 'function') {
+        triggerNewsWrapper('defekt', 0, 'ALL', neueMeldung.verfasser);
+    }
+
+    document.getElementById('meldung-text').value = '';
+    closeModal('new-meldung-modal');
+    renderMeldungen();
+};
+
+window.renderMeldungen = function() {
+    const container = document.getElementById('meldungen-container');
+    const meldungen = JSON.parse(localStorage.getItem('sportMeldungen') || '[]');
+    
+    container.innerHTML = meldungen.map(m => `
+        <div class="meldung-item">
+            <div>
+                <strong>${m.text}</strong>
+                <span class="meldung-meta">Verfasser: ${m.verfasser} | ${m.date}</span>
+            </div>
+            <button class="btn-erledigt" onclick="markAsResolved(${m.id})">Erledigt</button>
+        </div>
+    `).join('');
+};
+
+window.markAsResolved = function(id) {
+    let meldungen = JSON.parse(localStorage.getItem('sportMeldungen') || '[]');
+    meldungen = meldungen.filter(m => m.id !== id);
+    localStorage.setItem('sportMeldungen', JSON.stringify(meldungen));
+    renderMeldungen();
+};
+
+
+    
     
 </script>
 
