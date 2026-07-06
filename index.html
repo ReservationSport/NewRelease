@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOxcvxcvv</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1657,15 +1657,24 @@ body {
     cursor: pointer;
     font-weight: bold;
     transition: background 0.2s;
+    color: white;
 }
 
-/* Buttons für Aktionen (Primär) */
-.btn-primary { background: #3498db; color: white; }
-.btn-primary:hover { background: #2980b9; }
+/* Primäre Buttons (Grün, wie "Erledigt") */
+.btn-primary { 
+    background: #27ae60; 
+}
+.btn-primary:hover { 
+    background: #219150; 
+}
 
-/* Buttons für Schließen/Abbrechen (Sekundär) */
-.btn-secondary { background: #7f8c8d; color: white; }
-.btn-secondary:hover { background: #6c7a7b; }
+/* Sekundäre Buttons (Neutrales Dunkelgrau) */
+.btn-secondary { 
+    background: #444; 
+}
+.btn-secondary:hover { 
+    background: #555; 
+}
 
 /* Meldungs-Liste */
 .meldungen-list {
@@ -1694,7 +1703,7 @@ body {
     display: block;
 }
 
-/* "Erledigt" Button spezifisch */
+/* "Erledigt" Button innerhalb der Liste */
 .btn-erledigt {
     background: #27ae60;
     border: none;
@@ -1721,6 +1730,11 @@ body {
     background: #2c2c2c;
     color: white;
     box-sizing: border-box;
+}
+
+#meldung-text:focus {
+    outline: none;
+    border-color: #e67e22;
 }
     
 
