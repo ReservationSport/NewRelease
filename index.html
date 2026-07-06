@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOdfsfgdsgs</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3004,21 +3004,16 @@ async function initNewsSystem() {
     if (!aktuellerUser) return;
 
     try {
-        const zielUrl = typeof url !== 'undefined' ? url : "";
-        const pw = typeof userPw !== 'undefined' ? userPw : "";
-        
-        const response = await fetch(`${zielUrl}?action=getNews&pw=${encodeURIComponent(pw)}&t=${Date.now()}`);
-        const data = await response.json();
-        
+        // ... fetch request ...
         const allNews = data.news || (Array.isArray(data) ? data : []);
 
         meineRelevanteNews = allNews.filter(n => {
-            const empfaenger = (n.empfaenger || "").toUpperCase();
-            return empfaenger.split(',').map(e => e.trim()).includes(aktuellerUser);
+            const empfaenger = (n.empfaenger || "").toUpperCase().split(',').map(e => e.trim());
+            // Hier die Änderung: Prüfe ob User drin steht ODER 'ALLE'
+            return empfaenger.includes(aktuellerUser) || empfaenger.includes("ALLE");
         });
 
         updateNewsDot();
-        
     } catch (e) { console.error("Fehler beim Init:", e); }
 }
 
@@ -3137,9 +3132,18 @@ window.refreshAndShowNews = function() {
         .then(data => {
             const allNews = data.news || (Array.isArray(data) ? data : []);
             const aktuellerUser = userKuerzel.toUpperCase().trim();
+            
             meineRelevanteNews = allNews.filter(n => {
-                const empfaenger = (n.empfaenger || "").toUpperCase();
-                return empfaenger.split(',').map(e => e.trim()).includes(aktuellerUser);
+                const empfaenger = (n.empfaenger || "").toUpperCase().split(',').map(e => e.trim());
+                const geloeschtVon = (n.geloescht || "").toUpperCase().split(',').map(s => s.trim());
+                
+                // Bedingung 1: User ist Empfänger ODER Empfänger ist "ALLE"
+                const istEmpfaenger = empfaenger.includes(aktuellerUser) || empfaenger.includes("ALLE");
+                
+                // Bedingung 2: User hat die Nachricht noch nicht gelöscht
+                const istNichtGeloescht = !geloeschtVon.includes(aktuellerUser);
+                
+                return istEmpfaenger && istNichtGeloescht;
             });
             
             // Falls Sidebar noch offen ist, neu rendern
@@ -3151,6 +3155,8 @@ window.refreshAndShowNews = function() {
         .catch(e => console.error("Hintergrund-Update fehlgeschlagen:", e));
 };
 
+
+    
 async function markAsReadAndJump(news) {
     const user = typeof userKuerzel !== 'undefined' ? userKuerzel.toUpperCase().trim() : "";
     
