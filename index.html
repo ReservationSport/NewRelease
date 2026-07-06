@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOsdsdfdf</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2031,9 +2031,6 @@ function getDataBySlotIndex(index) {
    5. DATUMSSTEUERUNG, NAVIGATION & INITIALISIERUNG
    ============================================================ */
 
-/* ============================================================
-   ROBUSTE DATUMS-LOGIK
-   ============================================================ */
 
 window.changeDate = (days, mode = 'day') => {
     const dp = document.getElementById('datePicker');
@@ -2400,6 +2397,25 @@ window.setBoxClick = function(box, klasse, slot, canEdit) {
     box.onclick = handler; 
 };
 
+
+/* ============================================================
+   Allgemeine Modal-Funktionen
+   ============================================================ */
+   
+// Schließt jedes Modale Fenster, dessen ID übergeben wird
+window.closeModal = function(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.style.display = 'none';
+    } else {
+        console.error("Modal mit ID " + id + " nicht gefunden!");
+    }
+};
+
+
+
+
+    
 /* ============================================================
    SYNC PLAN - ROBUSTE VERSION (MIT ADD-MODE & EIGEN-CHECK)
    ============================================================ */
@@ -4792,11 +4808,6 @@ window.openExtraLessonModal = function(event) {
     modalContent.style.left = 'auto'; 
     
     modal.style.display = 'flex';
-};
-
-// Schließt das Modale Fenster
-window.closeModal = function() {
-    document.getElementById('modal-overlay').style.display = 'none';
 };
 
 
