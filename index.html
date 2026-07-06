@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO11111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3082,6 +3082,10 @@ window.showNews = function() {
         const uhrzeit = zeiten[rowIndex] || "";
 
         let formatiertesDatum = news.datum || '';
+        if (formatiertesDatum.includes('-')) {
+            const parts = formatiertesDatum.split('-');
+            if (parts.length === 3) formatiertesDatum = `${parts[2]}.${parts[1]}.${parts[0]}`;
+        }
 
         const newsTextLower = (news.text || "").toLowerCase();
         let displayText = "";
@@ -3098,12 +3102,13 @@ window.showNews = function() {
         card.className = `news-item ${istGelesen ? 'news-gelesen' : 'news-unread'}`;
         card.innerHTML = `
             <div class="news-header" style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="status-icon">${istGelesen ? 'Gelesen' : 'Neu'}</span>
-                <span class="material-icons" style="color: #ff9800; cursor: pointer; font-size: 20px;" 
+                <span class="status-icon" style="font-size: 0.85rem;">${istGelesen ? 'Gelesen' : 'Neu'}</span>
+                <span class="material-symbols-outlined" 
+                      style="color: #ff9800; cursor: pointer; font-size: 20px; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;" 
                       onclick="event.stopPropagation(); deleteNews('${news.id}')" 
                       title="Nachricht löschen">delete</span>
             </div>
-            <div class="news-text" style="margin-top: 5px;">${displayText}</div>
+            <div class="news-text" style="margin-top: 5px; font-size: 0.95em;">${displayText}</div>
             <div style="font-size: 0.75rem; color: #888; margin-top: 5px;">${formatiertesDatum} | ${uhrzeit}</div>
         `;
         card.onclick = () => markAsReadAndJump(news);
