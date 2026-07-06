@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1111111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1608,9 +1608,8 @@ body {
 }
 
 /* ============================================================
-   16. Meldungen
+   16. Meldungen (Optimiertes Layout)
    ============================================================ */
-
 
 .meldungen-list {
     margin: 20px 0;
@@ -1625,6 +1624,10 @@ body {
     margin-bottom: 10px;
     border-radius: 4px;
     color: white;
+    /* Flexbox für Text links und Button rechts */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .meldung-meta {
@@ -1638,10 +1641,15 @@ body {
     background: #27ae60;
     border: none;
     color: white;
-    padding: 5px 10px;
+    padding: 8px 12px;
     border-radius: 4px;
     cursor: pointer;
-    margin-top: 10px;
+    margin-left: 15px; /* Abstand zum Text */
+    flex-shrink: 0;   /* Verhindert, dass der Button schrumpft */
+}
+
+.btn-erledigt:hover {
+    background: #219150; /* Leicht dunkler bei Hover für besseres Feedback */
 }
 
 
@@ -1791,13 +1799,15 @@ body {
     </div>
 </div>
 
-<!-- Neue Meldung Modal -->
-<div id="new-meldung-modal" class="modal-overlay">
+<!-- Neues Eingabe-Modal für Defekte -->
+<div id="new-meldung-modal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
         <h3>Defekt melden</h3>
+        <!-- Eingabefeld für den Defekt -->
         <input type="text" id="meldung-text" placeholder="Was ist defekt?">
+        
         <div class="modal-actions">
-            <button onclick="saveMeldung()">An Team senden</button>
+            <button onclick="saveMeldung()">Speichern & Senden</button>
             <button onclick="closeModal('new-meldung-modal')">Abbrechen</button>
         </div>
     </div>
@@ -4981,61 +4991,84 @@ window.cancelAddMode = function() {
     
 
 /* ============================================================
-   16. Defekt-Meldungen
+   16. Defekt-Meldungen (Server-Synchronisiert mit Google Sheet)
    ============================================================ */
 
-window.openMeldungen = function() {
-    document.getElementById('meldungen-overlay').style.display = 'flex';
-    renderMeldungen();
+window.openNewMeldungModal = function() {
+    document.getElementById('new-meldung-modal').style.display = 'flex';
 };
 
 window.saveMeldung = function() {
-    const text = document.getElementById('meldung-text').value;
-    if (!text.trim()) return;
-
-    // 1. Speichern (hier im localStorage, idealerweise über triggerNews an Server)
-    const neueMeldung = {
-        id: Date.now(),
-        text: text,
-        verfasser: typeof userKuerzel !== 'undefined' ? userKuerzel : "Unbekannt",
-        date: new Date().toLocaleDateString()
-    };
+    const input = document.getElementById('meldung-text');
+    const text = input.value;
     
-    let meldungen = JSON.parse(localStorage.getItem('sportMeldungen') || '[]');
-    meldungen.push(neueMeldung);
-    localStorage.setItem('sportMeldungen', JSON.stringify(meldungen));
-
-    // 2. News-System informieren (Benachrichtigung an alle LPs)
-    // Wir nutzen dein bestehendes System: 'defekt' wird vom Wrapper abgefangen
-    if (typeof triggerNewsWrapper === 'function') {
-        triggerNewsWrapper('defekt', 0, 'ALL', neueMeldung.verfasser);
+    if (!text.trim()) {
+        alert("Bitte gib einen Defekt ein.");
+        return;
     }
 
-    document.getElementById('meldung-text').value = '';
-    closeModal('new-meldung-modal');
-    renderMeldungen();
+    // Sende direkt an dein Google Sheet
+    fetch(url, {
+        method: "POST",
+        body: JSON.stringify({ 
+            action: "saveMeldung", 
+            text: text, 
+            user: typeof userKuerzel !== 'undefined' ? userKuerzel : "LP",
+            pw: userPw
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === "success") {
+            // UI aufräumen
+            input.value = '';
+            closeModal('new-meldung-modal');
+            renderMeldungen(); // Lädt die Liste neu vom Server
+        } else {
+            alert("Fehler beim Speichern: " + data.msg);
+        }
+    })
+    .catch(e => console.error("Fehler beim Senden:", e));
 };
 
+// Lädt die Liste aus dem Sheet
 window.renderMeldungen = function() {
     const container = document.getElementById('meldungen-container');
-    const meldungen = JSON.parse(localStorage.getItem('sportMeldungen') || '[]');
-    
-    container.innerHTML = meldungen.map(m => `
-        <div class="meldung-item">
-            <div>
-                <strong>${m.text}</strong>
-                <span class="meldung-meta">Verfasser: ${m.verfasser} | ${m.date}</span>
-            </div>
-            <button class="btn-erledigt" onclick="markAsResolved(${m.id})">Erledigt</button>
-        </div>
-    `).join('');
+    container.innerHTML = "Lade Meldungen...";
+
+    // Der Fetch-Aufruf bleibt gleich, aber wir greifen nun auf die Objekt-Eigenschaften zu
+    fetch(`${url}?action=getMeldungen&pw=${encodeURIComponent(userPw)}&t=${Date.now()}`)
+        .then(res => res.json())
+        .then(meldungen => {
+            // Prüfen, ob wir ein Array zurückbekommen haben
+            if (!meldungen || meldungen.length === 0) {
+                container.innerHTML = "<p>Keine offenen Defekte.</p>";
+                return;
+            }
+            
+            container.innerHTML = meldungen.map(m => `
+                <div class="meldung-item">
+                    <div>
+                        <strong>${m.text}</strong>
+                        <span class="meldung-meta">Von: ${m.verfasser} | ${m.datum}</span>
+                    </div>
+                    <button class="btn-erledigt" onclick="markAsResolved('${m.id}')">Erledigt</button>
+                </div>
+            `).join('');
+        })
+        .catch(e => {
+            container.innerHTML = "Fehler beim Laden.";
+            console.error(e);
+        });
 };
+    
 
 window.markAsResolved = function(id) {
-    let meldungen = JSON.parse(localStorage.getItem('sportMeldungen') || '[]');
-    meldungen = meldungen.filter(m => m.id !== id);
-    localStorage.setItem('sportMeldungen', JSON.stringify(meldungen));
-    renderMeldungen();
+    fetch(url, {
+        method: "POST",
+        body: JSON.stringify({ action: "resolveMeldung", id: id, pw: userPw })
+    })
+    .then(() => renderMeldungen());
 };
 
 
