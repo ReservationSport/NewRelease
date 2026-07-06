@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO11111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1754,6 +1754,31 @@ body {
 }
     
 
+/* Spinner-Container */
+.loader-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 20px;
+    color: #888;
+}
+
+/* Der spezifische kleine orange Spinner */
+.littlespinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid #444;
+    border-top: 3px solid #e67e22;
+    border-radius: 50%;
+    animation: spin-little 1s linear infinite;
+}
+
+@keyframes spin-little {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+    
     
 </style>
 
@@ -1901,7 +1926,7 @@ body {
 <!-- Meldungen-Overlay (Hauptliste) -->
 <div id="meldungen-overlay" class="modal-overlay" style="display: none;">
     <div class="modal-content" style="width: 500px;">
-        <h2>Defekt-Meldungen</h2>
+        <h2>Meldungen</h2>
         <div id="meldungen-container" class="meldungen-list">
             <!-- Hier werden die Meldungen dynamisch eingefügt -->
         </div>
@@ -5174,27 +5199,44 @@ window.saveMeldung = function() {
 // Lädt die Liste aus dem Sheet
 window.renderMeldungen = function() {
     const container = document.getElementById('meldungen-container');
-    container.innerHTML = "Lade Meldungen...";
+    
+    // Lade-Zustand mit littlespinner
+    container.innerHTML = `
+        <div class="loader-container">
+            <div class="littlespinner"></div>
+            <span>Meldungen werden geladen...</span>
+        </div>
+    `;
 
     fetch(`${url}?action=getMeldungen&pw=${encodeURIComponent(userPw)}&t=${Date.now()}`)
         .then(res => res.json())
         .then(meldungen => {
             if (!meldungen || meldungen.length === 0) {
-                container.innerHTML = "<p>Keine offenen Defekte.</p>";
+                container.innerHTML = "<p>Keine offenen Meldungen.</p>";
                 return;
             }
             
-            container.innerHTML = meldungen.map(m => `
-                <div class="meldung-item">
-                    <div>
-                        <strong>${m.text}</strong>
-                        <span class="meldung-meta">Von: ${m.verfasser} | ${m.datum}</span>
+            container.innerHTML = meldungen.map(m => {
+                // Datum formatieren: ISO zu "TT.MM.JJJJ"
+                const dateObj = new Date(m.datum);
+                const formattedDate = dateObj.toLocaleDateString('de-DE', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+
+                return `
+                    <div class="meldung-item">
+                        <div>
+                            <strong>${m.text}</strong>
+                            <span class="meldung-meta">${m.verfasser} | ${formattedDate}</span>
+                        </div>
+                        <button class="btn-erledigt" onclick="markAsResolved('${m.id}', this)" title="Erledigt">
+                            <span class="material-symbols-outlined">check</span>
+                        </button>
                     </div>
-                    <button class="btn-erledigt" onclick="markAsResolved('${m.id}', this)" title="Erledigt">
-                        <span class="material-symbols-outlined">check</span>
-                    </button>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         })
         .catch(e => {
             container.innerHTML = "Fehler beim Laden.";
