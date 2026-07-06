@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOxcvxcvv</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1611,7 +1611,7 @@ body {
    16. Meldungen-Overlay & Listen-Design
    ============================================================ */
 
-/* Das Overlay zentriert beide Fenster (Hauptliste & Eingabe) über den ganzen Screen */
+/* Das Overlay zentriert beide Fenster über den ganzen Screen */
 #meldungen-overlay, #new-meldung-modal {
     position: fixed;
     top: 0;
@@ -1625,7 +1625,6 @@ body {
     z-index: 2000;
 }
 
-/* Das allgemeine Modal-Fenster-Design */
 .modal-content {
     background: #1e1e1e;
     padding: 25px;
@@ -1635,13 +1634,11 @@ body {
     color: white;
 }
 
-/* Spezifische Weite für die Meldungsliste */
 #meldungen-overlay .modal-content {
     width: 90%;
     max-width: 600px;
 }
 
-/* Layout für Buttons in den Modals */
 .modal-actions {
     display: flex;
     gap: 10px;
@@ -1649,7 +1646,6 @@ body {
     justify-content: flex-end;
 }
 
-/* Button-Basisdesign */
 .btn-action {
     padding: 10px 20px;
     border: none;
@@ -1660,15 +1656,15 @@ body {
     color: white;
 }
 
-/* Primäre Buttons (Grün, wie "Erledigt") */
+/* PRIMÄR: Dein Akzent-Orange für "Speichern" und "Erledigt" */
 .btn-primary { 
-    background: #27ae60; 
+    background: #e67e22; 
 }
 .btn-primary:hover { 
-    background: #219150; 
+    background: #d35400; 
 }
 
-/* Sekundäre Buttons (Neutrales Dunkelgrau) */
+/* SEKUNDÄR: Grau für "Abbrechen" und "Schließen" */
 .btn-secondary { 
     background: #444; 
 }
@@ -1703,9 +1699,9 @@ body {
     display: block;
 }
 
-/* "Erledigt" Button innerhalb der Liste */
+/* Erledigt-Button nutzt nun auch das Orange */
 .btn-erledigt {
-    background: #27ae60;
+    background: #e67e22;
     border: none;
     color: white;
     padding: 8px 12px;
@@ -1717,10 +1713,10 @@ body {
 }
 
 .btn-erledigt:hover {
-    background: #219150;
+    background: #d35400;
 }
 
-/* Input-Feld Style */
+/* Input-Feld */
 #meldung-text {
     width: 100%;
     padding: 12px;
