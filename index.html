@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOyccyx    </title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1699,7 +1699,7 @@ body {
     display: block;
 }
 
-/* Icon-Button für Erledigt */
+/* Erledigt-Button als Icon-Button */
 .btn-erledigt {
     background: #e67e22;
     border: none;
@@ -1712,17 +1712,25 @@ body {
     margin-left: 15px;
     flex-shrink: 0;
     transition: background 0.2s;
+    
+    /* Flexbox für Zentrierung */
     display: flex;
     justify-content: center;
     align-items: center;
+    
+    /* WICHTIG: Überschreibt eventuelle Standard-Margin des Icons */
+    overflow: hidden; 
 }
 
 .btn-erledigt:hover {
     background: #d35400;
 }
 
+/* Korrektur für das Icon selbst */
 .btn-erledigt .material-symbols-outlined {
     font-size: 24px;
+    line-height: 1; /* Verhindert vertikales Verspringen */
+    display: block; /* Stellt sicher, dass keine Baseline-Abstände das Icon schieben */
 }
 
 /* Input-Feld */
@@ -5193,11 +5201,23 @@ window.renderMeldungen = function() {
     
 
 window.markAsResolved = function(id) {
-    fetch(url, {
-        method: "POST",
-        body: JSON.stringify({ action: "resolveMeldung", id: id, pw: userPw })
-    })
-    .then(() => renderMeldungen());
+    // Optional: Visuelles Feedback geben (z.B. Button ausgrauen/Lade-Icon)
+    
+    // API-Aufruf zum Markieren als erledigt
+    fetch(`${url}?action=markResolved&id=${encodeURIComponent(id)}&pw=${encodeURIComponent(userPw)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Liste neu laden, um den erledigten Eintrag zu entfernen
+                renderMeldungen();
+            } else {
+                alert("Fehler beim Markieren: " + (data.message || "Unbekannter Fehler"));
+            }
+        })
+        .catch(e => {
+            console.error("Fehler:", e);
+            alert("Verbindungsfehler. Bitte erneut versuchen.");
+        });
 };
 
 
