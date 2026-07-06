@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO123e13r</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1931,8 +1931,8 @@ body {
             <!-- Hier werden die Meldungen dynamisch eingefügt -->
         </div>
         <div class="modal-actions">
-            <button class="btn-action btn-primary" onclick="openNewMeldungModal()">+ Neue Meldung</button>
-            <button class="btn-action btn-secondary" onclick="closeModal('meldungen-overlay')">Schließen</button>
+            <button class="btn-action btn-primary" onclick="openNewMeldungModal()">Meldung erfassen</button>
+            <button class="btn-action btn-secondary" onclick="closeModal('meldungen-overlay')">Abbrechen</button>
         </div>
     </div>
 </div>
@@ -1944,7 +1944,7 @@ body {
         <input type="text" id="meldung-text" placeholder="Was ist defekt?" style="width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box;">
         
         <div class="modal-actions">
-            <button class="btn-action btn-primary" onclick="saveMeldung()">Speichern & Senden</button>
+            <button class="btn-action btn-primary" onclick="saveMeldung()">Speichern</button>
             <button class="btn-action btn-secondary" onclick="closeModal('new-meldung-modal')">Abbrechen</button>
         </div>
     </div>
@@ -5174,15 +5174,17 @@ window.openNewMeldungModal = function() {
 
 window.saveMeldung = function() {
     const input = document.getElementById('meldung-text');
-    const saveBtn = document.querySelector('.btn-primary'); // Dein Speicher-Button
-    const text = input.value;
+    const text = input.value.trim();
     
-    if (!text.trim()) {
+    // Suche den Primär-Button innerhalb des Modals
+    const saveBtn = document.querySelector('#new-meldung-modal .btn-primary');
+    
+    if (!text) {
         alert("Bitte gib einen Defekt ein.");
         return;
     }
 
-    // Deaktivieren, um Mehrfach-Senden zu verhindern
+    // Button deaktivieren und Text ändern, um Mehrfach-Klicks zu verhindern
     saveBtn.disabled = true;
     saveBtn.innerText = "Wird gesendet...";
 
@@ -5197,22 +5199,24 @@ window.saveMeldung = function() {
     })
     .then(res => res.json())
     .then(data => {
-        // Button wieder aktivieren
+        // Button-Zustand zurücksetzen
         saveBtn.disabled = false;
-        saveBtn.innerText = "Speichern & Senden";
+        saveBtn.innerText = "Speichern";
         
         if(data.status === "success") {
+            // UI aufräumen
             input.value = '';
             closeModal('new-meldung-modal');
-            renderMeldungen();
+            renderMeldungen(); // Liste neu laden
         } else {
             alert("Fehler beim Speichern: " + data.msg);
         }
     })
     .catch(e => {
+        // Bei Fehler Button ebenfalls zurücksetzen
         saveBtn.disabled = false;
-        saveBtn.innerText = "Speichern & Senden";
-        console.error("Fehler:", e);
+        saveBtn.innerText = "Speichern";
+        console.error("Fehler beim Senden:", e);
     });
 };
 
