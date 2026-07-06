@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1111111111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1608,13 +1608,71 @@ body {
 }
 
 /* ============================================================
-   16. Meldungen (Optimiertes Layout)
+   16. Meldungen-Overlay & Listen-Design
    ============================================================ */
 
+/* Das Overlay zentriert beide Fenster (Hauptliste & Eingabe) über den ganzen Screen */
+#meldungen-overlay, #new-meldung-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: none; 
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+/* Das allgemeine Modal-Fenster-Design */
+.modal-content {
+    background: #1e1e1e;
+    padding: 25px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    color: white;
+}
+
+/* Spezifische Weite für die Meldungsliste */
+#meldungen-overlay .modal-content {
+    width: 90%;
+    max-width: 600px;
+}
+
+/* Layout für Buttons in den Modals */
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: flex-end;
+}
+
+/* Button-Basisdesign */
+.btn-action {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+/* Buttons für Aktionen (Primär) */
+.btn-primary { background: #3498db; color: white; }
+.btn-primary:hover { background: #2980b9; }
+
+/* Buttons für Schließen/Abbrechen (Sekundär) */
+.btn-secondary { background: #7f8c8d; color: white; }
+.btn-secondary:hover { background: #6c7a7b; }
+
+/* Meldungs-Liste */
 .meldungen-list {
     margin: 20px 0;
     max-height: 400px;
     overflow-y: auto;
+    padding-right: 5px;
 }
 
 .meldung-item {
@@ -1624,7 +1682,6 @@ body {
     margin-bottom: 10px;
     border-radius: 4px;
     color: white;
-    /* Flexbox für Text links und Button rechts */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1637,6 +1694,7 @@ body {
     display: block;
 }
 
+/* "Erledigt" Button spezifisch */
 .btn-erledigt {
     background: #27ae60;
     border: none;
@@ -1644,15 +1702,26 @@ body {
     padding: 8px 12px;
     border-radius: 4px;
     cursor: pointer;
-    margin-left: 15px; /* Abstand zum Text */
-    flex-shrink: 0;   /* Verhindert, dass der Button schrumpft */
+    margin-left: 15px;
+    flex-shrink: 0;
+    transition: background 0.2s;
 }
 
 .btn-erledigt:hover {
-    background: #219150; /* Leicht dunkler bei Hover für besseres Feedback */
+    background: #219150;
 }
 
-
+/* Input-Feld Style */
+#meldung-text {
+    width: 100%;
+    padding: 12px;
+    margin: 15px 0;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background: #2c2c2c;
+    color: white;
+    box-sizing: border-box;
+}
     
 
     
@@ -1785,30 +1854,29 @@ body {
     <div id="plan-container">
         <div class="move-overlay"></div> </div>
 
-<!-- Meldungen-Overlay -->
-<div id="meldungen-overlay" class="modal-overlay">
+<!-- Meldungen-Overlay (Hauptliste) -->
+<div id="meldungen-overlay" class="modal-overlay" style="display: none;">
     <div class="modal-content" style="width: 500px;">
         <h2>Defekt-Meldungen</h2>
         <div id="meldungen-container" class="meldungen-list">
             <!-- Hier werden die Meldungen dynamisch eingefügt -->
         </div>
         <div class="modal-actions">
-            <button onclick="openNewMeldungModal()">+ Neue Meldung</button>
-            <button onclick="closeModal('meldungen-overlay')">Schließen</button>
+            <button class="btn-action btn-primary" onclick="openNewMeldungModal()">+ Neue Meldung</button>
+            <button class="btn-action btn-secondary" onclick="closeModal('meldungen-overlay')">Schließen</button>
         </div>
     </div>
 </div>
 
 <!-- Neues Eingabe-Modal für Defekte -->
 <div id="new-meldung-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
+    <div class="modal-content" style="width: 400px;">
         <h3>Defekt melden</h3>
-        <!-- Eingabefeld für den Defekt -->
-        <input type="text" id="meldung-text" placeholder="Was ist defekt?">
+        <input type="text" id="meldung-text" placeholder="Was ist defekt?" style="width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box;">
         
         <div class="modal-actions">
-            <button onclick="saveMeldung()">Speichern & Senden</button>
-            <button onclick="closeModal('new-meldung-modal')">Abbrechen</button>
+            <button class="btn-action btn-primary" onclick="saveMeldung()">Speichern & Senden</button>
+            <button class="btn-action btn-secondary" onclick="closeModal('new-meldung-modal')">Abbrechen</button>
         </div>
     </div>
 </div>
