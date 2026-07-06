@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO11111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3004,17 +3004,36 @@ async function initNewsSystem() {
     if (!aktuellerUser) return;
 
     try {
-        // ... fetch request ...
+        const zielUrl = typeof url !== 'undefined' ? url : "";
+        const pw = typeof userPw !== 'undefined' ? userPw : "";
+        
+        // 1. Fetch ausführen
+        const response = await fetch(`${zielUrl}?action=getNews&pw=${encodeURIComponent(pw)}&t=${Date.now()}`);
+        
+        // 2. Hier lag der Fehler: 'data' muss explizit aus dem response-Objekt erstellt werden
+        const data = await response.json(); 
+        
+        // Falls das Backend ein Objekt {news: [...]} oder direkt das Array sendet
         const allNews = data.news || (Array.isArray(data) ? data : []);
 
+        // 3. Filter mit "ALLE" und Lösch-Logik
         meineRelevanteNews = allNews.filter(n => {
             const empfaenger = (n.empfaenger || "").toUpperCase().split(',').map(e => e.trim());
-            // Hier die Änderung: Prüfe ob User drin steht ODER 'ALLE'
-            return empfaenger.includes(aktuellerUser) || empfaenger.includes("ALLE");
+            const geloeschtVon = (n.geloescht || "").toUpperCase().split(',').map(s => s.trim());
+            
+            // User ist Empfänger ODER Empfänger ist "ALLE"
+            const istEmpfaenger = empfaenger.includes(aktuellerUser) || empfaenger.includes("ALLE");
+            // User hat die Nachricht noch nicht gelöscht
+            const istNichtGeloescht = !geloeschtVon.includes(aktuellerUser);
+            
+            return istEmpfaenger && istNichtGeloescht;
         });
 
         updateNewsDot();
-    } catch (e) { console.error("Fehler beim Init:", e); }
+        
+    } catch (e) { 
+        console.error("Fehler beim Init:", e); 
+    }
 }
 
 /**
