@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOsdfsdfs</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1878,9 +1878,9 @@ body {
         <span class="material-symbols-outlined">build</span> Meldungen (Defekte)
     </div>
 
-    <div class="menu-item" onclick="showPlaceholder('Materialwünsche')">
-        <span class="material-symbols-outlined">inventory_2</span> Materialwünsche
-    </div>
+    <div class="menu-item" onclick="openMaterialWunsche()">
+    <span class="material-symbols-outlined">inventory_2</span> Materialwünsche
+</div>
     <div class="menu-item" onclick="showPlaceholder('Krücken')">
         <span class="material-symbols-outlined">accessible</span> Krücken
     </div>
@@ -3111,7 +3111,7 @@ window.showNews = function() {
             displayMain = `${verf} ist mit der ${kl} draussen!`;
         } else if (hallenTypLower.includes("ausfall") || newsTextLower.includes("ausfall")) {
             displayHeader = "Halle frei!";
-            displayMain = `${verf} hat für ${kl} einen Ausfall eingetragen!`;
+            displayMain = `${verf} hat für die ${kl} einen Ausfall eingetragen!`;
         } else {
             displayHeader = "Info:";
             displayMain = news.text || '';
@@ -5417,6 +5417,22 @@ document.getElementById('meldung-text').addEventListener('keypress', function(e)
         saveMeldung();
     }
 });
+
+
+/* ============================================================
+   17. Materialwünsche
+   ============================================================ */
+
+window.openMaterialWunsche = function() {
+    closeExtraMenu(); // Schließt dein Menü, falls das bei dir so heißt
+    
+    // Wir nutzen hier das gleiche Overlay-System wie bei deinen Defekten
+    const modal = document.getElementById('meldungModal'); // Annahme: Du hast ein Modal für Meldungen
+    modal.style.display = 'block';
+    
+    // Hier laden wir die Daten aus dem Sheet
+    loadMaterialWunsche(); 
+};
     
     
 </script>
