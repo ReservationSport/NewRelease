@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOghfhgh</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2281,11 +2281,19 @@ body {
 
 <!-- Materialwünsche-Overlay (Hauptliste) -->
 <div id="material-overlay" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: 500px;">
+    <div class="modal-content" style="width: 500px; position: relative;">
+        
+        <!-- Icon oben rechts -->
+        <div class="modal-header-icon">
+            <span class="material-symbols-outlined">inventory_2</span>
+        </div>
+
         <h2>Materialwünsche</h2>
+        
         <div id="material-container" class="wunsch-list">
             <!-- Hier werden die Wünsche dynamisch eingefügt -->
         </div>
+        
         <div class="modal-actions">
             <button class="btn-action btn-primary" onclick="openNewWunschModal()">Wunsch erfassen</button>
             <button class="btn-action btn-secondary" onclick="closeModal('material-overlay')">Schliessen</button>
@@ -2309,11 +2317,19 @@ body {
 
 <!-- Krücken-Overlay (Hauptliste) -->
 <div id="kruecken-overlay" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: 500px;">
+    <div class="modal-content" style="width: 500px; position: relative;">
+        
+        <!-- Icon oben rechts -->
+        <div class="modal-header-icon">
+            <span class="material-symbols-outlined">accessible</span>
+        </div>
+
         <h2>Krücken-Verwaltung</h2>
+        
         <div id="kruecken-container" class="kruecken-list">
             <!-- Hier werden die Krücken dynamisch eingefügt -->
         </div>
+        
         <div class="modal-actions">
             <button class="btn-action btn-primary" onclick="openNewKrueckenModal()">Krücken ausgeben</button>
             <button class="btn-action btn-secondary" onclick="closeModal('kruecken-overlay')">Schliessen</button>
@@ -2321,6 +2337,7 @@ body {
     </div>
 </div>
 
+    
 <!-- Neues Eingabe-Modal für Krücken -->
 <div id="new-kruecken-modal" class="modal-overlay" style="display: none;">
     <div class="modal-content" style="width: 400px;">
@@ -2336,24 +2353,43 @@ body {
 </div>
 
 
-    <div id="links-overlay" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
+   <!-- Nützliche Links-Overlay -->
+<div id="links-overlay" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="position: relative;">
+        
+        <!-- Icon oben rechts -->
+        <div class="modal-header-icon">
+            <span class="material-symbols-outlined">link</span>
+        </div>
+
         <h2>Nützliche Links</h2>
+        
         <div id="links-container" class="link-list">
             <!-- Hier werden die Links per JS eingefügt -->
         </div>
-        <button class="btn-action btn-secondary" onclick="closeModal('links-overlay')">Schliessen</button>
+        
+        <div class="modal-actions">
+            <button class="btn-action btn-secondary" onclick="closeModal('links-overlay')">Schliessen</button>
+        </div>
     </div>
 </div>
 
 
-    <!-- Ideenbrett-Overlay (Hauptliste) -->
+<!-- Ideenbrett-Overlay (Hauptliste) -->
 <div id="ideen-overlay" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: 500px;">
+    <div class="modal-content" style="width: 500px; position: relative;">
+        
+        <!-- Icon oben rechts -->
+        <div class="modal-header-icon">
+            <span class="material-symbols-outlined">emoji_objects</span>
+        </div>
+
         <h2>Ideenbrett</h2>
+        
         <div id="ideen-container" class="ideen-list" style="max-height: 400px; overflow-y: auto;">
             <!-- Hier werden die Ideen dynamisch eingefügt -->
         </div>
+        
         <div class="modal-actions">
             <button class="btn-action btn-primary" onclick="openNewIdeeModal()">Idee einreichen</button>
             <button class="btn-action btn-secondary" onclick="closeModal('ideen-overlay')">Schliessen</button>
