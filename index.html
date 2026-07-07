@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -6028,10 +6028,17 @@ window.markKrueckeResolved = function(id, btnElement) {
    ============================================================ */    
 
 window.openLinks = function() {
+    // 1. Menü schließen
+    const menu = document.getElementById('extra-menu');
+    if (menu) {
+        menu.style.display = 'none';
+    }
+
+    // 2. Overlay öffnen und Links rendern
     const overlay = document.getElementById('links-overlay');
     if (overlay) {
         overlay.style.display = 'flex';
-        renderLinks(); // Lädt die Daten
+        renderLinks(); // Lädt die Daten direkt aus window.lastLinks
     }
 };
 
