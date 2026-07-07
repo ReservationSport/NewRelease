@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOfdgdsfgdsfg</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3094,7 +3094,7 @@ window.showNews = function() {
         // Texte bereinigen und Header zuweisen
         if (newsTextLower.includes("defekt behoben:")) {
             displayHeader = "Defekt behoben:";
-            displayMain = news.text.replace(/Defekt behoben: /i, '').trim();
+            displayMain = news.text.replace(/Defekt behoben: /i, '').replace(/\(Behoben durch: .*\)/i, '').trim();
         } else if (newsTextLower.includes("defekt")) {
             displayHeader = "Defekt gemeldet:";
             displayMain = news.text.replace(/NEUER DEFEKT: /i, '').replace(/\(Gemeldet von: .*\)/i, '').trim();
