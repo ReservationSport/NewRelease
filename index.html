@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOadas</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3090,12 +3090,8 @@ window.showNews = function() {
         let displayHeader = "";
         let displayMain = "";
         
-        // Logik für News-Header (Priorität: Spezielle Hallen > Defekte > Info)
-        if (hallenTypLower === "ausfall" || hallenTypLower === "outdoor" || hallenTypLower === "badi" || 
-            newsTextLower.includes("ausfall") || newsTextLower.includes("outdoor") || newsTextLower.includes("badi")) {
-            displayHeader = "Halle frei!";
-            displayMain = news.text || '';
-        } else if (newsTextLower.includes("defekt behoben:")) {
+        // Logik für News-Header und Text-Bereinigung
+        if (newsTextLower.includes("defekt behoben:")) {
             displayHeader = "Defekt behoben:";
             displayMain = news.text
                 .replace(/Defekt behoben: /i, '')
@@ -3111,11 +3107,16 @@ window.showNews = function() {
                 .replace(/\(Gemeldet von: .*\)/i, '')
                 .replace(/\(Behoben durch: .*\)/i, '')
                 .trim();
+        } else if (hallenTypLower === "ausfall" || hallenTypLower === "outdoor" || hallenTypLower === "badi" || 
+                   newsTextLower.includes("ausfall") || newsTextLower.includes("outdoor") || newsTextLower.includes("badi")) {
+            displayHeader = "Halle frei!";
+            // Dynamischer Text: [Verfasser] hat für die Klasse [Klasse] einen Ausfall eingetragen!
+            displayMain = `${news.verfasser || 'Jemand'} hat für die Klasse ${news.klasse || 'unbekannt'} einen Ausfall eingetragen!`;
         } else {
             displayHeader = "Info:";
             displayMain = news.text || '';
         }
-
+        
         const card = document.createElement('div');
         card.className = `news-item ${istGelesen ? 'news-gelesen' : 'news-unread'}`;
         card.innerHTML = `
@@ -3250,8 +3251,16 @@ async function markAsReadAndJump(news) {
             const box = document.querySelector(`[data-slot="${news.slot}"]`); 
             if (box) {
                 box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Klasse entfernen (falls vom vorigen Mal noch da) und neu setzen
+                box.classList.remove('blink-animation');
+                void box.offsetWidth; // Trigger für CSS-Reset
                 box.classList.add('blink-animation');
-                setTimeout(() => box.classList.remove('blink-animation'), 4000);
+                
+                // Automatisches Entfernen nach Animationsende
+                box.addEventListener('animationend', function() {
+                    box.classList.remove('blink-animation');
+                }, { once: true });
             }
         }, 200);
     } else {
