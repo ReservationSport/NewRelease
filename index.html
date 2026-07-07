@@ -2014,6 +2014,9 @@ body {
     margin-bottom: 10px;
     border-radius: 4px;
     color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .ideen-meta {
@@ -2054,6 +2057,29 @@ body {
     border-radius: 4px;
     font-size: 0.7em;
     text-transform: uppercase;
+}
+
+.btn-erledigt {
+    background: transparent;
+    border: 1px solid #444;
+    color: #888;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+    margin-left: 10px; /* Abstand zum Text */
+}
+
+.btn-erledigt:hover {
+    border-color: #27ae60;
+    color: #27ae60;
+}
+
+.btn-erledigt.is-success {
+    color: #27ae60;
+    border-color: #27ae60;
 }
 
     
@@ -6151,7 +6177,7 @@ window.markKrueckeResolved = function(id, btnElement) {
 
 
 /* ============================================================
-   18. LINKS
+   19. LINKS
    ============================================================ */    
 
 window.openLinks = function() {
@@ -6189,24 +6215,148 @@ window.renderLinks = function() {
 };
 
 
-    /* ============================================================
-   18. IDEENBRETT
-   ============================================================ */    
+  /* ============================================================
+   20. Ideenbrett
+   ============================================================ */
 
 window.openIdeen = function() {
-    document.getElementById('extra-menu').style.display = 'none';
+    console.log("Starte openIdeen...");
+    
+    // 1. Menü schließen
+    const extraMenu = document.getElementById('extra-menu');
+    if (extraMenu) {
+        extraMenu.style.display = 'none';
+    }
+
+    // 2. Overlay suchen
     const overlay = document.getElementById('ideen-overlay');
     if (overlay) {
         overlay.style.display = 'flex';
-        renderIdeen(); // Lädt die Daten vom Server
+        renderIdeen(); 
+    } else {
+        console.error("Fehler: Element mit ID 'ideen-overlay' existiert nicht!");
     }
 };
 
 window.openNewIdeeModal = function() {
-    document.getElementById('new-ideen-modal').style.display = 'flex';
+    const modal = document.getElementById('new-ideen-modal');
+    const input = document.getElementById('ideen-text');
+    modal.style.display = 'flex';
+    setTimeout(() => input.focus(), 100);
 };
 
+window.renderIdeen = function() {
+    const container = document.getElementById('ideen-container');
     
+    container.innerHTML = `
+        <div class="loader-container">
+            <div class="littlespinner"></div>
+            <span>Ideen werden geladen...</span>
+        </div>
+    `;
+
+    fetch(`${url}?action=getIdeen&pw=${encodeURIComponent(userPw)}&t=${Date.now()}`)
+        .then(res => res.json())
+        .then(data => {
+            // Filtere nur die "offenen" Ideen
+            const openIdeen = data.filter(i => i.status !== "erledigt");
+
+            if (!openIdeen || openIdeen.length === 0) {
+                container.innerHTML = "<p>Aktuell keine offenen Ideen vorhanden.</p>";
+                return;
+            }
+            
+            container.innerHTML = openIdeen.map(i => {
+                return `
+                    <div class="ideen-item">
+                        <div style="flex-grow: 1;">
+                            <span class="ideen-kat-badge">${i.kategorie}</span>
+                            <div style="margin-top: 5px; font-weight: 500;">${i.text}</div>
+                            <span class="ideen-meta">${i.verfasser} | ${i.datum}</span>
+                        </div>
+                        <button class="btn-erledigt" onclick="markIdeeResolved('${i.id}', this)" title="Erledigt">
+                            <span class="material-symbols-outlined">check</span>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        })
+        .catch(e => {
+            container.innerHTML = "Fehler beim Laden.";
+            console.error(e);
+        });
+};
+
+window.saveIdee = function() {
+    const kat = document.getElementById('ideen-kategorie').value;
+    const text = document.getElementById('ideen-text').value.trim();
+    const saveBtn = document.querySelector('#new-ideen-modal .btn-primary');
+    
+    if (!text) {
+        alert("Bitte gib eine Idee ein.");
+        return;
+    }
+
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerText = "Wird gesendet...";
+    }
+
+    fetch(url, {
+        method: "POST",
+        body: JSON.stringify({ 
+            action: "saveIdee", 
+            kategorie: kat,
+            text: text,
+            verfasser: typeof userKuerzel !== 'undefined' ? userKuerzel : "LP", 
+            pw: userPw 
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.innerText = "Speichern"; }
+        
+        if(data.status === "success") {
+            document.getElementById('ideen-text').value = '';
+            closeModal('new-ideen-modal');
+            renderIdeen();
+        } else {
+            alert("Fehler: " + data.msg);
+        }
+    })
+    .catch(e => {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.innerText = "Speichern"; }
+        console.error("Fehler:", e);
+    });
+};
+    
+
+window.markIdeeResolved = function(id, btnElement) {
+    btnElement.classList.add('is-success'); // Visuelles Feedback
+    fetch(url, {
+        method: 'POST',
+        body: JSON.stringify({ 
+            action: 'markIdeeResolved', 
+            id: id, 
+            pw: userPw 
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            // Kurze Verzögerung, damit man den Haken kurz sieht
+            setTimeout(() => renderIdeen(), 300);
+        } else {
+            alert("Fehler: " + data.msg);
+            btnElement.classList.remove('is-success');
+        }
+    })
+    .catch(e => {
+        console.error("Fehler:", e);
+        btnElement.classList.remove('is-success');
+    });
+};
+
     
     
 </script>
