@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOsdfas</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3174,14 +3174,24 @@ window.showNews = function() {
             displayHeader = "Defekt gemeldet:";
             displayMain = news.text.replace(/NEUER DEFEKT: /i, '').replace(/Defekt behoben: /i, '').replace(/\(Gemeldet von: .*\)/i, '').replace(/\(Behoben durch: .*\)/i, '').trim();
         } 
-        // NEU: Logik für Materialwünsche
+        // Logik für Materialwünsche (Saubere Trennung)
         else if (hallenTypLower.includes("material_wunsch") || newsTextLower.includes("materialwunsch")) {
-            displayHeader = "Neuer Materialwunsch";
-            displayMain = news.text
-                .replace(/MATERIALWUNSCH: /i, '')
-                .replace(/Materialwunsch erledigt: /i, '')
-                .replace(/\(Von: .*\)/i, '')
-                .trim();
+            if (newsTextLower.includes("erledigt")) {
+                displayHeader = "Materialwunsch erledigt";
+                displayMain = news.text
+                    .replace(/Materialwunsch erledigt: /i, '')
+                    .replace(/MATERIALWUNSCH: /i, '')
+                    .replace(/NEUER MATERIALWUNSCH: /i, '')
+                    .replace(/\(Von: .*\)/i, '')
+                    .trim();
+            } else {
+                displayHeader = "Neuer Materialwunsch";
+                displayMain = news.text
+                    .replace(/NEUER MATERIALWUNSCH: /i, '')
+                    .replace(/MATERIALWUNSCH: /i, '')
+                    .replace(/\(Von: .*\)/i, '')
+                    .trim();
+            }
         }
         else if (hallenTypLower.includes("badi") || newsTextLower.includes("badi")) {
             displayHeader = "Halle frei!";
