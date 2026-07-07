@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1932,7 +1932,7 @@ body {
 
 
 /* ============================================================
-   19. Links-Modul (Orange-Design)
+   19. Links
    ============================================================ */
 
 .link-list {
@@ -1967,6 +1967,93 @@ body {
 .link-item .material-symbols-outlined {
     font-size: 24px;
     color: #e67e22;
+}
+
+
+/* ============================================================
+   20. Ideenbrett-Modul
+   ============================================================ */
+
+/* Overlay und Modal-Grundstruktur */
+#ideen-overlay, #new-ideen-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: none; 
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+#ideen-overlay .modal-content, #new-ideen-modal .modal-content {
+    background: #1e1e1e;
+    padding: 25px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    color: white;
+    width: 90%;
+    max-width: 600px;
+}
+
+/* Ideen-Liste */
+.ideen-list {
+    margin: 20px 0;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.ideen-item {
+    background: #2c2c2c;
+    border-left: 4px solid #e67e22; /* Orange Design */
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    color: white;
+}
+
+.ideen-meta {
+    font-size: 0.75em;
+    color: #888;
+    margin-top: 8px;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Input-Felder und Select */
+#ideen-kategorie, #ideen-text {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background: #2c2c2c;
+    color: white;
+    box-sizing: border-box;
+}
+
+#ideen-text {
+    min-height: 100px;
+    resize: vertical;
+}
+
+#ideen-kategorie:focus, #ideen-text:focus {
+    outline: none;
+    border-color: #e67e22; /* Orange bei Fokus */
+}
+
+/* Kategorie-Badge (Optionales Feature für die Liste) */
+.ideen-kat-badge {
+    background: #e67e22;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.7em;
+    text-transform: uppercase;
 }
 
     
@@ -2072,6 +2159,9 @@ body {
     </div>
     <div class="menu-item" onclick="openKruecken()">
         <span class="material-symbols-outlined">accessible</span> Krücken
+    </div>
+    <div class="menu-item" onclick="openIdeen()">
+        <span class="material-symbols-outlined">lightbulb</span> Ideenbrett
     </div>
     <div class="menu-item" onclick="openLinks()">
         <span class="material-symbols-outlined">link</span> Links
@@ -2208,6 +2298,43 @@ body {
         <button class="btn-action btn-secondary" onclick="closeModal('links-overlay')">Schliessen</button>
     </div>
 </div>
+
+
+    <!-- Ideenbrett-Overlay (Hauptliste) -->
+<div id="ideen-overlay" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="width: 500px;">
+        <h2>Ideenbrett</h2>
+        <div id="ideen-container" class="ideen-list" style="max-height: 400px; overflow-y: auto;">
+            <!-- Hier werden die Ideen dynamisch eingefügt -->
+        </div>
+        <div class="modal-actions">
+            <button class="btn-action btn-primary" onclick="openNewIdeeModal()">Idee einreichen</button>
+            <button class="btn-action btn-secondary" onclick="closeModal('ideen-overlay')">Schliessen</button>
+        </div>
+    </div>
+</div>
+
+<!-- Neues Eingabe-Modal für Ideen -->
+<div id="new-ideen-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="width: 400px;">
+        <h3>Idee erfassen</h3>
+        
+        <select id="ideen-kategorie" style="width: 100%; margin-bottom: 10px; padding: 8px;">
+            <option value="Web-Tool">Web-Tool</option>
+            <option value="Fachschaft">Fachschaft</option>
+            <option value="Unterricht">Unterricht</option>
+            <option value="Weiteres">Weiteres</option>
+        </select>
+        
+        <textarea id="ideen-text" placeholder="Deine Idee oder dein Vorschlag..." style="width: 100%; height: 100px; margin-bottom: 10px;"></textarea>
+        
+        <div class="modal-actions">
+            <button class="btn-action btn-primary" onclick="saveIdee()">Speichern</button>
+            <button class="btn-action btn-secondary" onclick="closeModal('new-ideen-modal')">Abbrechen</button>
+        </div>
+    </div>
+</div>
+
     
     
 </body>
@@ -6060,6 +6187,26 @@ window.renderLinks = function() {
         </a>
     `).join('');
 };
+
+
+    /* ============================================================
+   18. IDEENBRETT
+   ============================================================ */    
+
+window.openIdeen = function() {
+    document.getElementById('extra-menu').style.display = 'none';
+    const overlay = document.getElementById('ideen-overlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+        renderIdeen(); // Lädt die Daten vom Server
+    }
+};
+
+window.openNewIdeeModal = function() {
+    document.getElementById('new-ideen-modal').style.display = 'flex';
+};
+
+    
     
     
 </script>
