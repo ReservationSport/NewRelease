@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2835,6 +2835,8 @@ window.syncPlan = async function() {
     try {
         const res = await fetch(fetchUrl);
         const json = await res.json();
+
+        window.lastLinks = json.links || [];    
         
         if (json.sperrMsg || !json.plan) return;
         
@@ -6034,28 +6036,20 @@ window.openLinks = function() {
     
 window.renderLinks = function() {
     const container = document.getElementById('links-container');
-    container.innerHTML = "Lade Daten...";
+    
+    // Wir nehmen die Variable, die wir eben in loadPlan befüllt haben
+    const data = window.lastLinks || [];
 
-    fetch(`${url}?action=getLinks&pw=${encodeURIComponent(userPw)}&t=${Date.now()}`)
-        .then(res => res.json())
-        .then(data => {
-            console.log("Daten vom Server:", data); // <-- DAS ist wichtig!
+    if (data.length === 0) {
+        container.innerHTML = "<p>Keine Links hinterlegt.</p>";
+        return;
+    }
 
-            // Prüfen, ob data wirklich ein Array ist
-            if (Array.isArray(data)) {
-                container.innerHTML = data.map(l => `
-                    <a href="${l.url}" target="_blank" class="link-item">
-                        <span class="material-symbols-outlined">link</span> ${l.name}
-                    </a>
-                `).join('');
-            } else {
-                container.innerHTML = "<p>Fehler: Datenformat ungültig.</p>";
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            container.innerHTML = "<p>Fehler beim Laden.</p>";
-        });
+    container.innerHTML = data.map(l => `
+        <a href="${l.url}" target="_blank" class="link-item">
+            <span class="material-symbols-outlined">link</span> ${l.name}
+        </a>
+    `).join('');
 };
     
     
