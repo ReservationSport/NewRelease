@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOsafasf</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1931,6 +1931,43 @@ body {
 }
 
 
+/* ============================================================
+   19. Links-Modul
+   ============================================================ */
+
+.link-list {
+    margin: 20px 0;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.link-item {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Abstand zwischen Icon und Text */
+    background: #2c2c2c;
+    border-left: 4px solid #3498db; /* Blau für Links - Unterscheidung zu Orange */
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    color: white;
+    text-decoration: none; /* Entfernt Unterstreichung vom Link */
+    transition: background 0.2s ease;
+}
+
+.link-item:hover {
+    background: #383838; /* Leichte Aufhellung beim Drüberfahren */
+    border-left-color: #5dade2; /* Blau hellt sich beim Hover auch etwas auf */
+}
+
+/* Optional: Icon-Größe anpassen */
+.link-item .material-symbols-outlined {
+    font-size: 24px;
+    color: #3498db;
+}
+
+    
     
 </style>
 
@@ -2034,7 +2071,7 @@ body {
     <div class="menu-item" onclick="openKruecken()">
         <span class="material-symbols-outlined">accessible</span> Krücken
     </div>
-    <div class="menu-item" onclick="showPlaceholder('Links')">
+    <div class="menu-item" onclick="openModal('links-overlay'); renderLinks();">
         <span class="material-symbols-outlined">link</span> Links
     </div>
 </div>
@@ -2159,6 +2196,16 @@ body {
     </div>
 </div>
 
+
+    <div id="links-overlay" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <h2>Nützliche Links</h2>
+        <div id="links-container" class="link-list">
+            <!-- Hier werden die Links per JS eingefügt -->
+        </div>
+        <button class="btn-action btn-secondary" onclick="closeModal('links-overlay')">Schliessen</button>
+    </div>
+</div>
     
     
 </body>
@@ -5969,7 +6016,32 @@ window.markKrueckeResolved = function(id, btnElement) {
         }
     });
 };
-    
+
+
+
+/* ============================================================
+   18. LINKS
+   ============================================================ */    
+
+window.renderLinks = function() {
+    const container = document.getElementById('links-container');
+    container.innerHTML = `<div class="loader-container"><div class="littlespinner"></div></div>`;
+
+    fetch(`${url}?action=getLinks&pw=${encodeURIComponent(userPw)}&t=${Date.now()}`)
+        .then(res => res.json())
+        .then(data => {
+            if (!data || data.length === 0) {
+                container.innerHTML = "<p>Keine Links hinterlegt.</p>";
+                return;
+            }
+            container.innerHTML = data.map(l => `
+                <a href="${l.url}" target="_blank" class="link-item">
+                    <span class="material-symbols-outlined">link</span> ${l.name}
+                </a>
+            `).join('');
+        });
+};
+
     
     
 </script>
