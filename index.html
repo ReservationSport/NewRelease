@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOsdfas</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1609,7 +1609,7 @@ body {
     color: #999;
 }
 /* ============================================================
-   16. Meldungen-Overlay & Listen-Design
+   16. Meldungen (Defekte)
    ============================================================ */
 
 /* Das Overlay zentriert beide Fenster über den ganzen Screen */
@@ -1787,39 +1787,74 @@ body {
    17. Materialwünsche
    ============================================================ */
 
+/* Overlay und Modal-Grundstruktur - absolut analog zu Defekten */
 #material-overlay, #new-wunsch-modal {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.85); display: none; 
-    justify-content: center; align-items: center; z-index: 2000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: none; 
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
 }
 
 #material-overlay .modal-content {
-    background: #1e1e1e; padding: 25px; border-radius: 8px;
-    border: 1px solid #444; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    color: white; width: 90%; max-width: 600px;
+    background: #1e1e1e;
+    padding: 25px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    color: white;
+    width: 90%;
+    max-width: 600px;
 }
 
+/* Materialwunsch-Liste - analog zu Defekten */
 .wunsch-list {
-    margin: 20px 0; max-height: 400px; overflow-y: auto; padding-right: 5px;
+    margin: 20px 0;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 5px;
 }
 
 .wunsch-item {
-    background: #2c2c2c; border-left: 4px solid #3498db; /* Blau für Material */
-    padding: 15px; margin-bottom: 10px; border-radius: 4px;
-    color: white; display: flex; justify-content: space-between; align-items: center;
+    background: #2c2c2c;
+    border-left: 4px solid #e67e22; /* Orange wie bei Defekten */
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .wunsch-meta {
-    font-size: 0.75em; color: #888; margin-top: 5px; display: block;
+    font-size: 0.75em;
+    color: #888;
+    margin-top: 5px;
+    display: block;
 }
 
+/* Input-Feld - analog zu Defekten */
 #wunsch-text {
-    width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #444;
-    border-radius: 4px; background: #2c2c2c; color: white; box-sizing: border-box;
+    width: 100%;
+    padding: 12px;
+    margin: 15px 0;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background: #2c2c2c;
+    color: white;
+    box-sizing: border-box;
 }
 
-#wunsch-text:focus { outline: none; border-color: #3498db; }
-
+#wunsch-text:focus {
+    outline: none;
+    border-color: #e67e22; /* Orange bei Fokus */
+}
     
     
 </style>
@@ -5551,7 +5586,14 @@ window.openNewWunschModal = function() {
 
 window.renderMaterialWunsche = function() {
     const container = document.getElementById('material-container');
-    container.innerHTML = `<div class="loader-container"><div class="littlespinner"></div><span>Wünsche laden...</span></div>`;
+    
+    // Lade-Zustand mit littlespinner
+    container.innerHTML = `
+        <div class="loader-container">
+            <div class="littlespinner"></div>
+            <span>Wünsche werden geladen...</span>
+        </div>
+    `;
 
     fetch(`${url}?action=getMaterialWunsche&pw=${encodeURIComponent(userPw)}&t=${Date.now()}`)
         .then(res => res.json())
@@ -5560,36 +5602,87 @@ window.renderMaterialWunsche = function() {
                 container.innerHTML = "<p>Keine offenen Materialwünsche.</p>";
                 return;
             }
-            container.innerHTML = data.map(m => `
-                <div class="wunsch-item">
-                    <div>
-                        <strong>${m.text}</strong>
-                        <span class="wunsch-meta">${m.verfasser} | ${m.datum}</span>
+            
+            container.innerHTML = data.map(m => {
+                // Datum formatieren: ISO zu "TT.MM.JJJJ"
+                const dateObj = new Date(m.datum);
+                const formattedDate = dateObj.toLocaleDateString('de-DE', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+
+                return `
+                    <div class="wunsch-item">
+                        <div>
+                            <strong>${m.text}</strong>
+                            <span class="wunsch-meta">${m.verfasser} | ${formattedDate}</span>
+                        </div>
+                        <button class="btn-erledigt" onclick="markWunschResolved('${m.id}', this)" title="Erledigt">
+                            <span class="material-symbols-outlined">check</span>
+                        </button>
                     </div>
-                    <button class="btn-erledigt" onclick="markWunschResolved('${m.id}', this)" title="Erledigt">
-                        <span class="material-symbols-outlined">check</span>
-                    </button>
-                </div>
-            `).join('');
+                `;
+            }).join('');
+        })
+        .catch(e => {
+            container.innerHTML = "Fehler beim Laden.";
+            console.error(e);
         });
 };
+    
 
 window.saveWunsch = function() {
     const input = document.getElementById('wunsch-text');
     const text = input.value.trim();
-    if (!text) return alert("Bitte Materialwunsch eingeben.");
+    
+    // Suche den Primär-Button innerhalb des Modals
+    const saveBtn = document.querySelector('#new-wunsch-modal .btn-primary');
+    
+    if (!text) {
+        alert("Bitte gib einen Materialwunsch ein.");
+        return;
+    }
+
+    // Button deaktivieren und Text ändern, um Mehrfach-Klicks zu verhindern
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerText = "Wird gesendet...";
+    }
 
     fetch(url, {
         method: "POST",
-        body: JSON.stringify({ action: "saveWunsch", text: text, user: typeof userKuerzel !== 'undefined' ? userKuerzel : "LP", pw: userPw })
+        body: JSON.stringify({ 
+            action: "saveWunsch", 
+            text: text, 
+            user: typeof userKuerzel !== 'undefined' ? userKuerzel : "LP", 
+            pw: userPw 
+        })
     })
     .then(res => res.json())
     .then(data => {
+        // Button-Zustand zurücksetzen
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerText = "Speichern";
+        }
+        
         if(data.status === "success") {
+            // UI aufräumen
             input.value = '';
             closeModal('new-wunsch-modal');
-            renderMaterialWunsche();
+            renderMaterialWunsche(); // Liste neu laden
+        } else {
+            alert("Fehler beim Speichern: " + data.msg);
         }
+    })
+    .catch(e => {
+        // Bei Fehler Button ebenfalls zurücksetzen
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerText = "Speichern";
+        }
+        console.error("Fehler beim Senden:", e);
     });
 };
 
