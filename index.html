@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOsdasgsh</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3054,12 +3054,8 @@ function updateNewsDot() {
     dot.style.display = hatUngelesene ? 'block' : 'none';
 }
 
-/**
- * Zeigt die Sidebar sofort an, berechnet die Uhrzeit basierend auf dem Slot.
- */
-/**
- * Zeigt die Sidebar an und filtert gelöschte Nachrichten heraus.
- */
+
+    
 window.showNews = function() {
     const sidebar = document.getElementById('newsSidebar');
     const newsContainer = document.getElementById('newsContent');
@@ -3069,7 +3065,6 @@ window.showNews = function() {
     sidebar.style.display = 'block';
     newsContainer.innerHTML = "";
     
-    // FILTER: Zeige nur News, die der User noch nicht gelöscht hat
     const aktiveNews = meineRelevanteNews.filter(n => {
         const geloeschtVon = (n.geloescht || "").toUpperCase().split(',').map(s => s.trim());
         return !geloeschtVon.includes(aktuellerUser);
@@ -3087,11 +3082,13 @@ window.showNews = function() {
             if (parts.length === 3) formatiertesDatum = `${parts[2]}.${parts[1]}.${parts[0]}`;
         }
 
+        // Lehrmerkürzel in Kleinbuchstaben umwandeln
+        const displayVerfasser = (news.verfasser || '').toLowerCase();
+
         const newsTextLower = (news.text || "").toLowerCase();
         let displayHeader = "";
         let displayMain = "";
         
-        // Texte bereinigen: Entfernt alle bekannten Präfixe und Anhänge radikal
         if (newsTextLower.includes("defekt behoben:")) {
             displayHeader = "Defekt behoben:";
             displayMain = news.text
@@ -3131,8 +3128,8 @@ window.showNews = function() {
                 <div style="font-style: italic;">${displayMain}</div>
             </div>
             <div style="font-size: 0.75rem; color: #666; border-top: 1px solid #eee; padding-top: 5px; display:flex; justify-content:space-between;">
-                <span>${formatiertesDatum} | ${uhrzeit}</span>
-                <span style="font-weight:bold;">${news.verfasser || ''}</span>
+                <span>${formatiertesDatum} ${uhrzeit}</span>
+                <span style="font-weight:bold;">${displayVerfasser}</span>
             </div>
         `;
         card.onclick = () => markAsReadAndJump(news);
@@ -3142,6 +3139,7 @@ window.showNews = function() {
     setTimeout(() => sidebar.classList.add('active'), 10);
 };
 
+    
 
 /**
  * Löscht eine Nachricht für den aktuellen User (markiert in Spalte K).
