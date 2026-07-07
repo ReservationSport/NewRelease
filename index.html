@@ -578,14 +578,15 @@ body {
 
 
     /* Blinken bei News-Sprung im Stundenplan */
+/* CSS: Nur die Keyframes */
 @keyframes highlightBlink {
     0% { box-shadow: 0 0 0px #e67e22; border-color: transparent; }
     50% { box-shadow: 0 0 20px #e67e22; border-color: #e67e22; background-color: rgba(230, 126, 34, 0.2); }
     100% { box-shadow: 0 0 0px #e67e22; border-color: transparent; }
 }
 
-.blink-animation { 
-    /* 4 mal 0.8s = 3.2s und dann IST ES AUS, egal ob JS was löscht oder nicht */
+/* Wir definieren die Animation NICHT in der Klasse, die wir hinzufügen */
+.is-blinking { 
     animation: highlightBlink 0.8s 4; 
 }
 
@@ -3208,6 +3209,10 @@ window.refreshAndShowNews = function() {
 
 
     
+// Globale Variable außerhalb der Funktion, um den Zustand über Sync-Vorgänge hinweg zu halten
+window.blinkTimer = window.blinkTimer || {};
+
+    
 async function markAsReadAndJump(news) {
     const user = typeof userKuerzel !== 'undefined' ? userKuerzel.toUpperCase().trim() : "";
     const istDefekt = (news.text || "").toLowerCase().includes("defekt");
@@ -3247,28 +3252,35 @@ async function markAsReadAndJump(news) {
             await changeDayAndLoad(news.datum, 'day');
         }
 
-        // 6. Scrollen & Blinken mit Puffer für syncplan
-        // Wir geben dem System Zeit für den DOM-Aufbau durch syncplan
+        // 6. Scrollen & Blinken
         setTimeout(() => {
             const box = document.querySelector(`[data-slot="${news.slot}"]`); 
             if (box) {
                 box.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 
-                // Entfernen, falls durch Zufall noch vorhanden
-                box.classList.remove('blink-animation');
-                // DOM-Reflow erzwingen
-                void box.offsetWidth; 
-                // Klasse hinzufügen - Die Animation läuft im CSS dank "4" am Ende exakt 4x ab
-                box.classList.add('blink-animation');
+                const blinkId = 'blink-' + news.slot;
                 
-                // WICHTIG: Wir entfernen die Klasse NICHT per Timeout, 
-                // da die Animation von selbst nach 4 Durchläufen endet.
-                // Falls syncPlan die Box neu zeichnet, ist die Klasse eh weg 
-                // und die Animation startet nicht neu, was genau das ist, was wir wollen.
+                // Bestehenden Timer für diesen Slot abbrechen, falls aktiv
+                if (window.blinkTimer[blinkId]) clearTimeout(window.blinkTimer[blinkId]);
+                
+                // Klasse entfernen und neu setzen (Reflow erzwingen)
+                box.classList.remove('is-blinking');
+                void box.offsetWidth; 
+                box.classList.add('is-blinking');
+                
+                // Timer zum Entfernen setzen
+                window.blinkTimer[blinkId] = setTimeout(() => {
+                    // Wir suchen das Element erneut, falls syncPlan es inzwischen ersetzt hat
+                    const currentBox = document.querySelector(`[data-slot="${news.slot}"]`);
+                    if (currentBox) {
+                        currentBox.classList.remove('is-blinking');
+                    }
+                    delete window.blinkTimer[blinkId];
+                }, 3500); 
             } else {
                 console.warn("Element mit data-slot " + news.slot + " nicht gefunden.");
             }
-        }, 800); // Erhöht auf 800ms für mehr Stabilität
+        }, 800);
     } else {
         console.log("Defekt-Meldung gelesen: Keine Navigation.");
     }
