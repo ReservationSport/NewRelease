@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1234</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3075,7 +3075,7 @@ window.showNews = function() {
         return !geloeschtVon.includes(aktuellerUser);
     });
 
-aktiveNews.forEach(news => {
+    aktiveNews.forEach(news => {
         const gelesenListe = (news.gelesen || "").toUpperCase().split(',').map(s => s.trim());
         const istGelesen = gelesenListe.includes(aktuellerUser);
         const rowIndex = Math.floor((parseInt(news.slot) - 1) / 5);
@@ -3091,8 +3091,11 @@ aktiveNews.forEach(news => {
         let displayHeader = "";
         let displayMain = "";
         
-        // Texte bereinigen
-        if (newsTextLower.includes("defekt")) {
+        // Texte bereinigen und Header zuweisen
+        if (newsTextLower.includes("defekt behoben:")) {
+            displayHeader = "Defekt behoben:";
+            displayMain = news.text.replace(/Defekt behoben: /i, '').trim();
+        } else if (newsTextLower.includes("defekt")) {
             displayHeader = "Defekt gemeldet:";
             displayMain = news.text.replace(/NEUER DEFEKT: /i, '').replace(/\(Gemeldet von: .*\)/i, '').trim();
         } else if (newsTextLower.includes("ausfall")) {
