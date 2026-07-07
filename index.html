@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1234</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1993,29 +1993,29 @@ body {
 </div>
 
 
-<!-- Meldungen-Overlay (Hauptliste) -->
-<div id="meldungen-overlay" class="modal-overlay" style="display: none;">
+<!-- Materialwünsche-Overlay (Hauptliste) -->
+<div id="material-overlay" class="modal-overlay" style="display: none;">
     <div class="modal-content" style="width: 500px;">
-        <h2>Meldungen (Defekte)</h2>
-        <div id="meldungen-container" class="meldungen-list">
-            <!-- Hier werden die Meldungen dynamisch eingefügt -->
+        <h2>Materialwünsche</h2>
+        <div id="material-container" class="wunsch-list">
+            <!-- Hier werden die Wünsche dynamisch eingefügt -->
         </div>
         <div class="modal-actions">
-            <button class="btn-action btn-primary" onclick="openNewMeldungModal()">Meldung erfassen</button>
-            <button class="btn-action btn-secondary" onclick="closeModal('meldungen-overlay')">Schliessen</button>
+            <button class="btn-action btn-primary" onclick="openNewWunschModal()">Wunsch erfassen</button>
+            <button class="btn-action btn-secondary" onclick="closeModal('material-overlay')">Schliessen</button>
         </div>
     </div>
 </div>
 
-<!-- Neues Eingabe-Modal für Defekte -->
-<div id="new-meldung-modal" class="modal-overlay" style="display: none;">
+<!-- Neues Eingabe-Modal für Materialwünsche -->
+<div id="new-wunsch-modal" class="modal-overlay" style="display: none;">
     <div class="modal-content" style="width: 400px;">
-        <h3>Defekt eintragen</h3>
-        <input type="text" id="meldung-text" placeholder="Welchen Defekt hast du gemeldet?" style="width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box;">
+        <h3>Materialwunsch eintragen</h3>
+        <input type="text" id="wunsch-text" placeholder="Welches Material wird benötigt?">
         
         <div class="modal-actions">
-            <button class="btn-action btn-primary" onclick="saveMeldung()">Speichern</button>
-            <button class="btn-action btn-secondary" onclick="closeModal('new-meldung-modal')">Abbrechen</button>
+            <button class="btn-action btn-primary" onclick="saveWunsch()">Speichern</button>
+            <button class="btn-action btn-secondary" onclick="closeModal('new-wunsch-modal')">Abbrechen</button>
         </div>
     </div>
 </div>
