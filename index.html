@@ -1932,7 +1932,7 @@ body {
 
 
 /* ============================================================
-   19. Links-Modul
+   19. Links-Modul (Orange-Design)
    ============================================================ */
 
 .link-list {
@@ -1945,26 +1945,28 @@ body {
 .link-item {
     display: flex;
     align-items: center;
-    gap: 15px; /* Abstand zwischen Icon und Text */
+    gap: 15px;
     background: #2c2c2c;
-    border-left: 4px solid #3498db; /* Blau für Links - Unterscheidung zu Orange */
+    /* Orange Border passend zu deinen anderen Modulen */
+    border-left: 4px solid #e67e22; 
     padding: 15px;
     margin-bottom: 10px;
     border-radius: 4px;
     color: white;
-    text-decoration: none; /* Entfernt Unterstreichung vom Link */
-    transition: background 0.2s ease;
+    text-decoration: none;
+    transition: background 0.2s ease, border-left-color 0.2s ease;
 }
 
 .link-item:hover {
-    background: #383838; /* Leichte Aufhellung beim Drüberfahren */
-    border-left-color: #5dade2; /* Blau hellt sich beim Hover auch etwas auf */
+    background: #383838;
+    /* Etwas helleres Orange beim Hover */
+    border-left-color: #f39c12; 
 }
 
-/* Optional: Icon-Größe anpassen */
+/* Icon-Farbe auf Orange angepasst */
 .link-item .material-symbols-outlined {
     font-size: 24px;
-    color: #3498db;
+    color: #e67e22;
 }
 
     
