@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -585,6 +585,7 @@ body {
 }
 
 .blink-animation { 
+    /* 4 mal 0.8s = 3.2s und dann IST ES AUS, egal ob JS was löscht oder nicht */
     animation: highlightBlink 0.8s 4; 
 }
 
@@ -3247,26 +3248,27 @@ async function markAsReadAndJump(news) {
         }
 
         // 6. Scrollen & Blinken mit Puffer für syncplan
-        // Wir geben dem System kurz Zeit, das DOM neu aufzubauen
+        // Wir geben dem System Zeit für den DOM-Aufbau durch syncplan
         setTimeout(() => {
             const box = document.querySelector(`[data-slot="${news.slot}"]`); 
             if (box) {
                 box.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 
-                // Klasse entfernen und neu setzen, um Animation bei jedem Klick neu zu triggern
+                // Entfernen, falls durch Zufall noch vorhanden
                 box.classList.remove('blink-animation');
+                // DOM-Reflow erzwingen
                 void box.offsetWidth; 
+                // Klasse hinzufügen - Die Animation läuft im CSS dank "4" am Ende exakt 4x ab
                 box.classList.add('blink-animation');
                 
-                // Nach ca. 4 Sekunden (4x 0.8s Animation + Sicherheitsabstand)
-                // entfernen wir die Klasse, damit das Element sauber bleibt.
-                setTimeout(() => {
-                    box.classList.remove('blink-animation');
-                }, 4000);
+                // WICHTIG: Wir entfernen die Klasse NICHT per Timeout, 
+                // da die Animation von selbst nach 4 Durchläufen endet.
+                // Falls syncPlan die Box neu zeichnet, ist die Klasse eh weg 
+                // und die Animation startet nicht neu, was genau das ist, was wir wollen.
             } else {
                 console.warn("Element mit data-slot " + news.slot + " nicht gefunden.");
             }
-        }, 500);
+        }, 800); // Erhöht auf 800ms für mehr Stabilität
     } else {
         console.log("Defekt-Meldung gelesen: Keine Navigation.");
     }
