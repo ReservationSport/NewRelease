@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO11111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3075,7 +3075,7 @@ window.showNews = function() {
         return !geloeschtVon.includes(aktuellerUser);
     });
 
-    aktiveNews.forEach(news => {
+aktiveNews.forEach(news => {
         const gelesenListe = (news.gelesen || "").toUpperCase().split(',').map(s => s.trim());
         const istGelesen = gelesenListe.includes(aktuellerUser);
         const rowIndex = Math.floor((parseInt(news.slot) - 1) / 5);
@@ -3088,28 +3088,38 @@ window.showNews = function() {
         }
 
         const newsTextLower = (news.text || "").toLowerCase();
-        let displayText = "";
+        let displayHeader = "";
+        let displayMain = "";
         
-        if (newsTextLower.includes("ausfall")) {
-            displayText = `<b>${news.verfasser || ''}</b> hat einen <b>Ausfall</b> für die Klasse <b>${news.klasse || ''}</b> eingetragen!`;
-        } else if (newsTextLower.includes("defekt")) {
-            displayText = `⚠️ <b>${news.verfasser || ''}</b> hat einen <b>Defekt</b> gemeldet: <i>${news.text || ''}</i>`;
+        // Neue Text-Logik
+        if (newsTextLower.includes("defekt")) {
+            displayHeader = "Defekt gemeldet:";
+            displayMain = news.text.replace(/NEUER DEFEKT: /i, '').replace(/\(Gemeldet von: .*\)/i, '').trim();
+        } else if (newsTextLower.includes("ausfall")) {
+            displayHeader = "Ausfall:";
+            displayMain = `${news.verfasser} - Klasse ${news.klasse}`;
         } else {
-            displayText = news.text || '';
+            displayHeader = "Info:";
+            displayMain = news.text || '';
         }
 
         const card = document.createElement('div');
         card.className = `news-item ${istGelesen ? 'news-gelesen' : 'news-unread'}`;
         card.innerHTML = `
             <div class="news-header" style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="status-icon" style="font-size: 0.85rem;">${istGelesen ? 'Gelesen' : 'Neu'}</span>
+                <span class="status-icon" style="font-size: 0.7rem; font-weight:bold;">${istGelesen ? 'GELESEN' : 'NEU'}</span>
                 <span class="material-symbols-outlined" 
-                      style="color: #ff9800; cursor: pointer; font-size: 20px; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;" 
+                      style="color: #ff9800; cursor: pointer; font-size: 20px;" 
                       onclick="event.stopPropagation(); deleteNews('${news.id}')" 
                       title="Nachricht löschen">delete</span>
             </div>
-            <div class="news-text" style="margin-top: 5px; font-size: 0.95em;">${displayText}</div>
-            <div style="font-size: 0.75rem; color: #888; margin-top: 5px;">${formatiertesDatum} | ${uhrzeit}</div>
+            <div class="news-text" style="margin: 8px 0;">
+                <div style="font-weight:bold; font-size: 0.9rem;">${displayHeader}</div>
+                <div style="font-style: italic;">${displayMain}</div>
+            </div>
+            <div style="font-size: 0.75rem; color: #666; border-top: 1px solid #eee; padding-top: 5px;">
+                ${formatiertesDatum} | ${uhrzeit} | Verfasser: <b>${news.verfasser || 'System'}</b>
+            </div>
         `;
         card.onclick = () => markAsReadAndJump(news);
         newsContainer.appendChild(card);
