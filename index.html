@@ -2071,7 +2071,7 @@ body {
     <div class="menu-item" onclick="openKruecken()">
         <span class="material-symbols-outlined">accessible</span> Krücken
     </div>
-    <div class="menu-item" onclick="openModal('links-overlay'); renderLinks();">
+    <div class="menu-item" onclick="openLinks()">
         <span class="material-symbols-outlined">link</span> Links
     </div>
 </div>
@@ -6023,6 +6023,15 @@ window.markKrueckeResolved = function(id, btnElement) {
    18. LINKS
    ============================================================ */    
 
+window.openLinks = function() {
+    const overlay = document.getElementById('links-overlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+        renderLinks(); // Lädt die Daten
+    }
+};
+
+    
 window.renderLinks = function() {
     const container = document.getElementById('links-container');
     container.innerHTML = `<div class="loader-container"><div class="littlespinner"></div></div>`;
