@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO23423424</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3070,10 +3070,10 @@ window.closeModal = function(id) {
 
     
 /* ============================================================
-   SYNC PLAN - NEU
+   SYNC PLAN - NEU (Optimiert gegen Geisterdaten)
    ============================================================ */
 window.syncPlan = async function() {
-    // Wenn gesperrt, sofort abbrechen
+    // Wenn gesperrt (beim Verschieben) oder bereits am Speichern, sofort abbrechen
     if (window.isSyncLocked || window.isSaving) return; 
 
     const dp = document.getElementById('datePicker');
@@ -3100,24 +3100,35 @@ window.syncPlan = async function() {
             const box = container.querySelector(`[data-slot="${slot}"]`);
             if (!box) return;
 
-            const klasse = slotData.klasse || "";
-            const verfasser = slotData.verfasser || "";
-            const halle = slotData.halle || "";
+            const klasse = (slotData.klasse || "").trim();
+            const verfasser = (slotData.verfasser || "").trim();
+            const halle = (slotData.halle || "").trim();
             const typ = slotData.typ || "";
-            const isAusfall = (halle === "Ausfall");
-            const isKlasseLeer = (klasse.trim() === "");
             
-            // --- Logik (analog zu loadPlan) ---
+            // Entscheidende Prüfung: Ist die Box wirklich leer?
+            const isKlasseLeer = (klasse === "" || klasse.toLowerCase() === "verschoben");
+            const isAusfall = (halle === "Ausfall");
+            
+            // --- Logik ---
             const lehrer = (verfasser !== "") ? verfasser : ((slotData.lehrer !== "") ? slotData.lehrer : (allClassTeachers[klasse] || ""));
-            const isMyClass = !isKlasseLeer && myClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
-            const isMyBooking = (verfasser.trim().toLowerCase() === userKuerzel.toLowerCase());
-            const canEdit = isMyClass || isMyBooking;
+            const isMyClass = !isKlasseLeer && myClasses.some(c => klasse.toLowerCase() === c.trim().toLowerCase());
+            const isMyBooking = (verfasser.toLowerCase() === userKuerzel.toLowerCase());
+            const canEdit = isKlasseLeer || isMyClass || isMyBooking; // Leer darf meist bearbeitet werden
             
             // --- Update UI ---
-            // Klassen aktualisieren
+            if (isKlasseLeer) {
+                // HARTER RESET BEI LEERER BOX
+                box.className = "box empty";
+                box.style.backgroundColor = "";
+                box.style.cursor = "default";
+                box.innerHTML = ""; // Alles löschen
+                box.onclick = null;
+                return; // Nichts weiter tun für diesen Slot
+            }
+
+            // Wenn Box nicht leer, UI aktualisieren
             box.className = [
                 "box",
-                isKlasseLeer ? "empty" : "",
                 canEdit ? "is-mine" : "not-mine",
                 isAusfall ? "ausfall-mode" : ""
             ].filter(Boolean).join(" ");
@@ -3125,25 +3136,17 @@ window.syncPlan = async function() {
             box.style.backgroundColor = (window.hallenConfig[halle] && !isAusfall) ? window.hallenConfig[halle].color : '';
             box.style.cursor = canEdit ? 'pointer' : 'default';
 
-            // Inhalte aktualisieren
-            const klassenEl = box.querySelector('.klasse-label');
-            const lehrerEl = box.querySelector('.lehrer-info');
-            const halleEl = box.querySelector('.halle-label');
-            
-            if (klassenEl) klassenEl.innerText = klasse;
-            if (lehrerEl) lehrerEl.innerText = lehrer;
-            if (halleEl) halleEl.innerText = halle;
-
-            // Lock Icon
-            let lockContainer = box.querySelector('.lock-icon-container');
-            if (lockContainer) {
-                lockContainer.innerHTML = (typ === 'fix') ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
-            }
+            // Box neu befüllen, falls sie vorher leer war (oder einfach überschreiben)
+            box.innerHTML = `
+                <div class="klasse-label">${klasse}</div>
+                <div class="lehrer-info">${lehrer}</div>
+                <div class="halle-label">${halle}</div>
+                <div class="lock-icon-container" style="position:absolute; right:-3px; bottom:5px; display:flex; align-items:center;">
+                    ${typ === 'fix' ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : ''}
+                </div>
+            `;
 
             // Material/Notiz Icons
-            const altesNotizIcon = box.querySelector('.box-notiz-icon');
-            if (altesNotizIcon) altesNotizIcon.remove();
-            
             if (slotData.material && slotData.material.trim() !== "") {
                 markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
             }
@@ -5423,11 +5426,12 @@ window.handleMoveConfirm = async function(targetSlot) {
         pw: userPw
     };
 
-    const payloadOld = { 
-        ...payloadClear, 
-        slot: tempMoveMode.sourceSlot,
-        klasse: "verschoben" 
-    };
+    // B. Quell-Slot leeren (NUR NOCH LEER SIND WIRKLICH LEER!)
+const payloadOld = { 
+    ...payloadClear, // Hier sind alle Felder leer!
+    slot: tempMoveMode.sourceSlot
+    // KEIN klasse: "verschoben" mehr!
+};
 
     const payloadNew = {
         ...tempMoveMode, 
