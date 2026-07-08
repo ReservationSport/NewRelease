@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOsdfdsdf</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2471,16 +2471,29 @@ document.addEventListener('DOMContentLoaded', () => {
 async function checkGlobalSync() {
     try {
         const response = await fetch(`${url}?action=getNews&pw=${encodeURIComponent(userPw)}`);
-        const data = await response.json();
+        const text = await response.text(); 
         
-        // Da wir jetzt Zahlen vergleichen, ist das absolut sicher:
+        // Erst parsen, wenn es wirklich JSON ist
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            // Wenn der Server HTML/Fehler schickt, beenden wir das hier lautlos
+            // ohne das "News-System" zu triggern.
+            return; 
+        }
+
+        // Sicherstellen, dass die Daten valide sind
+        if (!data || !data.lastChange) return;
+
         const serverZeit = Number(data.lastChange); 
 
+        // --- HIER IST DAS GATE: Zündet NUR bei echter Änderung ---
         if (serverZeit > lastKnownChange) {
             console.log("Änderung erkannt - Starte syncPlan jetzt...");
             lastKnownChange = serverZeit;
             
-            // Debug-Log: Startet es wirklich?
+            // Erst jetzt wird die kritische Funktion aufgerufen
             try {
                 await syncPlan();
                 console.log("syncPlan erfolgreich beendet.");
@@ -2488,8 +2501,11 @@ async function checkGlobalSync() {
                 console.error("FEHLER in syncPlan:", err);
             }
         }
-    } catch (e) {
-        console.error("Fehler im Sync-Check:", e);
+        // --- ENDE GATE ---
+
+    } catch (err) {
+        // Netzwerkfehler werden hier ignoriert, damit das System ruhig bleibt
+        return;
     }
 }
 
