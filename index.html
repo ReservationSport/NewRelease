@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOsdfdsdf</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3068,7 +3068,7 @@ window.closeModal = function(id) {
 
     
 /* ============================================================
-   SYNC PLAN - ROBUSTE VERSION (MIT ADD-MODE & EIGEN-CHECK)
+   SYNC PLAN - ROBUSTE VERSION (MIT CACHE-KILLER & DEBUG)
    ============================================================ */
 window.syncPlan = async function() {
     if (isSaving) return; 
@@ -3076,14 +3076,24 @@ window.syncPlan = async function() {
     const dp = document.getElementById('datePicker');
     const container = document.getElementById('plan-container'); 
     
+    // Cache-Killer: Verhindert, dass der Browser alte Daten aus dem Cache nimmt
+    const cacheKiller = new Date().getTime();
     const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-    const fetchUrl = isLocal ? 'data.json' : `${url}?date=${dp.value}&pw=${userPw}&kuerzel=${userKuerzel}`;
+    const fetchUrl = isLocal 
+        ? `data.json?t=${cacheKiller}` 
+        : `${url}?date=${dp.value}&pw=${userPw}&kuerzel=${userKuerzel}&t=${cacheKiller}`;
     
     try {
         const res = await fetch(fetchUrl);
         const json = await res.json();
         
-        if (json.sperrMsg || !json.plan) return;
+        // DEBUG: Hier siehst du in der Konsole genau, was der Server schickt
+        console.log("DEBUG SYNC - Empfangen:", json);
+        
+        if (json.sperrMsg || !json.plan) {
+            console.warn("Sync: Keine gültigen Plandaten erhalten.");
+            return;
+        }
         
         window.lastPlanData = json.plan; 
         if (json.hallenConfig) window.hallenConfig = json.hallenConfig;
@@ -3097,7 +3107,7 @@ window.syncPlan = async function() {
             if (box) {
                 const data = json.plan[slot] || {};
                 const klasse = data.klasse || "";
-                const verfasser = data.verfasser || ""; // Dein Kürzel aus Spalte 11
+                const verfasser = data.verfasser || ""; 
                 const isLeer = (klasse.trim() === "" || klasse.trim().toLowerCase() === "verschoben");
 
                 if (isLeer) {
@@ -3119,10 +3129,10 @@ window.syncPlan = async function() {
                         `;
                     }
 
-                    // --- ERWEITERTER EDIT-CHECK ---
+                    // --- EDIT-CHECK ---
                     const isMyClass = userClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
                     const isMyBooking = (verfasser.trim().toLowerCase() === userKuerzel.toLowerCase());
-                    const canEdit = isMyClass || isMyBooking; // Erlaubt, wenn Klasse in Liste ODER Kürzel passt
+                    const canEdit = isMyClass || isMyBooking;
                     
                     box.classList.remove('is-mine', 'not-mine');
                     box.classList.add(canEdit ? 'is-mine' : 'not-mine');
@@ -3182,7 +3192,7 @@ window.syncPlan = async function() {
             }
         });
 
-        // NACH DEM SYNC: Modi & Zustände wiederherstellen
+        // MODI WIEDERHERSTELLEN
         if (window.moveMode && typeof highlightFreeSlots === 'function') {
             highlightFreeSlots();
         } else if (window.addMode) {
