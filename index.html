@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1234</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2465,6 +2465,39 @@ document.addEventListener('DOMContentLoaded', () => {
     changeDayAndLoad(dp.value); 
 });
 
+    
+
+let lastKnownChange = 0;
+
+async function smartSync() {
+    // 1. Wenn wir gerade manuell speichern oder im AddMode sind -> NICHT prüfen.
+    if (isSaving || (typeof isManualSaving !== 'undefined' && isManualSaving) || window.addMode) return;
+
+    // 2. Nur wenn das Tab aktiv ist
+    if (document.visibilityState !== 'visible') return;
+
+    try {
+        // Wir fragen nur nach dem Zeitstempel (action=check)
+        const checkUrl = `${url}?action=check&pw=${encodeURIComponent(userPw)}`;
+        const res = await fetch(checkUrl);
+        const json = await res.json();
+
+        if (json.lastChange > lastKnownChange) {
+            console.log("Änderung erkannt, syncPlan wird gestartet...");
+            lastKnownChange = json.lastChange; 
+            await syncPlan(); 
+            // News auch gleich mit aktualisieren
+            if (typeof initNewsSystem === 'function') await initNewsSystem(); 
+        }
+    } catch (e) {
+        console.error("SmartSync Check fehlgeschlagen:", e);
+    }
+}
+
+
+
+
+    
 /* ============================================================
    3. LOGIN-LOGIK (Optimiert & Sicher)
    ============================================================ */
@@ -2524,14 +2557,15 @@ async function handleLogin() {
         // Fertig: Loading-Overlay entfernen
         loadingOverlay.classList.remove('is-visible');
 
-        // 5. Hintergrund-Sync (alle 30s)
-        // 5. Hintergrund-Sync (alle 30s)
-setInterval(async () => {
-    if (document.visibilityState === 'visible') {
-        await syncPlan();
-        await initNewsSystem(); 
-    }
-}, 5000); 
+
+// ... direkt VOR dem setInterval in handleLogin:
+const res = await fetch(`${url}?action=check&pw=${encodeURIComponent(userPw)}`);
+const json = await res.json();
+lastKnownChange = json.lastChange; // Initiale Version merken
+        
+      
+      // 5. Neuer "Smart Sync"-Loop (prüft alle 3 Sekunden)
+setInterval(smartSync, 3000);
 
 // 6. Automatischer Tageswechsel-Check (nur wenn der User "Heute" betrachtet)
 setInterval(async () => {
