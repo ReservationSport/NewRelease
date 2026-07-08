@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOedfeqwe</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3069,7 +3069,7 @@ window.closeModal = function(id) {
 
     
 /* ============================================================
-   SYNC PLAN - KOMPLETT-SYNCHRONISATION
+   SYNC PLAN - NEU
    ============================================================ */
 window.syncPlan = async function() {
     if (window.isSaving) return; 
@@ -3080,115 +3080,86 @@ window.syncPlan = async function() {
     const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
     const cacheKiller = new Date().getTime();
     const fetchUrl = isLocal ? `data.json?t=${cacheKiller}` : `${url}?date=${dp.value}&pw=${userPw}&kuerzel=${userKuerzel}&t=${cacheKiller}`;
-    
+
     try {
         const res = await fetch(fetchUrl);
         const json = await res.json();
         
         if (json.sperrMsg || !json.plan) return;
+
+        const newPlan = json.plan;
+        window.lastPlanData = newPlan;
+        window.hallenConfig = json.hallenConfig || window.hallenConfig;
+        const myClasses = json.userClasses || [];
         
-        window.lastPlanData = json.plan; 
-        if (json.hallenConfig) window.hallenConfig = json.hallenConfig;
-        const userClasses = json.userClasses || [];
-        
-        const allBoxes = container.querySelectorAll('[data-slot]');
-        
-        allBoxes.forEach(box => {
-            const slot = box.getAttribute('data-slot');
-            if (window.syncBlockierteSlots && window.syncBlockierteSlots[slot]) return;
+        // Gehe durch alle Slots des neuen Plans
+        Object.keys(newPlan).forEach(slot => {
+            const slotData = newPlan[slot] || {};
+            const box = container.querySelector(`[data-slot="${slot}"]`);
+            if (!box) return;
 
-            const data = json.plan[slot] || {};
-            const klasse = (data.klasse || "").trim();
-            const verfasser = (data.verfasser || "").trim();
-            const isLeer = (klasse === "" || klasse.toLowerCase() === "verschoben");
+            const klasse = slotData.klasse || "";
+            const verfasser = slotData.verfasser || "";
+            const halle = slotData.halle || "";
+            const typ = slotData.typ || "";
+            const isAusfall = (halle === "Ausfall");
+            const isKlasseLeer = (klasse.trim() === "");
+            
+            // --- Logik (analog zu loadPlan) ---
+            const lehrer = (verfasser !== "") ? verfasser : ((slotData.lehrer !== "") ? slotData.lehrer : (allClassTeachers[klasse] || ""));
+            const isMyClass = !isKlasseLeer && myClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
+            const isMyBooking = (verfasser.trim().toLowerCase() === userKuerzel.toLowerCase());
+            const canEdit = isMyClass || isMyBooking;
+            
+            // --- Update UI ---
+            // Klassen aktualisieren
+            box.className = [
+                "box",
+                isKlasseLeer ? "empty" : "",
+                canEdit ? "is-mine" : "not-mine",
+                isAusfall ? "ausfall-mode" : ""
+            ].filter(Boolean).join(" ");
+            
+            box.style.backgroundColor = (window.hallenConfig[halle] && !isAusfall) ? window.hallenConfig[halle].color : '';
+            box.style.cursor = canEdit ? 'pointer' : 'default';
 
-            // --- DEBUG LOGGING ---
-            console.log(`Debug Slot ${slot}:`, { klasse, verfasser, isLeer });
+            // Inhalte aktualisieren
+            const klassenEl = box.querySelector('.klasse-label');
+            const lehrerEl = box.querySelector('.lehrer-info');
+            const halleEl = box.querySelector('.halle-label');
+            
+            if (klassenEl) klassenEl.innerText = klasse;
+            if (lehrerEl) lehrerEl.innerText = lehrer;
+            if (halleEl) halleEl.innerText = halle;
 
-            if (isLeer) {
-                box.innerHTML = ""; 
-                box.className = "box empty"; 
-                box.style.backgroundColor = ""; 
-                box.style.cursor = "default";
-                box.onclick = null;
-            } else {
-                if (box.classList.contains('empty')) {
-                    box.classList.remove('empty');
-                    box.innerHTML = `
-                        <div class="klasse-label"></div>
-                        <div class="lehrer-info"></div>
-                        <div class="halle-label"></div>
-                    `;
-                }
+            // Lock Icon
+            let lockContainer = box.querySelector('.lock-icon-container');
+            if (lockContainer) {
+                lockContainer.innerHTML = (typ === 'fix') ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
+            }
 
-                // --- EDIT-CHECK ---
-                const isMyClass = userClasses.some(c => klasse.toLowerCase() === c.trim().toLowerCase());
-                const isMyBooking = (verfasser.toLowerCase() === userKuerzel.toLowerCase());
-                const canEdit = isMyClass || isMyBooking;
-                
-                box.className = `box ${canEdit ? 'is-mine' : 'not-mine'}`;
-                box.style.cursor = canEdit ? 'pointer' : 'default';
-
-                setBoxClick(box, klasse, slot, canEdit);
-
-                // --- DATENBEFÜLLUNG ---
-                const halle = data.halle || "";
-                const material = data.material || "";  
-                const kommentar = data.kommentar || ""; 
-                const typ = data.typ || ""; 
-                const lehrerDaten = data.lehrer || "";
-                const lehrer = (verfasser !== "") ? verfasser : (lehrerDaten !== "" ? lehrerDaten : (allClassTeachers[klasse] || ""));
-
-                box.querySelector('.klasse-label').innerText = klasse;
-                box.querySelector('.lehrer-info').innerText = lehrer;
-                box.querySelector('.halle-label').innerText = halle;
-                box.setAttribute('data-notiz', kommentar);
-
-                if (halle === "Ausfall") {
-                    box.classList.add('ausfall-mode');
-                    box.style.backgroundColor = ""; 
-                } else {
-                    box.classList.remove('ausfall-mode');
-                    box.style.backgroundColor = (window.hallenConfig && window.hallenConfig[halle]) ? window.hallenConfig[halle].color : "";
-                }
-
-                markBoxWithMaterialIcon(box, material, kommentar);
-
-                let lockIcon = box.querySelector('.lock-icon-container');
-                if (!lockIcon) {
-                    lockIcon = document.createElement('div');
-                    lockIcon.className = 'lock-icon-container';
-                    Object.assign(lockIcon.style, { position: 'absolute', right: '-3px', bottom: '5px', display: 'flex', alignItems: 'center' });
-                    box.appendChild(lockIcon);
-                }
-                lockIcon.innerHTML = (typ === 'fix') ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
-
-                const altesNotizIcon = box.querySelector('.box-notiz-icon');
-                if (altesNotizIcon) altesNotizIcon.remove();
-
-                if (kommentar.trim() !== "") {
-                    const neuesNotizIcon = document.createElement('span');
-                    neuesNotizIcon.className = 'box-notiz-icon';
-                    neuesNotizIcon.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
-                    Object.assign(neuesNotizIcon.style, { position: 'absolute', top: '-2px', left: '4px', cursor: 'pointer', zIndex: '5' });
-                    neuesNotizIcon.onclick = function(e) { 
-                        e.stopPropagation(); 
-                        if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(klasse, kommentar); 
-                    };
-                    box.appendChild(neuesNotizIcon);
-                }
+            // Material/Notiz Icons
+            const altesNotizIcon = box.querySelector('.box-notiz-icon');
+            if (altesNotizIcon) altesNotizIcon.remove();
+            
+            if (slotData.material && slotData.material.trim() !== "") {
+                markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
+            }
+            
+            if (slotData.kommentar && slotData.kommentar.trim() !== "") {
+                const notizElement = document.createElement('span');
+                notizElement.className = 'box-notiz-icon';
+                notizElement.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
+                Object.assign(notizElement.style, { position: 'absolute', top: '-2px', left: '4px', cursor: 'pointer', zIndex: '5' });
+                notizElement.onclick = (e) => { 
+                    e.stopPropagation(); 
+                    if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(klasse, slotData.kommentar); 
+                };
+                box.appendChild(notizElement);
             }
         });
-
-        if (window.moveMode && typeof highlightFreeSlots === 'function') {
-            highlightFreeSlots();
-        } else if (window.addMode) {
-            document.querySelectorAll('.box.empty:not(.header-row)').forEach(box => {
-                box.classList.add('is-selectable', 'move-mode-highlight');
-            });
-        }
     } catch(e) {
-        console.error("Sync fehlgeschlagen:", e);
+        console.error("Hintergrund-Sync fehlgeschlagen:", e);
     }
 };
 
