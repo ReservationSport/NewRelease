@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2470,16 +2470,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function checkGlobalSync() {
     try {
-        // News-Endpunkt abfragen (der schickt jetzt immer das aktuelle G1-Datum mit)
         const response = await fetch(`${url}?action=getNews&pw=${encodeURIComponent(userPw)}`);
         const data = await response.json();
+        
+        // Beide Werte säubern (Leerzeichen an den Rändern entfernen)
+        const serverZeit = (data.lastChange || "").toString().trim();
+        const lokalZeit = (lastKnownChange || "").toString().trim();
 
-        // Wenn der Zeitstempel vom letzten bekannten abweicht:
-        if (data.lastChange && data.lastChange !== lastKnownChange) {
-            console.log("Änderung in DB erkannt (G1):", data.lastChange);
-            lastKnownChange = data.lastChange;
+        console.log("DEBUG - Server:", "'" + serverZeit + "'");
+        console.log("DEBUG - Lokal:", "'" + lokalZeit + "'");
 
-            // Sync auslösen
+        // Vergleich mit den gesäuberten Strings
+        if (serverZeit !== "" && serverZeit !== lokalZeit) {
+            console.log("Änderung erkannt! Sync wird gestartet.");
+            lastKnownChange = serverZeit; // Aktualisieren
             await syncPlan(); 
         }
     } catch (e) {
