@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2463,6 +2463,45 @@ document.addEventListener('DOMContentLoaded', () => {
     changeDayAndLoad(dp.value); 
 });
 
+
+
+let lastKnownChange = 0; // Globale Variable für den Zeitstempel
+
+// 1. Initialisieren: Hole beim Login den aktuellen Stand
+async function initSync() {
+    try {
+        const response = await fetch(`${url}?action=check`, { cache: 'no-store' });
+        const data = await response.json();
+        lastKnownChange = data.lastChange;
+        
+        // Starte den Interval-Timer erst nach dem ersten Login
+        setInterval(smartSync, 10000); // Alle 10 Sekunden prüfen
+    } catch (e) {
+        console.error("Konnte Sync nicht initialisieren");
+    }
+}
+
+// 2. Der smarte Check
+async function smartSync() {
+    try {
+        const response = await fetch(`${url}?action=check`, { cache: 'no-store' });
+        const data = await response.json();
+
+        // Prüfen, ob eine Änderung im Sheet vorliegt
+        if (data.lastChange > lastKnownChange) {
+            console.log("Änderung erkannt! Lade Plan neu...");
+            lastKnownChange = data.lastChange;
+            
+            // Lade den Plan neu
+            const date = document.getElementById('datePicker').value;
+            await changeDayAndLoad(date);
+        }
+    } catch (e) {
+        console.warn("Sync-Check fehlgeschlagen (Ignoriert)");
+    }
+}
+
+    
 /* ============================================================
    3. LOGIN-LOGIK (Optimiert & Sicher)
    ============================================================ */
