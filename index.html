@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1234</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2522,8 +2522,12 @@ async function handleLogin() {
     errorDiv.innerText = "";
 
     try {
-        const response = await fetch(`${url}?mode=login&pw=${encodeURIComponent(pwVal)}&kuerzel=${encodeURIComponent(kuerzelVal)}`);
-        const loginJson = await response.json(); // Umbenannt von json zu loginJson
+        // Login-Anfrage mit no-store, um Browser-Cache-Interferenzen zu vermeiden
+        const response = await fetch(`${url}?mode=login&pw=${encodeURIComponent(pwVal)}&kuerzel=${encodeURIComponent(kuerzelVal)}`, {
+            method: 'GET',
+            cache: 'no-store'
+        });
+        const loginJson = await response.json(); 
 
         if (loginJson.status !== "success") {
             errorDiv.innerText = loginJson.msg || "Login fehlgeschlagen!";
@@ -2554,9 +2558,12 @@ async function handleLogin() {
             window.hallenConfig = window.lastPlanResponse.hallenConfig;
         }
         
-        // Initialen Zeitstempel abrufen
-        const checkRes = await fetch(`${url}?action=check&pw=${encodeURIComponent(userPw)}`);
-        const checkData = await checkRes.json(); // Umbenannt von json zu checkData
+        // Initialen Zeitstempel abrufen (Check-Zweig)
+        const checkRes = await fetch(`${url}?action=check&pw=${encodeURIComponent(userPw)}`, {
+            method: 'GET',
+            cache: 'no-store'
+        });
+        const checkData = await checkRes.json();
         lastKnownChange = checkData.lastChange; 
         
         // Fertig: Loading-Overlay entfernen
@@ -2565,7 +2572,7 @@ async function handleLogin() {
         // 5. Neuer "Smart Sync"-Loop (prüft alle 3 Sekunden)
         setInterval(smartSync, 3000);
 
-        // 6. Automatischer Tageswechsel-Check (nur wenn der User "Heute" betrachtet)
+        // 6. Automatischer Tageswechsel-Check
         setInterval(async () => {
             const jetzt = new Date();
             const localToday = `${jetzt.getFullYear()}-${String(jetzt.getMonth() + 1).padStart(2, '0')}-${String(jetzt.getDate()).padStart(2, '0')}`;
