@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOsfsf</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3098,31 +3098,31 @@ window.syncPlan = async function() {
         const allBoxes = container.querySelectorAll('[data-slot]');
         
         allBoxes.forEach(box => {
-            const slot = box.getAttribute('data-slot');
-            if (window.syncBlockierteSlots && window.syncBlockierteSlots[slot]) return;
+    const slot = box.getAttribute('data-slot');
+    const data = json.plan[slot];
 
-            const data = json.plan[slot] || {};
-            const klasse = (data.klasse || "").trim();
-            const verfasser = (data.verfasser || "").trim();
-            const isLeer = (klasse === "" || klasse.toLowerCase() === "verschoben");
+    // Nur loggen, wenn der Slot Daten hat, um die Konsole nicht zu fluten
+    if (data && data.klasse) {
+        console.log(`Debug Slot ${slot}: Klasse=${data.klasse}`);
+        
+        const label = box.querySelector('.klasse-label');
+        const lehrer = box.querySelector('.lehrer-info');
+        const halle = box.querySelector('.halle-label');
 
-            if (isLeer) {
-                // LEERE BOX
-                box.innerHTML = ""; 
-                box.className = "box empty"; 
-                box.style.backgroundColor = ""; 
-                box.style.cursor = "default";
-                box.onclick = null;
-            } else {
-                // BELEGTE BOX
-                if (box.classList.contains('empty')) {
-                    box.classList.remove('empty');
-                    box.innerHTML = `
-                        <div class="klasse-label"></div>
-                        <div class="lehrer-info"></div>
-                        <div class="halle-label"></div>
-                    `;
-                }
+        if (!label || !lehrer || !halle) {
+            console.error(`FEHLER: Struktur in Box ${slot} unvollständig!`);
+            console.error("Gefundene Elemente:", {label, lehrer, halle});
+            return; // Hier bricht die Bearbeitung dieser Box ab
+        }
+
+        // Wenn wir hier ankommen, sind die Elemente da
+        label.innerText = data.klasse;
+        lehrer.innerText = (data.verfasser || data.lehrer || "");
+        halle.innerText = (data.halle || "");
+        
+        console.log(`Erfolg: Slot ${slot} wurde aktualisiert.`);
+    }
+});
 
                 // --- EDIT-CHECK ---
                 const isMyClass = userClasses.some(c => klasse.toLowerCase() === c.trim().toLowerCase());
