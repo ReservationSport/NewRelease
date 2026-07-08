@@ -2443,8 +2443,6 @@ body {
     let pendingNews = [];
     let isSaving = false;          // Status für den Global Loader
 
-    let isManualSaving = false; // Ganz oben bei deinen Variablen
-
 /* ============================================================
    2. INITIALISIERUNG
    ============================================================ */
@@ -2465,39 +2463,6 @@ document.addEventListener('DOMContentLoaded', () => {
     changeDayAndLoad(dp.value); 
 });
 
-    
-
-let lastKnownChange = 0;
-
-async function smartSync() {
-    // 1. Wenn wir gerade manuell speichern oder im AddMode sind -> NICHT prüfen.
-    if (isSaving || (typeof isManualSaving !== 'undefined' && isManualSaving) || window.addMode) return;
-
-    // 2. Nur wenn das Tab aktiv ist
-    if (document.visibilityState !== 'visible') return;
-
-    try {
-        // Wir fragen nur nach dem Zeitstempel (action=check)
-        const checkUrl = `${url}?action=check&pw=${encodeURIComponent(userPw)}`;
-        const res = await fetch(checkUrl);
-        const json = await res.json();
-
-        if (json.lastChange > lastKnownChange) {
-            console.log("Änderung erkannt, syncPlan wird gestartet...");
-            lastKnownChange = json.lastChange; 
-            await syncPlan(); 
-            // News auch gleich mit aktualisieren
-            if (typeof initNewsSystem === 'function') await initNewsSystem(); 
-        }
-    } catch (e) {
-        console.error("SmartSync Check fehlgeschlagen:", e);
-    }
-}
-
-
-
-
-    
 /* ============================================================
    3. LOGIN-LOGIK (Optimiert & Sicher)
    ============================================================ */
@@ -2522,15 +2487,11 @@ async function handleLogin() {
     errorDiv.innerText = "";
 
     try {
-        // Login-Anfrage mit no-store, um Browser-Cache-Interferenzen zu vermeiden
-        const response = await fetch(`${url}?mode=login&pw=${encodeURIComponent(pwVal)}&kuerzel=${encodeURIComponent(kuerzelVal)}`, {
-            method: 'GET',
-            cache: 'no-store'
-        });
-        const loginJson = await response.json(); 
+        const response = await fetch(`${url}?mode=login&pw=${encodeURIComponent(pwVal)}&kuerzel=${encodeURIComponent(kuerzelVal)}`);
+        const json = await response.json();
 
-        if (loginJson.status !== "success") {
-            errorDiv.innerText = loginJson.msg || "Login fehlgeschlagen!";
+        if (json.status !== "success") {
+            errorDiv.innerText = json.msg || "Login fehlgeschlagen!";
             btn.classList.remove('is-loading');
             return;
         }
@@ -2554,43 +2515,60 @@ async function handleLogin() {
         await initNewsSystem();
         await changeDayAndLoad(dp.value);
 
-        if (window.lastPlanResponse) {
-            window.hallenConfig = window.lastPlanResponse.hallenConfig;
-        }
-        
-        // Initialen Zeitstempel abrufen (Check-Zweig)
-        const checkRes = await fetch(`${url}?action=check&pw=${encodeURIComponent(userPw)}`, {
-            method: 'GET',
-            cache: 'no-store'
-        });
-        const checkData = await checkRes.json();
-        lastKnownChange = checkData.lastChange; 
+            if (window.lastPlanResponse) {
+                window.hallenConfig = window.lastPlanResponse.hallenConfig;
+            }
         
         // Fertig: Loading-Overlay entfernen
         loadingOverlay.classList.remove('is-visible');
+
+        // 5. Hintergrund-Sync (alle 30s)
+        // 5. Hintergrund-Sync (alle 30s)
+setInterval(async () => {
+    if (document.visibilityState === 'visible') {
+        await syncPlan();
+        await initNewsSystem(); 
+    }
+}, 5000); 
+
+// 6. Automatischer Tageswechsel-Check (nur wenn der User "Heute" betrachtet)
+setInterval(async () => {
+    const jetzt = new Date();
+    const localToday = `${jetzt.getFullYear()}-${String(jetzt.getMonth() + 1).padStart(2, '0')}-${String(jetzt.getDate()).padStart(2, '0')}`;
+    const dp = document.getElementById('datePicker');
+    
+    // Wir speichern den Zustand, ob der User "Heute" aktiv hat
+    // Wenn dp.value dem heutigen Tag entspricht, ist alles gut.
+    // Wenn er NICHT dem heutigen Tag entspricht, lassen wir ihn in Ruhe!
+    
+    // Aber: Wenn wir BEIM LADEN oder BEIM LOGIN "Heute" gewählt hatten
+    // und nun ein Tag vergangen ist, WOLLEN wir das Update.
+    
+    // Neue Logik: Springe nur, wenn der Tag tatsächlich gewechselt hat 
+    // UND der User nicht aktiv an einem anderen Tag arbeitet.
+    
+    // Ein einfacher Weg: Prüfe, ob das Datum im DatePicker veraltet ist,
+    // ABER setze ein Flag, wenn der User den Tag manuell geändert hat.
+    
+    if (dp && dp.value !== localToday) {
+        // Wir fragen den User nicht, wir prüfen: 
+        // Hat der User aktiv ein Datum gewählt, das in der ZUKUNFT liegt?
+        // Wenn der User aktiv den 5. Juni gewählt hat, ist dp.value > localToday.
+        // Dann NICHT zurückspringen!
         
-        // 5. Neuer "Smart Sync"-Loop (prüft alle 3 Sekunden)
-        setInterval(smartSync, 3000);
+        if (dp.value > localToday) {
+            console.log("User arbeitet in der Zukunft, kein automatischer Sprung.");
+            return; 
+        }
 
-        // 6. Automatischer Tageswechsel-Check
-        setInterval(async () => {
-            const jetzt = new Date();
-            const localToday = `${jetzt.getFullYear()}-${String(jetzt.getMonth() + 1).padStart(2, '0')}-${String(jetzt.getDate()).padStart(2, '0')}`;
-            const dp = document.getElementById('datePicker');
-            
-            if (dp && dp.value !== localToday) {
-                if (dp.value > localToday) {
-                    console.log("User arbeitet in der Zukunft, kein automatischer Sprung.");
-                    return; 
-                }
+        console.log("Neuer Tag erkannt! Synchronisiere auf: " + localToday);
+        dp.value = localToday;
+        updateDateText(localToday);
+        updateNavButtons();
+        await changeDayAndLoad(localToday);
+    }
+}, 60000);
 
-                console.log("Neuer Tag erkannt! Synchronisiere auf: " + localToday);
-                dp.value = localToday;
-                updateDateText(localToday);
-                updateNavButtons();
-                await changeDayAndLoad(localToday);
-            }
-        }, 60000);
         
     } catch (e) {
         errorDiv.innerText = "Verbindung fehlgeschlagen.";
@@ -3060,11 +3038,7 @@ window.closeModal = function(id) {
    SYNC PLAN - ROBUSTE VERSION (MIT ADD-MODE & EIGEN-CHECK)
    ============================================================ */
 window.syncPlan = async function() {
-    // HARTES AUSSCHALTEN: Wenn addMode aktiv ist oder manuell gespeichert wird, 
-    // blockieren wir den Sync komplett.
-    if (isSaving || (typeof isManualSaving !== 'undefined' && isManualSaving) || window.addMode) {
-        return; 
-    }
+    if (isSaving) return; 
 
     const dp = document.getElementById('datePicker');
     const container = document.getElementById('plan-container'); 
@@ -3090,7 +3064,7 @@ window.syncPlan = async function() {
             if (box) {
                 const data = json.plan[slot] || {};
                 const klasse = data.klasse || "";
-                const verfasser = data.verfasser || ""; 
+                const verfasser = data.verfasser || ""; // Dein Kürzel aus Spalte 11
                 const isLeer = (klasse.trim() === "" || klasse.trim().toLowerCase() === "verschoben");
 
                 if (isLeer) {
@@ -3115,7 +3089,7 @@ window.syncPlan = async function() {
                     // --- ERWEITERTER EDIT-CHECK ---
                     const isMyClass = userClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
                     const isMyBooking = (verfasser.trim().toLowerCase() === userKuerzel.toLowerCase());
-                    const canEdit = isMyClass || isMyBooking;
+                    const canEdit = isMyClass || isMyBooking; // Erlaubt, wenn Klasse in Liste ODER Kürzel passt
                     
                     box.classList.remove('is-mine', 'not-mine');
                     box.classList.add(canEdit ? 'is-mine' : 'not-mine');
@@ -3192,6 +3166,8 @@ window.syncPlan = async function() {
 
 
 
+
+    
 
 // Variable außerhalb der Funktion definieren
 let isNavigating = false; 
@@ -5621,7 +5597,6 @@ window.startAddMode = function() {
     applyHighlights();
 };
 
-    
 window.showInlineInput = function(box) {
     // 1. Altes Panel entfernen, falls vorhanden
     const existing = document.getElementById('inline-input-panel');
@@ -5664,9 +5639,7 @@ window.confirmInlineAdd = async function(targetSlot) {
     const name = document.getElementById('inline-klasse-name').value;
     if (!name) return alert("Bitte Namen eingeben!");
 
-    // UI-Panel entfernen und Modus-Sperre setzen
     document.getElementById('inline-input-panel').remove();
-    isManualSaving = true; // Blockiert den automatischen Sync via setInterval
     showLoading('saving');
 
     const payload = {
@@ -5675,7 +5648,7 @@ window.confirmInlineAdd = async function(targetSlot) {
         slot: targetSlot,
         klasse: name,
         halle: "", 
-        lehrer: userKuerzel,
+        lehrer: userKuerzel, // Dein Kürzel
         material: "", 
         kommentar: "", 
         typ: "Zusatz",
@@ -5683,38 +5656,29 @@ window.confirmInlineAdd = async function(targetSlot) {
     };
 
     try {
-        // 1. Daten zum Server senden
         await fetch(url, { method: "POST", body: JSON.stringify(payload) });
 
-        // 2. Sofortige UI-Aktualisierung (Optimistic UI)
+        // --- SOFORTIGE UI-AKTUALISIERUNG ---
         const box = document.querySelector(`[data-slot="${targetSlot}"]`);
         if (box) {
             box.classList.remove('empty', 'not-mine');
             box.classList.add('is-mine');
             box.style.cursor = 'pointer';
             
+            // Inhalt der Box setzen
             box.innerHTML = `
                 <div class="klasse-label">${name}</div>
                 <div class="lehrer-info">${userKuerzel}</div>
                 <div class="halle-label"></div>
             `;
             
+            // Event-Handler wieder aktivieren (da er durch das manuelle Überschreiben verloren geht)
             setBoxClick(box, name, targetSlot, true);
         }
 
-        // 3. AddMode beenden (setzt intern window.addMode = null)
-        cancelAddMode();
-
-        // 4. Sperre aufheben, damit der Sync wieder arbeiten darf
-        isManualSaving = false;
-
-        // 5. Jetzt erst den Sync manuell auslösen, um den aktuellen Server-Zustand zu holen
-        await syncPlan(); 
-        
+        cancelAddMode(); 
     } catch (err) {
-        console.error("Fehler beim Speichern:", err);
-        // Bei Fehler Sperre lösen, damit das System nicht dauerhaft blockiert ist
-        isManualSaving = false;
+        console.error("Fehler:", err);
     } finally {
         hideLoading();
     }
