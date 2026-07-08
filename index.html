@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOsdvsav</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3072,26 +3072,22 @@ window.closeModal = function(id) {
 
     
 /* ============================================================
-   SYNC PLAN - ROBUSTE VERSION (MIT CACHE-KILLER & DEBUG)
+   SYNC PLAN - ROBUSTE VERSION (DOM-basiertes Rendering)
    ============================================================ */
 window.syncPlan = async function() {
-    if (isSaving) return; 
+    if (window.isSaving) return; 
 
     const dp = document.getElementById('datePicker');
     const container = document.getElementById('plan-container'); 
     
-    // Cache-Killer: Verhindert, dass der Browser alte Daten aus dem Cache nimmt
+    // Cache-Killer & Fetch-URL
     const cacheKiller = new Date().getTime();
-    const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-    const fetchUrl = isLocal 
-        ? `data.json?t=${cacheKiller}` 
-        : `${url}?date=${dp.value}&pw=${userPw}&kuerzel=${userKuerzel}&t=${cacheKiller}`;
+    const fetchUrl = `${url}?date=${dp.value}&pw=${encodeURIComponent(userPw)}&kuerzel=${encodeURIComponent(userKuerzel)}&t=${cacheKiller}`;
     
     try {
         const res = await fetch(fetchUrl);
         const json = await res.json();
         
-        // DEBUG: Hier siehst du in der Konsole genau, was der Server schickt
         console.log("DEBUG SYNC - Empfangen:", json);
         
         if (json.sperrMsg || !json.plan) {
@@ -3101,102 +3097,99 @@ window.syncPlan = async function() {
         
         window.lastPlanData = json.plan; 
         if (json.hallenConfig) window.hallenConfig = json.hallenConfig;
-        
         const userClasses = json.userClasses || [];
         
-        Object.keys(json.plan).forEach(slot => {
-            if (window.syncBlockierteSlots && window.syncBlockierteSlots[slot]) return;
+        // --- ZENTRALES RENDER-LOGIK: ALLE BOXEN DURCHLAUFEN ---
+        const allBoxes = container.querySelectorAll('[data-slot]');
+        
+        allBoxes.forEach(box => {
+            const slot = box.getAttribute('data-slot');
+            const data = json.plan[slot]; // Daten vom Server für diesen Slot
+            
+            // 1. Wenn Slot leer oder nicht vorhanden
+            if (!data || !data.klasse || data.klasse.trim() === "" || data.klasse.trim().toLowerCase() === "verschoben") {
+                box.innerHTML = ""; 
+                box.className = "box empty"; 
+                box.style.backgroundColor = ""; 
+                box.style.cursor = "default";
+                box.onclick = null;
+                return;
+            }
 
-            const box = container.querySelector(`[data-slot="${slot}"]`);
-            if (box) {
-                const data = json.plan[slot] || {};
-                const klasse = data.klasse || "";
-                const verfasser = data.verfasser || ""; 
-                const isLeer = (klasse.trim() === "" || klasse.trim().toLowerCase() === "verschoben");
+            // 2. Belegte Box - Struktur sicherstellen
+            if (!box.classList.contains('empty') && box.innerHTML !== "" && box.querySelector('.klasse-label')) {
+                // Bestehende Struktur nutzen
+            } else {
+                box.classList.remove('empty');
+                box.innerHTML = `
+                    <div class="klasse-label"></div>
+                    <div class="lehrer-info"></div>
+                    <div class="halle-label"></div>
+                `;
+            }
 
-                if (isLeer) {
-                    // LEERE BOX
-                    box.innerHTML = ""; 
-                    box.classList.remove('is-mine', 'not-mine', 'ausfall-mode');
-                    box.classList.add('empty'); 
-                    box.style.backgroundColor = ""; 
-                    box.style.cursor = "default";
-                    box.onclick = null;
-                } else {
-                    // BELEGTE BOX
-                    if (box.classList.contains('empty')) {
-                        box.classList.remove('empty');
-                        box.innerHTML = `
-                            <div class="klasse-label"></div>
-                            <div class="lehrer-info"></div>
-                            <div class="halle-label"></div>
-                        `;
-                    }
+            // 3. Rechte & Styles
+            const klasse = data.klasse.trim();
+            const verfasser = (data.verfasser || "").trim();
+            const isMyClass = userClasses.some(c => klasse.toLowerCase() === c.trim().toLowerCase());
+            const isMyBooking = (verfasser.toLowerCase() === userKuerzel.toLowerCase());
+            const canEdit = isMyClass || isMyBooking;
+            
+            box.className = `box ${canEdit ? 'is-mine' : 'not-mine'}`;
+            box.style.cursor = canEdit ? 'pointer' : 'default';
+            setBoxClick(box, klasse, slot, canEdit);
 
-                    // --- EDIT-CHECK ---
-                    const isMyClass = userClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
-                    const isMyBooking = (verfasser.trim().toLowerCase() === userKuerzel.toLowerCase());
-                    const canEdit = isMyClass || isMyBooking;
-                    
-                    box.classList.remove('is-mine', 'not-mine');
-                    box.classList.add(canEdit ? 'is-mine' : 'not-mine');
-                    box.style.cursor = canEdit ? 'pointer' : 'default';
+            // 4. Daten befüllen
+            const halle = data.halle || "";
+            const kommentar = data.kommentar || ""; 
+            const lehrerDaten = data.lehrer || "";
+            const lehrer = verfasser !== "" ? verfasser : (lehrerDaten !== "" ? lehrerDaten : (allClassTeachers[klasse] || ""));
 
-                    setBoxClick(box, klasse, slot, canEdit);
+            box.querySelector('.klasse-label').innerText = klasse;
+            box.querySelector('.lehrer-info').innerText = lehrer;
+            box.querySelector('.halle-label').innerText = halle;
+            box.setAttribute('data-notiz', kommentar);
 
-                    // --- DATENBEFÜLLUNG ---
-                    const halle = data.halle || "";
-                    const material = data.material || "";   
-                    const kommentar = data.kommentar || ""; 
-                    const typ = data.typ || ""; 
-                    const lehrerDaten = data.lehrer || "";
-                    const lehrer = (verfasser !== "") ? verfasser : (lehrerDaten !== "" ? lehrerDaten : (allClassTeachers[klasse] || ""));
+            // 5. Hallen-Farben & Ausfall
+            if (halle === "Ausfall") {
+                box.classList.add('ausfall-mode');
+                box.style.backgroundColor = ""; 
+            } else {
+                box.classList.remove('ausfall-mode');
+                box.style.backgroundColor = (window.hallenConfig && window.hallenConfig[halle]) ? window.hallenConfig[halle].color : "";
+            }
 
-                    box.querySelector('.klasse-label').innerText = klasse;
-                    box.querySelector('.lehrer-info').innerText = lehrer;
-                    box.querySelector('.halle-label').innerText = halle;
-                    box.setAttribute('data-notiz', kommentar);
+            // 6. Materialien, Icons & Notizen
+            markBoxWithMaterialIcon(box, data.material || "", kommentar);
 
-                    if (halle === "Ausfall") {
-                        box.classList.add('ausfall-mode');
-                        box.style.backgroundColor = ""; 
-                    } else {
-                        box.classList.remove('ausfall-mode');
-                        box.style.backgroundColor = (window.hallenConfig && window.hallenConfig[halle]) 
-                                                    ? window.hallenConfig[halle].color : "";
-                    }
+            // Lock Icon
+            let lockIcon = box.querySelector('.lock-icon-container');
+            if (!lockIcon) {
+                lockIcon = document.createElement('div');
+                lockIcon.className = 'lock-icon-container';
+                Object.assign(lockIcon.style, { position: 'absolute', right: '-3px', bottom: '5px', display: 'flex' });
+                box.appendChild(lockIcon);
+            }
+            lockIcon.innerHTML = (data.typ === 'fix') ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
 
-                    markBoxWithMaterialIcon(box, material, kommentar);
+            // Notiz Icon
+            const altesNotizIcon = box.querySelector('.box-notiz-icon');
+            if (altesNotizIcon) altesNotizIcon.remove();
 
-                    // Icons
-                    let lockIcon = box.querySelector('.lock-icon-container');
-                    if (!lockIcon) {
-                        lockIcon = document.createElement('div');
-                        lockIcon.className = 'lock-icon-container';
-                        Object.assign(lockIcon.style, { position: 'absolute', right: '-3px', bottom: '5px', display: 'flex', alignItems: 'center' });
-                        box.appendChild(lockIcon);
-                    }
-                    lockIcon.innerHTML = (typ === 'fix') ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
-
-                    const altesNotizIcon = box.querySelector('.box-notiz-icon');
-                    if (altesNotizIcon) altesNotizIcon.remove();
-
-                    if (kommentar.trim() !== "") {
-                        const neuesNotizIcon = document.createElement('span');
-                        neuesNotizIcon.className = 'box-notiz-icon';
-                        neuesNotizIcon.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
-                        Object.assign(neuesNotizIcon.style, { position: 'absolute', top: '-2px', left: '4px', cursor: 'pointer', zIndex: '5' });
-                        neuesNotizIcon.onclick = function(e) { 
-                            e.stopPropagation(); 
-                            if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(klasse, kommentar); 
-                        };
-                        box.appendChild(neuesNotizIcon);
-                    }
-                }
+            if (kommentar.trim() !== "") {
+                const neuesNotizIcon = document.createElement('span');
+                neuesNotizIcon.className = 'box-notiz-icon';
+                neuesNotizIcon.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
+                Object.assign(neuesNotizIcon.style, { position: 'absolute', top: '-2px', left: '4px', cursor: 'pointer', zIndex: '5' });
+                neuesNotizIcon.onclick = function(e) { 
+                    e.stopPropagation(); 
+                    if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(klasse, kommentar); 
+                };
+                box.appendChild(neuesNotizIcon);
             }
         });
 
-        // MODI WIEDERHERSTELLEN
+        // Modus-Wiederherstellung
         if (window.moveMode && typeof highlightFreeSlots === 'function') {
             highlightFreeSlots();
         } else if (window.addMode) {
