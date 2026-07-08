@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO11111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2443,6 +2443,9 @@ body {
     let pendingNews = [];
     let isSaving = false;          // Status für den Global Loader
 
+
+    let lastKnownChange = ""; // Hier speichern wir den Stand für syncplan...
+
 /* ============================================================
    2. INITIALISIERUNG
    ============================================================ */
@@ -2463,6 +2466,30 @@ document.addEventListener('DOMContentLoaded', () => {
     changeDayAndLoad(dp.value); 
 });
 
+    
+
+async function checkGlobalSync() {
+    try {
+        // Wir nutzen den News-Endpunkt, um den Zeitstempel mitzuholen
+        const response = await fetch(`${url}?action=getNews&pw=${encodeURIComponent(userPw)}`);
+        const data = await response.json();
+
+        // Prüfen, ob lastChange existiert und sich vom letzten Stand unterscheidet
+        if (data.lastChange && data.lastChange !== lastKnownChange) {
+            console.log("Änderung in DB erkannt (G1):", data.lastChange);
+            lastKnownChange = data.lastChange;
+
+            // Hier zünden wir deinen bewährten syncPlan()
+            await syncPlan(); 
+        }
+    } catch (e) {
+        console.error("Fehler beim Globalen Sync-Check:", e);
+    }
+}
+
+
+
+    
 /* ============================================================
    3. LOGIN-LOGIK (Optimiert & Sicher)
    ============================================================ */
@@ -2526,7 +2553,7 @@ async function handleLogin() {
         // 5. Hintergrund-Sync (alle 30s)
 setInterval(async () => {
     if (document.visibilityState === 'visible') {
-        await syncPlan();
+        await checkGlobalSync(); // Der neue Sync-Check für den Plan
         await initNewsSystem(); 
     }
 }, 5000); 
