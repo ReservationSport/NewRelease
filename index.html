@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2473,21 +2473,17 @@ async function checkGlobalSync() {
         const response = await fetch(`${url}?action=getNews&pw=${encodeURIComponent(userPw)}`);
         const data = await response.json();
         
-        // Beide Werte säubern (Leerzeichen an den Rändern entfernen)
-        const serverZeit = (data.lastChange || "").toString().trim();
-        const lokalZeit = (lastKnownChange || "").toString().trim();
+        // Da wir jetzt Zahlen vergleichen, ist das absolut sicher:
+        const serverZeit = Number(data.lastChange); 
 
-        console.log("DEBUG - Server:", "'" + serverZeit + "'");
-        console.log("DEBUG - Lokal:", "'" + lokalZeit + "'");
-
-        // Vergleich mit den gesäuberten Strings
-        if (serverZeit !== "" && serverZeit !== lokalZeit) {
-            console.log("Änderung erkannt! Sync wird gestartet.");
-            lastKnownChange = serverZeit; // Aktualisieren
+        // Initialisierung beim ersten Lauf oder wenn eine echte Änderung vorliegt
+        if (serverZeit > lastKnownChange) {
+            console.log("Änderung erkannt (Server-Zeit: " + serverZeit + ")");
+            lastKnownChange = serverZeit;
             await syncPlan(); 
         }
     } catch (e) {
-        console.error("Fehler beim Sync-Check:", e);
+        console.error("Fehler im Sync-Check:", e);
     }
 }
 
