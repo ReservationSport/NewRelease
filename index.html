@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOsfsfa</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2444,7 +2444,7 @@ body {
     let isSaving = false;          // Status für den Global Loader
 
 
-    let lastKnownChange = ""; // Hier speichern wir den Stand für syncplan...
+    let lastKnownChange = 0; // Hier speichern wir den Stand für syncplan...
 
 /* ============================================================
    2. INITIALISIERUNG
@@ -2470,52 +2470,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function checkGlobalSync() {
     try {
+        // Hier deine URL anpassen, falls du ein anderes Action-Ziel brauchst
         const response = await fetch(`${url}?action=getNews&pw=${encodeURIComponent(userPw)}`);
         const text = await response.text(); 
         
-        // Erst parsen, wenn es wirklich JSON ist
         let data;
         try {
             data = JSON.parse(text);
         } catch (e) {
-            // Wenn der Server HTML/Fehler schickt, beenden wir das hier lautlos
-            // ohne das "News-System" zu triggern.
+            // Bei Fehler (Login/HTML) einfach gar nichts tun, Stille bewahren
             return; 
         }
 
-        // Sicherstellen, dass die Daten valide sind
-        if (!data || !data.lastChange) return;
+        // Annahme: Dein Server schickt 'g1' als Zeitstempel oder Versionsnummer
+        // Passe 'data.g1' an, falls dein Feld anders heißt
+        const serverZeit = Number(data.g1); 
 
-        const serverZeit = Number(data.lastChange); 
-
-        // --- HIER IST DAS GATE: Zündet NUR bei echter Änderung ---
+        // Prüfen, ob wir einen neuen Wert haben
         if (serverZeit > lastKnownChange) {
-            console.log("Änderung erkannt - Starte syncPlan jetzt...");
-            lastKnownChange = serverZeit;
+            console.log("Änderung (g1) erkannt! Starte Sync & News...");
             
-            // Erst jetzt wird die kritische Funktion aufgerufen
-            try {
-                await syncPlan();
-                console.log("syncPlan erfolgreich beendet.");
-            } catch (err) {
-                console.error("FEHLER in syncPlan:", err);
-            }
+            // Update den Zeitstempel, damit es nicht nochmal triggert
+            lastKnownChange = serverZeit;
+
+            // Zünde deine Systeme
+            if (typeof initNewsSystem === 'function') initNewsSystem();
+            if (typeof syncPlan === 'function') await syncPlan();
+            
+        } else {
+            // Hier passiert absolut nichts, wenn g1 gleich ist
         }
-        // --- ENDE GATE ---
 
     } catch (err) {
-        // Netzwerkfehler werden hier ignoriert, damit das System ruhig bleibt
-        return;
+        // Netzwerkfehler ignorieren
     }
 }
 
 
 
     
-/* ============================================================
-   3. LOGIN-LOGIK (Optimiert & Sicher)
-   ============================================================ */
-
 async function handleLogin() {
     const btn = document.getElementById('loginBtn');
     const errorDiv = document.getElementById('loginError');
@@ -2531,7 +2524,6 @@ async function handleLogin() {
         return; 
     }
 
-    // 1. Button morpht zum Spinner
     btn.classList.add('is-loading');
     errorDiv.innerText = "";
 
@@ -2545,81 +2537,71 @@ async function handleLogin() {
             return;
         }
 
-        // ZUTRITT GEWÄHRT
         userPw = pwVal;
         userKuerzel = kuerzelVal;
         
-        // 2. Overlay zeigen
         loadingOverlay.classList.add('is-visible');
-        
-        // 3. Login-Karte ausblenden
         loginOverlay.classList.add('fade-out');
         await new Promise(resolve => setTimeout(resolve, 500));
         loginOverlay.style.display = 'none';
         
-        // 4. UI-Elemente vorbereiten
         const newsContainer = document.getElementById('news-btn-container');
         if(newsContainer) newsContainer.style.display = 'block';
         
         await initNewsSystem();
         await changeDayAndLoad(dp.value);
 
-            if (window.lastPlanResponse) {
-                window.hallenConfig = window.lastPlanResponse.hallenConfig;
-            }
+        if (window.lastPlanResponse) {
+            window.hallenConfig = window.lastPlanResponse.hallenConfig;
+            // Initialer Zeitstempel für das G1-Gate setzen
+            window.lastKnownChange = Number(window.lastPlanResponse.g1 || 0);
+        }
         
-        // Fertig: Loading-Overlay entfernen
         loadingOverlay.classList.remove('is-visible');
 
+        /* ============================================================
+           5. INTELLIGENTER HINTERGRUND-SYNC (Nur bei Änderung)
+           ============================================================ */
+        setInterval(async () => {
+            if (document.visibilityState !== 'visible') return;
 
-        // 5. Hintergrund-Sync (alle 5s)
-setInterval(async () => {
-    if (document.visibilityState === 'visible') {
-        await checkGlobalSync(); // Der neue Sync-Check für den Plan
-        await initNewsSystem(); 
-    }
-}, 5000); 
+            try {
+                const res = await fetch(`${url}?action=getNews&pw=${encodeURIComponent(userPw)}`);
+                const text = await res.text();
+                const data = JSON.parse(text);
 
-// 6. Automatischer Tageswechsel-Check (nur wenn der User "Heute" betrachtet)
-setInterval(async () => {
-    const jetzt = new Date();
-    const localToday = `${jetzt.getFullYear()}-${String(jetzt.getMonth() + 1).padStart(2, '0')}-${String(jetzt.getDate()).padStart(2, '0')}`;
-    const dp = document.getElementById('datePicker');
-    
-    // Wir speichern den Zustand, ob der User "Heute" aktiv hat
-    // Wenn dp.value dem heutigen Tag entspricht, ist alles gut.
-    // Wenn er NICHT dem heutigen Tag entspricht, lassen wir ihn in Ruhe!
-    
-    // Aber: Wenn wir BEIM LADEN oder BEIM LOGIN "Heute" gewählt hatten
-    // und nun ein Tag vergangen ist, WOLLEN wir das Update.
-    
-    // Neue Logik: Springe nur, wenn der Tag tatsächlich gewechselt hat 
-    // UND der User nicht aktiv an einem anderen Tag arbeitet.
-    
-    // Ein einfacher Weg: Prüfe, ob das Datum im DatePicker veraltet ist,
-    // ABER setze ein Flag, wenn der User den Tag manuell geändert hat.
-    
-    if (dp && dp.value !== localToday) {
-        // Wir fragen den User nicht, wir prüfen: 
-        // Hat der User aktiv ein Datum gewählt, das in der ZUKUNFT liegt?
-        // Wenn der User aktiv den 5. Juni gewählt hat, ist dp.value > localToday.
-        // Dann NICHT zurückspringen!
-        
-        if (dp.value > localToday) {
-            console.log("User arbeitet in der Zukunft, kein automatischer Sprung.");
-            return; 
-        }
+                // Das GATE: Prüft nur, ob sich G1 geändert hat
+                if (data && data.g1 && Number(data.g1) > window.lastKnownChange) {
+                    console.log("Änderung erkannt (g1: " + data.g1 + "). Synchronisiere...");
+                    window.lastKnownChange = Number(data.g1);
+                    
+                    await syncPlan();
+                    await initNewsSystem();
+                }
+            } catch (e) {
+                // Bei Parse-Fehler (HTML statt JSON) einfach ignorieren
+            }
+        }, 5000); 
 
-        console.log("Neuer Tag erkannt! Synchronisiere auf: " + localToday);
-        dp.value = localToday;
-        updateDateText(localToday);
-        updateNavButtons();
-        await changeDayAndLoad(localToday);
-    }
-}, 60000);
-
+        /* ============================================================
+           6. TAGESWECHSEL-CHECK
+           ============================================================ */
+        setInterval(async () => {
+            const jetzt = new Date();
+            const localToday = `${jetzt.getFullYear()}-${String(jetzt.getMonth() + 1).padStart(2, '0')}-${String(jetzt.getDate()).padStart(2, '0')}`;
+            const dp = document.getElementById('datePicker');
+            
+            if (dp && dp.value !== localToday && dp.value <= localToday) {
+                console.log("Neuer Tag erkannt! Synchronisiere auf: " + localToday);
+                dp.value = localToday;
+                updateDateText(localToday);
+                updateNavButtons();
+                await changeDayAndLoad(localToday);
+            }
+        }, 60000);
         
     } catch (e) {
+        // Error Handling bleibt wie gehabt
         errorDiv.innerText = "Verbindung fehlgeschlagen.";
         btn.classList.remove('is-loading');
         loadingOverlay.classList.remove('is-visible');
