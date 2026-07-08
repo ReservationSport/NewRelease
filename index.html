@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOaddadsd</title>
+    <title>Reservation Sport - BBZO23423424</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2443,7 +2443,6 @@ body {
 
    window.lastKnownChange = 0;
 
-    window.isSyncLocked = false;
     
 /* ============================================================
    2. INITIALISIERUNG
@@ -2895,7 +2894,7 @@ window.hideLoading = function() {
     
 
 /* ============================================================
-   LOAD PLAN - ROBUSTE VERSION
+   LOAD PLAN - VOLLSTÄNDIGE & ROBUSTE VERSION (MIT EIGEN-CHECK)
    ============================================================ */
 window.loadPlan = async function() {
     const dp = document.getElementById('datePicker');
@@ -2948,10 +2947,9 @@ window.loadPlan = async function() {
             for(let i = 1; i <= 5; i++) {
                 const absoluteSlot = (rowIndex * 5) + i; 
                 const slotData = plan[absoluteSlot] || {};
-                const klasse = (slotData.klasse || "").trim();
+                const klasse = slotData.klasse || "";
                 
-                // --- NEU: Wenn 'verschoben' oder komplett leer, Box explizit als leer rendern ---
-                if (klasse.toLowerCase() === "verschoben" || klasse === "") {
+                if (klasse.trim().toLowerCase() === "verschoben") {
                     html += `<div class="box empty" data-slot="${absoluteSlot}" data-time="${zeitStr}"></div>`;
                     continue; 
                 }
@@ -2959,6 +2957,7 @@ window.loadPlan = async function() {
                 const halle = slotData.halle || "";
                 const typ = slotData.typ || ""; 
                 const isAusfall = (halle === "Ausfall");
+                const isKlasseLeer = klasse.trim() === "";
                 
                 // --- KÜRZEL/VERFASSER LOGIK ---
                 const verfasser = slotData.verfasser || "";
@@ -2966,7 +2965,7 @@ window.loadPlan = async function() {
                 const lehrer = (verfasser !== "") ? verfasser : (lehrerDaten !== "" ? lehrerDaten : (allClassTeachers[klasse] || ""));
                 
                 // --- ERWEITERTER EDIT-CHECK ---
-                const isMyClass = myClasses.some(c => klasse.toLowerCase() === c.trim().toLowerCase());
+                const isMyClass = !isKlasseLeer && myClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
                 const isMyBooking = (verfasser.trim().toLowerCase() === userKuerzel.toLowerCase());
                 const canEdit = isMyClass || isMyBooking;
 
@@ -2974,7 +2973,7 @@ window.loadPlan = async function() {
                 
                 const classList = [
                     "box",
-                    "not-empty", // Markierung für CSS
+                    isKlasseLeer ? "empty" : "",
                     canEdit ? "is-mine" : "not-mine",
                     isAusfall ? "ausfall-mode" : ""
                 ].filter(Boolean).join(" ");
@@ -2997,24 +2996,19 @@ window.loadPlan = async function() {
         // Icons nachladen
         Object.keys(plan).forEach(slot => {
             const slotData = plan[slot] || {};
-            const klasse = (slotData.klasse || "").trim();
-            
-            // Wenn der Slot als verschoben markiert ist, wollen wir keine Icons rendern
-            if (klasse.toLowerCase() === "verschoben" || klasse === "") return;
-
+            if (slotData.klasse && slotData.klasse.trim().toLowerCase() === "verschoben") return;
             const box = container.querySelector(`[data-slot="${slot}"]`);
             if (!box) return;
-
             if (slotData.material && slotData.material.trim() !== "") markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
-            
             if (slotData.kommentar && slotData.kommentar.trim() !== "") {
                 const notizElement = document.createElement('span');
                 notizElement.className = 'box-notiz-icon';
                 notizElement.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
+                notizElement.title = slotData.kommentar;
                 Object.assign(notizElement.style, { position: 'absolute', top: '-2px', left: '4px', cursor: 'pointer', zIndex: '5' });
                 notizElement.onclick = (e) => { 
                     e.stopPropagation(); 
-                    if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(klasse, slotData.kommentar); 
+                    if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(slotData.klasse || "", slotData.kommentar); 
                 };
                 box.appendChild(notizElement);
             }
@@ -3075,10 +3069,10 @@ window.closeModal = function(id) {
 
     
 /* ============================================================
-   SYNC PLAN - ROBUST (Spiegelt Logik von loadPlan)
+   SYNC PLAN - NEU
    ============================================================ */
 window.syncPlan = async function() {
-    if (window.isSyncLocked || window.isSaving) return; 
+    if (window.isSaving) return; 
 
     const dp = document.getElementById('datePicker');
     const container = document.getElementById('plan-container'); 
@@ -3098,39 +3092,30 @@ window.syncPlan = async function() {
         window.hallenConfig = json.hallenConfig || window.hallenConfig;
         const myClasses = json.userClasses || [];
         
-        // Gehe durch alle Slots des Plans
+        // Gehe durch alle Slots des neuen Plans
         Object.keys(newPlan).forEach(slot => {
             const slotData = newPlan[slot] || {};
             const box = container.querySelector(`[data-slot="${slot}"]`);
             if (!box) return;
 
-            const klasse = (slotData.klasse || "").trim();
-            
-            // --- HARTER RESET WIE IN LOADPLAN ---
-            if (klasse.toLowerCase() === "verschoben" || klasse === "") {
-                box.className = "box empty";
-                box.style.backgroundColor = "";
-                box.style.cursor = "default";
-                box.innerHTML = ""; 
-                box.onclick = null;
-                return; 
-            }
-
-            // Normale Logik für belegte Slots
-            const verfasser = (slotData.verfasser || "").trim();
-            const halle = (slotData.halle || "").trim();
+            const klasse = slotData.klasse || "";
+            const verfasser = slotData.verfasser || "";
+            const halle = slotData.halle || "";
             const typ = slotData.typ || "";
             const isAusfall = (halle === "Ausfall");
+            const isKlasseLeer = (klasse.trim() === "");
             
+            // --- Logik (analog zu loadPlan) ---
             const lehrer = (verfasser !== "") ? verfasser : ((slotData.lehrer !== "") ? slotData.lehrer : (allClassTeachers[klasse] || ""));
-            const isMyClass = myClasses.some(c => klasse.toLowerCase() === c.trim().toLowerCase());
-            const isMyBooking = (verfasser.toLowerCase() === userKuerzel.toLowerCase());
+            const isMyClass = !isKlasseLeer && myClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
+            const isMyBooking = (verfasser.trim().toLowerCase() === userKuerzel.toLowerCase());
             const canEdit = isMyClass || isMyBooking;
             
-            // Update UI
+            // --- Update UI ---
+            // Klassen aktualisieren
             box.className = [
                 "box",
-                "not-empty",
+                isKlasseLeer ? "empty" : "",
                 canEdit ? "is-mine" : "not-mine",
                 isAusfall ? "ausfall-mode" : ""
             ].filter(Boolean).join(" ");
@@ -3138,17 +3123,28 @@ window.syncPlan = async function() {
             box.style.backgroundColor = (window.hallenConfig[halle] && !isAusfall) ? window.hallenConfig[halle].color : '';
             box.style.cursor = canEdit ? 'pointer' : 'default';
 
-            box.innerHTML = `
-                <div class="klasse-label">${klasse}</div>
-                <div class="lehrer-info">${lehrer}</div>
-                <div class="halle-label">${halle}</div>
-                <div class="lock-icon-container" style="position:absolute; right:-3px; bottom:5px; display:flex; align-items:center;">
-                    ${typ === 'fix' ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : ''}
-                </div>
-            `;
+            // Inhalte aktualisieren
+            const klassenEl = box.querySelector('.klasse-label');
+            const lehrerEl = box.querySelector('.lehrer-info');
+            const halleEl = box.querySelector('.halle-label');
+            
+            if (klassenEl) klassenEl.innerText = klasse;
+            if (lehrerEl) lehrerEl.innerText = lehrer;
+            if (halleEl) halleEl.innerText = halle;
 
-            // Icons neu setzen
-            if (slotData.material && slotData.material.trim() !== "") markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
+            // Lock Icon
+            let lockContainer = box.querySelector('.lock-icon-container');
+            if (lockContainer) {
+                lockContainer.innerHTML = (typ === 'fix') ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
+            }
+
+            // Material/Notiz Icons
+            const altesNotizIcon = box.querySelector('.box-notiz-icon');
+            if (altesNotizIcon) altesNotizIcon.remove();
+            
+            if (slotData.material && slotData.material.trim() !== "") {
+                markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
+            }
             
             if (slotData.kommentar && slotData.kommentar.trim() !== "") {
                 const notizElement = document.createElement('span');
@@ -3166,6 +3162,7 @@ window.syncPlan = async function() {
         console.error("Hintergrund-Sync fehlgeschlagen:", e);
     }
 };
+
 
 
 
@@ -5401,8 +5398,7 @@ if (!window.moveMode) {
 window.handleMoveConfirm = async function(targetSlot) {
     if (!window.moveMode) return;
 
-    // 1. Sperre den Hintergrund-Sync und speichere den Zustand
-    window.isSyncLocked = true; 
+    // 1. Sofortiges Flag setzen, um zu verhindern, dass loadPlan() den Modus neu startet
     const tempMoveMode = window.moveMode;
     window.moveMode = null; 
 
@@ -5415,7 +5411,7 @@ window.handleMoveConfirm = async function(targetSlot) {
     const overlay = document.getElementById('move-overlay');
     if (overlay) overlay.remove();
 
-    // A. Ziel vorbereiten (Payloads)
+    // A. Ziel vorbereiten (alles leer machen)
     const payloadClear = {
         action: "saveBooking",
         date: tempMoveMode.date,
@@ -5424,13 +5420,14 @@ window.handleMoveConfirm = async function(targetSlot) {
         pw: userPw
     };
 
-    // B. Quell-Slot leeren (NUR NOCH LEER SIND WIRKLICH LEER!)
-const payloadOld = { 
-    ...payloadClear, // Hier sind alle Felder leer!
-    slot: tempMoveMode.sourceSlot
-    // KEIN klasse: "verschoben" mehr!
-};
+    // B. Quell-Slot leeren
+    const payloadOld = { 
+        ...payloadClear, 
+        slot: tempMoveMode.sourceSlot,
+        klasse: "verschoben" 
+    };
 
+    // C. Ziel-Slot belegen
     const payloadNew = {
         ...tempMoveMode, 
         action: "saveBooking",
@@ -5439,30 +5436,28 @@ const payloadOld = {
     };
 
     try {
-        // Sequenzielle Abarbeitung der Server-Anfragen
         await fetch(url, { method: "POST", body: JSON.stringify(payloadOld) });
         await fetch(url, { method: "POST", body: JSON.stringify(payloadClear) });
         await fetch(url, { method: "POST", body: JSON.stringify(payloadNew) });
 
-        // Finales Laden des Plans (der Sync ist immer noch gelockt)
+        // Finales Laden
         await loadPlan(); 
         
     } catch (err) {
         console.error("Fehler beim Verschieben:", err);
+        // Bei Fehler Modus wiederherstellen, falls nötig
         window.moveMode = tempMoveMode;
         await loadPlan();
     } finally {
-        // UI Aufräumarbeiten
+        // UI Aufräumarbeiten nach dem Laden
         document.getElementById('plan-container')?.classList.remove('move-mode-active');
         document.querySelectorAll('.move-mode-active').forEach(el => el.classList.remove('move-mode-active'));
         
+        // Letzte Instanz: Panel entfernen falls es durch loadPlan() wieder entstand
         document.getElementById('move-panel-ui')?.remove();
         document.getElementById('move-overlay')?.remove();
         
         hideLoading();
-        
-        // SPERRE AUFHEBEN: Erst hier darf der Hintergrund-Sync wieder arbeiten
-        window.isSyncLocked = false; 
     }
 };
     
