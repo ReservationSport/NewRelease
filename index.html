@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOaddadsd</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2895,7 +2895,7 @@ window.hideLoading = function() {
     
 
 /* ============================================================
-   LOAD PLAN - VOLLSTÄNDIGE & ROBUSTE VERSION (MIT EIGEN-CHECK)
+   LOAD PLAN - ROBUSTE VERSION
    ============================================================ */
 window.loadPlan = async function() {
     const dp = document.getElementById('datePicker');
@@ -2948,9 +2948,10 @@ window.loadPlan = async function() {
             for(let i = 1; i <= 5; i++) {
                 const absoluteSlot = (rowIndex * 5) + i; 
                 const slotData = plan[absoluteSlot] || {};
-                const klasse = slotData.klasse || "";
+                const klasse = (slotData.klasse || "").trim();
                 
-                if (klasse.trim().toLowerCase() === "verschoben") {
+                // --- NEU: Wenn 'verschoben' oder komplett leer, Box explizit als leer rendern ---
+                if (klasse.toLowerCase() === "verschoben" || klasse === "") {
                     html += `<div class="box empty" data-slot="${absoluteSlot}" data-time="${zeitStr}"></div>`;
                     continue; 
                 }
@@ -2958,7 +2959,6 @@ window.loadPlan = async function() {
                 const halle = slotData.halle || "";
                 const typ = slotData.typ || ""; 
                 const isAusfall = (halle === "Ausfall");
-                const isKlasseLeer = klasse.trim() === "";
                 
                 // --- KÜRZEL/VERFASSER LOGIK ---
                 const verfasser = slotData.verfasser || "";
@@ -2966,7 +2966,7 @@ window.loadPlan = async function() {
                 const lehrer = (verfasser !== "") ? verfasser : (lehrerDaten !== "" ? lehrerDaten : (allClassTeachers[klasse] || ""));
                 
                 // --- ERWEITERTER EDIT-CHECK ---
-                const isMyClass = !isKlasseLeer && myClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
+                const isMyClass = myClasses.some(c => klasse.toLowerCase() === c.trim().toLowerCase());
                 const isMyBooking = (verfasser.trim().toLowerCase() === userKuerzel.toLowerCase());
                 const canEdit = isMyClass || isMyBooking;
 
@@ -2974,7 +2974,7 @@ window.loadPlan = async function() {
                 
                 const classList = [
                     "box",
-                    isKlasseLeer ? "empty" : "",
+                    "not-empty", // Markierung für CSS
                     canEdit ? "is-mine" : "not-mine",
                     isAusfall ? "ausfall-mode" : ""
                 ].filter(Boolean).join(" ");
@@ -2997,19 +2997,24 @@ window.loadPlan = async function() {
         // Icons nachladen
         Object.keys(plan).forEach(slot => {
             const slotData = plan[slot] || {};
-            if (slotData.klasse && slotData.klasse.trim().toLowerCase() === "verschoben") return;
+            const klasse = (slotData.klasse || "").trim();
+            
+            // Wenn der Slot als verschoben markiert ist, wollen wir keine Icons rendern
+            if (klasse.toLowerCase() === "verschoben" || klasse === "") return;
+
             const box = container.querySelector(`[data-slot="${slot}"]`);
             if (!box) return;
+
             if (slotData.material && slotData.material.trim() !== "") markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
+            
             if (slotData.kommentar && slotData.kommentar.trim() !== "") {
                 const notizElement = document.createElement('span');
                 notizElement.className = 'box-notiz-icon';
                 notizElement.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
-                notizElement.title = slotData.kommentar;
                 Object.assign(notizElement.style, { position: 'absolute', top: '-2px', left: '4px', cursor: 'pointer', zIndex: '5' });
                 notizElement.onclick = (e) => { 
                     e.stopPropagation(); 
-                    if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(slotData.klasse || "", slotData.kommentar); 
+                    if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(klasse, slotData.kommentar); 
                 };
                 box.appendChild(notizElement);
             }
@@ -3070,10 +3075,9 @@ window.closeModal = function(id) {
 
     
 /* ============================================================
-   SYNC PLAN - NEU (Optimiert gegen Geisterdaten)
+   SYNC PLAN - ROBUST (Spiegelt Logik von loadPlan)
    ============================================================ */
 window.syncPlan = async function() {
-    // Wenn gesperrt (beim Verschieben) oder bereits am Speichern, sofort abbrechen
     if (window.isSyncLocked || window.isSaving) return; 
 
     const dp = document.getElementById('datePicker');
@@ -3094,41 +3098,39 @@ window.syncPlan = async function() {
         window.hallenConfig = json.hallenConfig || window.hallenConfig;
         const myClasses = json.userClasses || [];
         
-        // Gehe durch alle Slots des neuen Plans
+        // Gehe durch alle Slots des Plans
         Object.keys(newPlan).forEach(slot => {
             const slotData = newPlan[slot] || {};
             const box = container.querySelector(`[data-slot="${slot}"]`);
             if (!box) return;
 
             const klasse = (slotData.klasse || "").trim();
-            const verfasser = (slotData.verfasser || "").trim();
-            const halle = (slotData.halle || "").trim();
-            const typ = slotData.typ || "";
             
-            // Entscheidende Prüfung: Ist die Box wirklich leer?
-            const isKlasseLeer = (klasse === "" || klasse.toLowerCase() === "verschoben");
-            const isAusfall = (halle === "Ausfall");
-            
-            // --- Logik ---
-            const lehrer = (verfasser !== "") ? verfasser : ((slotData.lehrer !== "") ? slotData.lehrer : (allClassTeachers[klasse] || ""));
-            const isMyClass = !isKlasseLeer && myClasses.some(c => klasse.toLowerCase() === c.trim().toLowerCase());
-            const isMyBooking = (verfasser.toLowerCase() === userKuerzel.toLowerCase());
-            const canEdit = isKlasseLeer || isMyClass || isMyBooking; // Leer darf meist bearbeitet werden
-            
-            // --- Update UI ---
-            if (isKlasseLeer) {
-                // HARTER RESET BEI LEERER BOX
+            // --- HARTER RESET WIE IN LOADPLAN ---
+            if (klasse.toLowerCase() === "verschoben" || klasse === "") {
                 box.className = "box empty";
                 box.style.backgroundColor = "";
                 box.style.cursor = "default";
-                box.innerHTML = ""; // Alles löschen
+                box.innerHTML = ""; 
                 box.onclick = null;
-                return; // Nichts weiter tun für diesen Slot
+                return; 
             }
 
-            // Wenn Box nicht leer, UI aktualisieren
+            // Normale Logik für belegte Slots
+            const verfasser = (slotData.verfasser || "").trim();
+            const halle = (slotData.halle || "").trim();
+            const typ = slotData.typ || "";
+            const isAusfall = (halle === "Ausfall");
+            
+            const lehrer = (verfasser !== "") ? verfasser : ((slotData.lehrer !== "") ? slotData.lehrer : (allClassTeachers[klasse] || ""));
+            const isMyClass = myClasses.some(c => klasse.toLowerCase() === c.trim().toLowerCase());
+            const isMyBooking = (verfasser.toLowerCase() === userKuerzel.toLowerCase());
+            const canEdit = isMyClass || isMyBooking;
+            
+            // Update UI
             box.className = [
                 "box",
+                "not-empty",
                 canEdit ? "is-mine" : "not-mine",
                 isAusfall ? "ausfall-mode" : ""
             ].filter(Boolean).join(" ");
@@ -3136,7 +3138,6 @@ window.syncPlan = async function() {
             box.style.backgroundColor = (window.hallenConfig[halle] && !isAusfall) ? window.hallenConfig[halle].color : '';
             box.style.cursor = canEdit ? 'pointer' : 'default';
 
-            // Box neu befüllen, falls sie vorher leer war (oder einfach überschreiben)
             box.innerHTML = `
                 <div class="klasse-label">${klasse}</div>
                 <div class="lehrer-info">${lehrer}</div>
@@ -3146,10 +3147,8 @@ window.syncPlan = async function() {
                 </div>
             `;
 
-            // Material/Notiz Icons
-            if (slotData.material && slotData.material.trim() !== "") {
-                markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
-            }
+            // Icons neu setzen
+            if (slotData.material && slotData.material.trim() !== "") markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
             
             if (slotData.kommentar && slotData.kommentar.trim() !== "") {
                 const notizElement = document.createElement('span');
@@ -3167,7 +3166,6 @@ window.syncPlan = async function() {
         console.error("Hintergrund-Sync fehlgeschlagen:", e);
     }
 };
-
 
 
 
