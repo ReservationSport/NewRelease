@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOsfsf</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2206,9 +2206,6 @@ body {
         <span class="material-symbols-outlined">link</span> Links
     </div>
 </div>
-
-<div id="plan-container"></div>
-
 
 <div id="calendar-modal" class="cal-modal-backdrop" style="display: none;">
     <div class="cal-modal-container" onclick="event.stopPropagation()">
@@ -5072,32 +5069,7 @@ window.saveImmediately = async function(payload, options = {}) {
         return { status: "error", msg: e.toString() };
     }
 };
-   
-
-
-/**
- * Mischt bestehende Daten mit neuen Änderungen
- * @param {string} slotID - Der Slot, der geändert wird
- * @param {object} newData - Nur die Felder, die sich ändern (z.B. { material: "..." })
- */
-window.getMergedPayload = function(slotID, newData) {
-    // 1. Hole das existierende Objekt (oder leeres Objekt als Fallback)
-    const currentData = window.lastPlanData[slotID] || {};
-    
-    // 2. Mische alt und neu
-    const mergedData = {
-        ...currentData, // Nimmt alles, was schon da war (auch fix, klasse, time, etc.)
-        ...newData      // Überschreibt nur die spezifischen neuen Felder
-    };
-    
-    // 3. Gib das komplette Objekt zurück
-    return {
-        slot: slotID,
-        data: mergedData
-    };
-};
-
-    
+       
 
 /**
  * Interne Hilfsfunktion: Hält die News-Logik sauber
