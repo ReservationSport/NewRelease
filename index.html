@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2443,6 +2443,8 @@ body {
     let pendingNews = [];
     let isSaving = false;          // Status für den Global Loader
 
+    let isManualSaving = false; // Ganz oben bei deinen Variablen
+
 /* ============================================================
    2. INITIALISIERUNG
    ============================================================ */
@@ -3038,7 +3040,8 @@ window.closeModal = function(id) {
    SYNC PLAN - ROBUSTE VERSION (MIT ADD-MODE & EIGEN-CHECK)
    ============================================================ */
 window.syncPlan = async function() {
-    if (isSaving) return; 
+    // Schützt vor gleichzeitigen Aufrufen und pausiert bei manuellen Speicher-Aktionen
+    if (isSaving || (typeof isManualSaving !== 'undefined' && isManualSaving)) return; 
 
     const dp = document.getElementById('datePicker');
     const container = document.getElementById('plan-container'); 
@@ -3064,7 +3067,7 @@ window.syncPlan = async function() {
             if (box) {
                 const data = json.plan[slot] || {};
                 const klasse = data.klasse || "";
-                const verfasser = data.verfasser || ""; // Dein Kürzel aus Spalte 11
+                const verfasser = data.verfasser || ""; 
                 const isLeer = (klasse.trim() === "" || klasse.trim().toLowerCase() === "verschoben");
 
                 if (isLeer) {
@@ -3089,7 +3092,7 @@ window.syncPlan = async function() {
                     // --- ERWEITERTER EDIT-CHECK ---
                     const isMyClass = userClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
                     const isMyBooking = (verfasser.trim().toLowerCase() === userKuerzel.toLowerCase());
-                    const canEdit = isMyClass || isMyBooking; // Erlaubt, wenn Klasse in Liste ODER Kürzel passt
+                    const canEdit = isMyClass || isMyBooking;
                     
                     box.classList.remove('is-mine', 'not-mine');
                     box.classList.add(canEdit ? 'is-mine' : 'not-mine');
@@ -5597,6 +5600,7 @@ window.startAddMode = function() {
     applyHighlights();
 };
 
+    
 window.showInlineInput = function(box) {
     // 1. Altes Panel entfernen, falls vorhanden
     const existing = document.getElementById('inline-input-panel');
@@ -5641,6 +5645,9 @@ window.confirmInlineAdd = async function(targetSlot) {
 
     document.getElementById('inline-input-panel').remove();
     showLoading('saving');
+    
+    // --- BLOCKER AKTIVIEREN ---
+    isManualSaving = true;
 
     const payload = {
         action: "saveBooking",
@@ -5648,7 +5655,7 @@ window.confirmInlineAdd = async function(targetSlot) {
         slot: targetSlot,
         klasse: name,
         halle: "", 
-        lehrer: userKuerzel, // Dein Kürzel
+        lehrer: userKuerzel,
         material: "", 
         kommentar: "", 
         typ: "Zusatz",
@@ -5658,28 +5665,33 @@ window.confirmInlineAdd = async function(targetSlot) {
     try {
         await fetch(url, { method: "POST", body: JSON.stringify(payload) });
 
-        // --- SOFORTIGE UI-AKTUALISIERUNG ---
+        // Sofortige UI-Aktualisierung (Optimistic UI)
         const box = document.querySelector(`[data-slot="${targetSlot}"]`);
         if (box) {
             box.classList.remove('empty', 'not-mine');
             box.classList.add('is-mine');
             box.style.cursor = 'pointer';
             
-            // Inhalt der Box setzen
             box.innerHTML = `
                 <div class="klasse-label">${name}</div>
                 <div class="lehrer-info">${userKuerzel}</div>
                 <div class="halle-label"></div>
             `;
             
-            // Event-Handler wieder aktivieren (da er durch das manuelle Überschreiben verloren geht)
             setBoxClick(box, name, targetSlot, true);
         }
 
-        cancelAddMode(); 
+        cancelAddMode();
+
+        // --- NACHSYNC: Sicherstellen, dass die Datenbank-Daten geladen werden ---
+        // Dies verhindert, dass der nächste automatische Sync die Box wieder leert.
+        await syncPlan(); 
+        
     } catch (err) {
         console.error("Fehler:", err);
     } finally {
+        // --- BLOCKER DEAKTIVIEREN ---
+        isManualSaving = false;
         hideLoading();
     }
 };
