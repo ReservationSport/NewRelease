@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO23423424</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2443,6 +2443,7 @@ body {
 
    window.lastKnownChange = 0;
 
+    window.isSyncLocked = false;
     
 /* ============================================================
    2. INITIALISIERUNG
@@ -3072,7 +3073,8 @@ window.closeModal = function(id) {
    SYNC PLAN - NEU
    ============================================================ */
 window.syncPlan = async function() {
-    if (window.isSaving) return; 
+    // Wenn gesperrt, sofort abbrechen
+    if (window.isSyncLocked || window.isSaving) return; 
 
     const dp = document.getElementById('datePicker');
     const container = document.getElementById('plan-container'); 
@@ -5398,7 +5400,8 @@ if (!window.moveMode) {
 window.handleMoveConfirm = async function(targetSlot) {
     if (!window.moveMode) return;
 
-    // 1. Sofortiges Flag setzen, um zu verhindern, dass loadPlan() den Modus neu startet
+    // 1. Sperre den Hintergrund-Sync und speichere den Zustand
+    window.isSyncLocked = true; 
     const tempMoveMode = window.moveMode;
     window.moveMode = null; 
 
@@ -5411,7 +5414,7 @@ window.handleMoveConfirm = async function(targetSlot) {
     const overlay = document.getElementById('move-overlay');
     if (overlay) overlay.remove();
 
-    // A. Ziel vorbereiten (alles leer machen)
+    // A. Ziel vorbereiten (Payloads)
     const payloadClear = {
         action: "saveBooking",
         date: tempMoveMode.date,
@@ -5420,14 +5423,12 @@ window.handleMoveConfirm = async function(targetSlot) {
         pw: userPw
     };
 
-    // B. Quell-Slot leeren
     const payloadOld = { 
         ...payloadClear, 
         slot: tempMoveMode.sourceSlot,
         klasse: "verschoben" 
     };
 
-    // C. Ziel-Slot belegen
     const payloadNew = {
         ...tempMoveMode, 
         action: "saveBooking",
@@ -5436,28 +5437,30 @@ window.handleMoveConfirm = async function(targetSlot) {
     };
 
     try {
+        // Sequenzielle Abarbeitung der Server-Anfragen
         await fetch(url, { method: "POST", body: JSON.stringify(payloadOld) });
         await fetch(url, { method: "POST", body: JSON.stringify(payloadClear) });
         await fetch(url, { method: "POST", body: JSON.stringify(payloadNew) });
 
-        // Finales Laden
+        // Finales Laden des Plans (der Sync ist immer noch gelockt)
         await loadPlan(); 
         
     } catch (err) {
         console.error("Fehler beim Verschieben:", err);
-        // Bei Fehler Modus wiederherstellen, falls nötig
         window.moveMode = tempMoveMode;
         await loadPlan();
     } finally {
-        // UI Aufräumarbeiten nach dem Laden
+        // UI Aufräumarbeiten
         document.getElementById('plan-container')?.classList.remove('move-mode-active');
         document.querySelectorAll('.move-mode-active').forEach(el => el.classList.remove('move-mode-active'));
         
-        // Letzte Instanz: Panel entfernen falls es durch loadPlan() wieder entstand
         document.getElementById('move-panel-ui')?.remove();
         document.getElementById('move-overlay')?.remove();
         
         hideLoading();
+        
+        // SPERRE AUFHEBEN: Erst hier darf der Hintergrund-Sync wieder arbeiten
+        window.isSyncLocked = false; 
     }
 };
     
