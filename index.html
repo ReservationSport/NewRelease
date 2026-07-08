@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOsdfdsf</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2476,19 +2476,20 @@ async function checkGlobalSync() {
         // Da wir jetzt Zahlen vergleichen, ist das absolut sicher:
         const serverZeit = Number(data.lastChange); 
 
-        
-if (serverZeit > lastKnownChange) {
-    console.log("Änderung erkannt - Starte syncPlan jetzt...");
-    lastKnownChange = serverZeit;
-    
-    // Debug-Log: Startet es wirklich?
-    try {
-        await syncPlan();
-        console.log("syncPlan erfolgreich beendet.");
-    } catch (err) {
-        console.error("FEHLER in syncPlan:", err);
+        if (serverZeit > lastKnownChange) {
+            console.log("Änderung erkannt - Starte syncPlan jetzt...");
+            lastKnownChange = serverZeit;
+            
+            // Debug-Log: Startet es wirklich?
+            try {
+                await syncPlan();
+                console.log("syncPlan erfolgreich beendet.");
+            } catch (err) {
+                console.error("FEHLER in syncPlan:", err);
             }
         }
+    } catch (e) {
+        console.error("Fehler im Sync-Check:", e);
     }
 }
 
