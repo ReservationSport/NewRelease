@@ -2493,10 +2493,11 @@ async function checkGlobalSync() {
             // Update den Zeitstempel, damit es nicht nochmal triggert
             lastKnownChange = serverZeit;
 
-            // Zünde deine Systeme
-            if (typeof initNewsSystem === 'function') initNewsSystem();
-            if (typeof syncPlan === 'function') await syncPlan();
-            
+           if (typeof loadPlan === 'function') {
+                console.log("Teste mit loadPlan...");
+                await loadPlan(); 
+}
+        
         } else {
             // Hier passiert absolut nichts, wenn g1 gleich ist
         }
