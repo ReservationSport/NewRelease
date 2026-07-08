@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOsdvsav</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2510,11 +2510,12 @@ async function checkGlobalSync() {
                 console.log("NewsSystem aktualisiert.");
             }
             
-            if (typeof loadPlan === 'function') {
-                console.log("Führe loadPlan() aus...");
-                await loadPlan(); 
+            // GEÄNDERT: loadPlan durch syncPlan ersetzt
+            if (typeof syncPlan === 'function') {
+                console.log("Führe syncPlan() aus...");
+                await syncPlan(); 
             } else {
-                console.error("loadPlan ist keine Funktion!");
+                console.error("syncPlan ist keine Funktion!");
             }
             
         } else {
