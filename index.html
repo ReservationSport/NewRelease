@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2503,8 +2503,11 @@ async function smartSync() {
 
     
 /* ============================================================
-   3. LOGIN-LOGIK (Optimiert & Sicher)
+   3. LOGIN-LOGIK (Optimiert & Intelligent)
    ============================================================ */
+
+// Globale Variable für den Sync
+let lastKnownChange = 0; 
 
 async function handleLogin() {
     const btn = document.getElementById('loginBtn');
@@ -2521,7 +2524,6 @@ async function handleLogin() {
         return; 
     }
 
-    // 1. Button morpht zum Spinner
     btn.classList.add('is-loading');
     errorDiv.innerText = "";
 
@@ -2539,76 +2541,51 @@ async function handleLogin() {
         userPw = pwVal;
         userKuerzel = kuerzelVal;
         
+        // 1. Hole Initial-Zeitstempel für den Sync
+        const checkResp = await fetch(`${url}?action=check`, { cache: 'no-store' });
+        const checkData = await checkResp.json();
+        lastKnownChange = checkData.lastChange;
+
         // 2. Overlay zeigen
         loadingOverlay.classList.add('is-visible');
-        
-        // 3. Login-Karte ausblenden
         loginOverlay.classList.add('fade-out');
         await new Promise(resolve => setTimeout(resolve, 500));
         loginOverlay.style.display = 'none';
         
-        // 4. UI-Elemente vorbereiten
+        // 3. UI-Elemente
         const newsContainer = document.getElementById('news-btn-container');
         if(newsContainer) newsContainer.style.display = 'block';
         
         await initNewsSystem();
         await changeDayAndLoad(dp.value);
 
-            if (window.lastPlanResponse) {
-                window.hallenConfig = window.lastPlanResponse.hallenConfig;
-            }
-        
-        // Fertig: Loading-Overlay entfernen
+        if (window.lastPlanResponse) {
+            window.hallenConfig = window.lastPlanResponse.hallenConfig;
+        }
         loadingOverlay.classList.remove('is-visible');
 
-        // 5. Hintergrund-Sync (alle 30s)
-        // 5. Hintergrund-Sync (alle 30s)
-setInterval(async () => {
-    if (document.visibilityState === 'visible') {
-        await syncPlan();
-        await initNewsSystem(); 
-    }
-}, 5000); 
+       // 4. INTELLIGENTER SYNC (Prüft alle 5 Sekunden bei Änderung im Sheet)
+        setInterval(async () => {
+            if (document.visibilityState === 'visible') {
+                try {
+                    // Cache umgehen, um sicher die aktuelle Zeit aus dem Sheet zu erhalten
+                    const syncResp = await fetch(`${url}?action=check&_=${new Date().getTime()}`);
+                    const data = await syncResp.json();
+                    
+                    if (data.lastChange > lastKnownChange) {
+                        console.log("Änderung im Sheet erkannt, synchronisiere...");
+                        lastKnownChange = data.lastChange;
+                        // Plan neu laden
+                        await changeDayAndLoad(dp.value);
+                        // Optional: News ebenfalls aktualisieren
+                        await initNewsSystem();
+                    }
+                } catch (e) {
+                    console.warn("Sync-Check fehlgeschlagen");
+                }
+            }
+        }, 5000); // 5 Sekunden Intervall
 
-// 6. Automatischer Tageswechsel-Check (nur wenn der User "Heute" betrachtet)
-setInterval(async () => {
-    const jetzt = new Date();
-    const localToday = `${jetzt.getFullYear()}-${String(jetzt.getMonth() + 1).padStart(2, '0')}-${String(jetzt.getDate()).padStart(2, '0')}`;
-    const dp = document.getElementById('datePicker');
-    
-    // Wir speichern den Zustand, ob der User "Heute" aktiv hat
-    // Wenn dp.value dem heutigen Tag entspricht, ist alles gut.
-    // Wenn er NICHT dem heutigen Tag entspricht, lassen wir ihn in Ruhe!
-    
-    // Aber: Wenn wir BEIM LADEN oder BEIM LOGIN "Heute" gewählt hatten
-    // und nun ein Tag vergangen ist, WOLLEN wir das Update.
-    
-    // Neue Logik: Springe nur, wenn der Tag tatsächlich gewechselt hat 
-    // UND der User nicht aktiv an einem anderen Tag arbeitet.
-    
-    // Ein einfacher Weg: Prüfe, ob das Datum im DatePicker veraltet ist,
-    // ABER setze ein Flag, wenn der User den Tag manuell geändert hat.
-    
-    if (dp && dp.value !== localToday) {
-        // Wir fragen den User nicht, wir prüfen: 
-        // Hat der User aktiv ein Datum gewählt, das in der ZUKUNFT liegt?
-        // Wenn der User aktiv den 5. Juni gewählt hat, ist dp.value > localToday.
-        // Dann NICHT zurückspringen!
-        
-        if (dp.value > localToday) {
-            console.log("User arbeitet in der Zukunft, kein automatischer Sprung.");
-            return; 
-        }
-
-        console.log("Neuer Tag erkannt! Synchronisiere auf: " + localToday);
-        dp.value = localToday;
-        updateDateText(localToday);
-        updateNavButtons();
-        await changeDayAndLoad(localToday);
-    }
-}, 60000);
-
-        
     } catch (e) {
         errorDiv.innerText = "Verbindung fehlgeschlagen.";
         btn.classList.remove('is-loading');
