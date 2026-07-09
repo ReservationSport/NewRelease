@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1234</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2466,6 +2466,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     
 
+// Variable außerhalb der Funktion, um den Timer zu speichern
+window.syncDebounceTimer = null;
+
+
+    
 async function checkGlobalSync() {
     try {
         const response = await fetch(`${url}?action=getNews&pw=${encodeURIComponent(userPw)}`);
@@ -2479,48 +2484,45 @@ async function checkGlobalSync() {
             return; 
         }
 
-        // Sicherheitscheck: Existiert g1 überhaupt?
-        if (data.g1 === undefined || data.g1 === null) {
-            console.warn("Sync: g1 ist nicht im Datenpaket vorhanden.");
-            return;
-        }
+        if (data.g1 === undefined || data.g1 === null) return;
 
         const serverZeit = Number(data.g1); 
 
-        // Initialisierung von lastKnownChange, falls es noch 0 ist (z.B. nach Page Refresh)
         if (lastKnownChange === 0) {
             lastKnownChange = serverZeit;
-            console.log("Sync: Initialer Zeitstempel gesetzt auf", lastKnownChange);
             return;
         }
 
-        // Vergleich
         if (serverZeit > lastKnownChange) {
-            console.log(`Änderung erkannt! Alt: ${lastKnownChange} | Neu: ${serverZeit}. Starte Updates...`);
+            console.log(`Änderung erkannt! Alt: ${lastKnownChange} | Neu: ${serverZeit}.`);
             
-            // 1. Zeitstempel sofort aktualisieren, um doppelte Trigger zu vermeiden
+            // Zeitstempel sofort aktualisieren, damit wir nicht bei jedem Poll erneut triggern
             lastKnownChange = serverZeit;
 
-            // 2. Systeme zünden
-            if (typeof initNewsSystem === 'function') {
-                await initNewsSystem();
-                console.log("NewsSystem aktualisiert.");
-            }
+            // --- DEBOUNCE LOGIK: 2 Sekunden Verzögerung ---
+            if (window.syncDebounceTimer) clearTimeout(window.syncDebounceTimer);
             
-            // GEÄNDERT: loadPlan durch syncPlan ersetzt
-            if (typeof syncPlan === 'function') {
-                console.log("Führe syncPlan() aus...");
-                await syncPlan(); 
-            } else {
-                console.error("syncPlan ist keine Funktion!");
-            }
+            console.log("Warte 2 Sekunden, bevor syncPlan() ausgeführt wird...");
             
-        } else {
-            // Kein Log hier, um die Konsole sauber zu halten
-        }
+            window.syncDebounceTimer = setTimeout(async () => {
+                console.log("Starte verzögertes Update...");
 
+                // 2. Systeme zünden
+                if (typeof initNewsSystem === 'function') {
+                    await initNewsSystem();
+                    console.log("NewsSystem aktualisiert.");
+                }
+                
+                if (typeof syncPlan === 'function') {
+                    await syncPlan(); 
+                    console.log("syncPlan() erfolgreich ausgeführt.");
+                } else {
+                    console.error("syncPlan ist keine Funktion!");
+                }
+            }, 2000); 
+            
+        }
     } catch (err) {
-        // Netzwerkfehler leise behandeln
         console.error("Sync: Netzwerkfehler", err);
     }
 }
