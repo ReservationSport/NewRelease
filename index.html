@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOsdfs</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -5399,14 +5399,18 @@ window.handleMoveConfirm = async function(targetSlot) {
     const tempMoveMode = window.moveMode;
     window.moveMode = null; 
     
-    // 1. UI sofort entfernen, noch BEVOR der Fetch stattfindet
+    // 1. UI entfernen
     const panel = document.getElementById('move-panel-ui');
     const overlay = document.getElementById('move-overlay');
     if (panel) panel.remove();
     if (overlay) overlay.remove();
     
-    // Klasse vom Container entfernen
-    document.getElementById('plan-container')?.classList.remove('move-mode-active');
+    // 2. CSS-Reset für den Container
+    const container = document.getElementById('plan-container');
+    if (container) {
+        container.classList.remove('move-mode-active');
+        container.style.pointerEvents = 'auto'; // Erzwingt Klickbarkeit
+    }
 
     showLoading('saving');
 
@@ -5427,10 +5431,11 @@ window.handleMoveConfirm = async function(targetSlot) {
         console.error("Verschiebe-Fehler:", err);
         await loadPlan();
     } finally {
-        // 2. Doppelte Sicherheit: Nach dem Laden alles explizit nochmal entfernen
+        // 3. Sicherheits-Cleanup
         document.getElementById('move-panel-ui')?.remove();
         document.getElementById('move-overlay')?.remove();
         document.getElementById('plan-container')?.classList.remove('move-mode-active');
+        document.getElementById('plan-container')?.style.setProperty('pointer-events', 'auto');
         
         hideLoading();
     }
