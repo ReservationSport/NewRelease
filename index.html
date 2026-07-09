@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOadad</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2668,6 +2668,49 @@ function getDataBySlotIndex(index) {
     }
     return null;
 }
+
+
+window.updateBoxVisuals = function(s, h, t) {
+    const targetBox = document.querySelector(`[data-slot="${s}"]`);
+    if (!targetBox) return;
+
+    // 1. Daten im globalen Speicher aktualisieren
+    if (window.lastPlanData && window.lastPlanData[s]) {
+        window.lastPlanData[s].halle = h;
+        window.lastPlanData[s].typ = t;
+    }
+
+    // 2. Label aktualisieren
+    const label = targetBox.querySelector('.halle-label');
+    if (label) label.innerText = h;
+    
+    // 3. Ausfall-Status
+    targetBox.classList.remove('ausfall-mode');
+    if (h === "Ausfall") targetBox.classList.add('ausfall-mode');
+
+    // 4. Farbe aktualisieren
+    const farbe = (h !== "" && window.hallenConfig && window.hallenConfig[h]) 
+                  ? window.hallenConfig[h].color 
+                  : "";
+    targetBox.style.backgroundColor = farbe;
+
+    // 5. Schloss-Icon für Fix-Buchungen
+    let lockIcon = targetBox.querySelector('.lock-icon-container');
+    if (!lockIcon) {
+        lockIcon = document.createElement('div');
+        lockIcon.className = 'lock-icon-container';
+        Object.assign(lockIcon.style, {
+            position: 'absolute', right: '-3px', bottom: '5px',
+            display: 'flex', alignItems: 'center'
+        });
+        targetBox.appendChild(lockIcon);
+    }
+    
+    lockIcon.innerHTML = (t === "fix") 
+        ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' 
+        : '';
+};
+
     
     /* ============================================================
        4. SICHERHEITSABFRAGE (Falls doch mal was hängt)
@@ -4642,6 +4685,20 @@ window.syncBlockierteSlots = window.syncBlockierteSlots || {};
     
 window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
     if (!btn) return;
+
+    // 1. UI SOFORT AKTUALISIEREN (Optimistic UI)
+    // Wir nutzen die globale Funktion, um das Flackern zu verhindern
+    if (typeof window.updateBoxVisuals === 'function') {
+        window.updateBoxVisuals(slot, neueHalle, typ);
+    }
+
+    // 2. MODAL SOFORT SCHLIESSEN
+    // Da das UI bereits aktualisiert ist, stört das Zerstören des Modals nicht mehr
+    if (typeof closeEditor === 'function') {
+        closeEditor();
+    }
+
+    // 3. SERVER-AKTION IM HINTERGRUND
     const payload = {
         action: "saveBooking",
         pw: userPw,
@@ -4654,60 +4711,14 @@ window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
         typ: typ || ""
     };
 
-    const visuelleAktualisierung = function(p) {
-        const h = p.halle;
-        const s = p.slot;
-        const t = p.typ;
-        const targetBox = document.querySelector(`[data-slot="${s}"]`);
-        
-        if (window.lastPlanData && window.lastPlanData[s]) {
-            window.lastPlanData[s].halle = h;
-            window.lastPlanData[s].typ = t;
-        }
-
-        if (targetBox) {
-            const label = targetBox.querySelector('.halle-label');
-            if (label) label.innerText = h;
-            targetBox.classList.remove('ausfall-mode');
-            
-            const farbe = (h !== "" && window.hallenConfig && window.hallenConfig[h]) 
-                          ? window.hallenConfig[h].color 
-                          : "";
-            targetBox.style.backgroundColor = farbe;
-            
-            if (h === "Ausfall") targetBox.classList.add('ausfall-mode');
-
-            let lockIcon = targetBox.querySelector('.lock-icon-container');
-            if (!lockIcon) {
-                lockIcon = document.createElement('div');
-                lockIcon.className = 'lock-icon-container';
-                Object.assign(lockIcon.style, {
-                    position: 'absolute',
-                    right: '-3px',
-                    bottom: '5px',
-                    display: 'flex',
-                    alignItems: 'center'
-                });
-                targetBox.appendChild(lockIcon);
-            }
-            
-            lockIcon.innerHTML = (t === "fix") 
-                ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' 
-                : '';
-        }
-
-        // --- HIER: Modal erst schließen, wenn das Update sicher durch ist ---
-  //     if (typeof closeModal === 'function') {
-   //         closeModal('eigenesmenu-modal'); 
-   //     }
-    };
-
     if (typeof window.prozessiereAktion === 'function') {
-        window.prozessiereAktion(payload, visuelleAktualisierung);
+        // Wir übergeben eine leere Funktion als Callback, da das UI 
+        // bereits durch Schritt 1 aktualisiert wurde.
+        window.prozessiereAktion(payload, () => {
+            console.log("Speichervorgang auf dem Server bestätigt.");
+        });
     }
-    // Der alte Aufruf hier unten wurde entfernt, da er zu früh kam!
 };
-
 
 
 window.handleNotizUI = function(time, slot, klasse) {
