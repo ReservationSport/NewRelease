@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1234</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -4802,9 +4802,6 @@ window.loescheNotizVomModal = function(slot, klasse) {
 
 
     
-/**
- * 🔥 Phase 2: Korrigierte Klammerstruktur & Daten-Merge zur Wahrung bestehender Felder
- */
 window.speichereNotizVomModal = async function(slot, klasse) {
     const textFeld = document.getElementById('notiz-text-feld');
     const saveBtn = document.getElementById('btn-save-notiz');
@@ -4818,10 +4815,8 @@ window.speichereNotizVomModal = async function(slot, klasse) {
         saveBtn.style.pointerEvents = "none";
     }
 
-    // 1. Hole das existierende Datenobjekt des Slots, um existierende Felder (wie "fix") zu erhalten
     const currentSlotData = (window.lastPlanData && window.lastPlanData[slot]) ? window.lastPlanData[slot] : {};
 
-    // 2. Erstelle das Payload als Merge aus bestehenden Daten und den neuen Änderungen
     const payload = {
         action: "saveBooking",
         pw: userPw,
@@ -4829,58 +4824,56 @@ window.speichereNotizVomModal = async function(slot, klasse) {
         date: dateVal,
         slot: slot.toString(),
         klasse: klasse,
-        ...currentSlotData,    // <--- WICHTIG: Erhält existierende Felder wie 'fix' (Spalte J)
-        kommentar: notizText   // <--- Überschreibt/setzt nur den Kommentar neu
+        ...currentSlotData,    
+        kommentar: notizText   
     };
 
-    const onCompleteVisuals = function(p) {
-        const n = p.kommentar;
-        const s = p.slot;
-        
-        console.log("Triggere Sofort-Update für Notiz in Slot:", s);
-        
-        const box = document.querySelector(`[data-slot="${s}"]`);
-        if (box) {
-            box.setAttribute('data-notiz', n);
+    // ============================================================
+    // --- NEU: SOFORTIGES LOKALES UPDATE (VOR DEM FETCH) ---
+    // ============================================================
+    if (window.lastPlanData) {
+        if (!window.lastPlanData[slot.toString()]) window.lastPlanData[slot.toString()] = {};
+        window.lastPlanData[slot.toString()] = {
+            ...window.lastPlanData[slot.toString()],
+            kommentar: notizText
+        };
+    }
 
-            const altesIcon = box.querySelector('.box-notiz-icon');
-            if (altesIcon) altesIcon.remove();
+    const box = document.querySelector(`[data-slot="${slot.toString()}"]`);
+    if (box) {
+        box.setAttribute('data-notiz', notizText);
+        const altesIcon = box.querySelector('.box-notiz-icon');
+        if (altesIcon) altesIcon.remove();
 
-            if (n !== "") {
-                const neuesNotizIcon = document.createElement('span');
-                neuesNotizIcon.className = 'box-notiz-icon';
-                neuesNotizIcon.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
-                neuesNotizIcon.title = n;
-                
-                Object.assign(neuesNotizIcon.style, {
-                    position: 'absolute',
-                    top: '-2px',
-                    left: '4px',
-                    cursor: 'pointer',
-                    zIndex: '5'
-                });
-                
-                neuesNotizIcon.onclick = function(event) {
-                    event.stopPropagation();
-                    if (typeof showNotizDetailPopup === "function") {
-                        showNotizDetailPopup(box.querySelector('.klasse-label')?.innerText || "", n);
-                    }
-                };
-                box.appendChild(neuesNotizIcon);
-            }
-        }
-
-        // Update der lokalen Datenstruktur unter Erhalt anderer Felder
-        if (window.lastPlanData) {
-            if (!window.lastPlanData[s]) window.lastPlanData[s] = {};
-            // Auch hier nutzen wir den Merge für das lokale Objekt
-            window.lastPlanData[s] = {
-                ...window.lastPlanData[s],
-                kommentar: n
+        if (notizText !== "") {
+            const neuesNotizIcon = document.createElement('span');
+            neuesNotizIcon.className = 'box-notiz-icon';
+            neuesNotizIcon.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
+            neuesNotizIcon.title = notizText;
+            
+            Object.assign(neuesNotizIcon.style, {
+                position: 'absolute',
+                top: '-2px',
+                left: '4px',
+                cursor: 'pointer',
+                zIndex: '5'
+            });
+            
+            neuesNotizIcon.onclick = function(event) {
+                event.stopPropagation();
+                if (typeof showNotizDetailPopup === "function") {
+                    showNotizDetailPopup(box.querySelector('.klasse-label')?.innerText || "", notizText);
+                }
             };
+            box.appendChild(neuesNotizIcon);
         }
+    }
+    // ============================================================
 
-        if (s === slot.toString() && typeof closeEditor === 'function') {
+    // Das onCompleteVisuals kümmert sich jetzt nur noch um das Schließen des Menüs
+    const onCompleteVisuals = function(p) {
+        console.log("Server-Bestätigung erhalten für Notiz in Slot:", p.slot);
+        if (p.slot === slot.toString() && typeof closeEditor === 'function') {
             closeEditor();
         }
     };
