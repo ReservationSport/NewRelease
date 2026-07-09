@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOvwevwe</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2507,7 +2507,7 @@ async function checkGlobalSync() {
                 console.log("NewsSystem aktualisiert.");
             }
             
-            // GEÄNDERT: loadPlan durch syncPlan ersetzt
+
             if (typeof syncPlan === 'function') {
                 console.log("Führe syncPlan() aus...");
                 await syncPlan(); 
@@ -5236,8 +5236,7 @@ function executePayloads(payloadArray, onCompleteVisuals) {
         saveImmediately(p)
             .then(result => {
                 if (result && result.status === "success") {
-                    // --- HIER: NEWS NUR BEI ERFOLG AUSLÖSEN ---
-                    // Wir prüfen, ob im Payload eine Hallen-Info steckt, die News auslöst
+                    // --- NEWS NUR BEI ERFOLG AUSLÖSEN ---
                     if (p.halle === "Ausfall" || (p.halle && p.halle.includes("Outdoor"))) {
                         window.triggerNewsWrapper(p.halle, p.slot, p.klasse);
                     }
@@ -5247,12 +5246,12 @@ function executePayloads(payloadArray, onCompleteVisuals) {
                     }, 2500);
                 } else {
                     if (window.syncBlockierteSlots) delete window.syncBlockierteSlots[p.slot];
-                    if (typeof syncPlan === "function") syncPlan();
+                    // Sync-Aufruf entfernt
                 }
             })
             .catch(() => {
                 if (window.syncBlockierteSlots) delete window.syncBlockierteSlots[p.slot];
-                if (typeof syncPlan === "function") syncPlan();
+                // Sync-Aufruf entfernt
             });
     });
 }
