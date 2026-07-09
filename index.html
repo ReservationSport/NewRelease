@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1234</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2423,14 +2423,6 @@ body {
 <script>
 
 
-    // Temporärer Schutz
-window.originalCloseModal = window.closeModal;
-window.closeModal = function(id) {
-    console.log("!!! GEISTER-AUFRUF: closeModal() wurde mit ID " + id + " aufgerufen !!!");
-    // Wir lassen es einfach gar nicht mehr zu, dass das Modal schließt
-    // window.originalCloseModal(id); 
-};
-
 
     /* ============================================================
        1. GLOBALE KONFIGURATION & VARIABLEN
@@ -2474,11 +2466,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     
 
-// Variable außerhalb der Funktion, um den Timer zu speichern
-window.syncDebounceTimer = null;
-
-
-    
 async function checkGlobalSync() {
     try {
         const response = await fetch(`${url}?action=getNews&pw=${encodeURIComponent(userPw)}`);
@@ -2492,45 +2479,48 @@ async function checkGlobalSync() {
             return; 
         }
 
-        if (data.g1 === undefined || data.g1 === null) return;
-
-        const serverZeit = Number(data.g1); 
-
-        if (lastKnownChange === 0) {
-            lastKnownChange = serverZeit;
+        // Sicherheitscheck: Existiert g1 überhaupt?
+        if (data.g1 === undefined || data.g1 === null) {
+            console.warn("Sync: g1 ist nicht im Datenpaket vorhanden.");
             return;
         }
 
+        const serverZeit = Number(data.g1); 
+
+        // Initialisierung von lastKnownChange, falls es noch 0 ist (z.B. nach Page Refresh)
+        if (lastKnownChange === 0) {
+            lastKnownChange = serverZeit;
+            console.log("Sync: Initialer Zeitstempel gesetzt auf", lastKnownChange);
+            return;
+        }
+
+        // Vergleich
         if (serverZeit > lastKnownChange) {
-            console.log(`Änderung erkannt! Alt: ${lastKnownChange} | Neu: ${serverZeit}.`);
+            console.log(`Änderung erkannt! Alt: ${lastKnownChange} | Neu: ${serverZeit}. Starte Updates...`);
             
-            // Zeitstempel sofort aktualisieren, damit wir nicht bei jedem Poll erneut triggern
+            // 1. Zeitstempel sofort aktualisieren, um doppelte Trigger zu vermeiden
             lastKnownChange = serverZeit;
 
-            // --- DEBOUNCE LOGIK: 2 Sekunden Verzögerung ---
-            if (window.syncDebounceTimer) clearTimeout(window.syncDebounceTimer);
+            // 2. Systeme zünden
+            if (typeof initNewsSystem === 'function') {
+                await initNewsSystem();
+                console.log("NewsSystem aktualisiert.");
+            }
             
-            console.log("Warte 2 Sekunden, bevor syncPlan() ausgeführt wird...");
+            // GEÄNDERT: loadPlan durch syncPlan ersetzt
+            if (typeof syncPlan === 'function') {
+                console.log("Führe syncPlan() aus...");
+                await syncPlan(); 
+            } else {
+                console.error("syncPlan ist keine Funktion!");
+            }
             
-            window.syncDebounceTimer = setTimeout(async () => {
-                console.log("Starte verzögertes Update...");
-
-                // 2. Systeme zünden
-                if (typeof initNewsSystem === 'function') {
-                    await initNewsSystem();
-                    console.log("NewsSystem aktualisiert.");
-                }
-                
-                if (typeof syncPlan === 'function') {
-                    await syncPlan(); 
-                    console.log("syncPlan() erfolgreich ausgeführt.");
-                } else {
-                    console.error("syncPlan ist keine Funktion!");
-                }
-            }, 2000); 
-            
+        } else {
+            // Kein Log hier, um die Konsole sauber zu halten
         }
+
     } catch (err) {
+        // Netzwerkfehler leise behandeln
         console.error("Sync: Netzwerkfehler", err);
     }
 }
@@ -2593,11 +2583,11 @@ async function handleLogin() {
         loadingOverlay.classList.remove('is-visible');
 
         // --- HINTERGRUND-SYNC (JETZT SAUBER & REUSABLE) ---
-/*       setInterval(async () => {
+        setInterval(async () => {
             if (document.visibilityState === 'visible') {
                 await checkGlobalSync();
             }
-        }, 5000); */
+        }, 5000); 
 
         // --- TAGESWECHSEL-CHECK ---
         setInterval(async () => {
@@ -2668,49 +2658,6 @@ function getDataBySlotIndex(index) {
     }
     return null;
 }
-
-
-window.updateBoxVisuals = function(s, h, t) {
-    const targetBox = document.querySelector(`[data-slot="${s}"]`);
-    if (!targetBox) return;
-
-    // 1. Daten im globalen Speicher aktualisieren
-    if (window.lastPlanData && window.lastPlanData[s]) {
-        window.lastPlanData[s].halle = h;
-        window.lastPlanData[s].typ = t;
-    }
-
-    // 2. Label aktualisieren
-    const label = targetBox.querySelector('.halle-label');
-    if (label) label.innerText = h;
-    
-    // 3. Ausfall-Status
-    targetBox.classList.remove('ausfall-mode');
-    if (h === "Ausfall") targetBox.classList.add('ausfall-mode');
-
-    // 4. Farbe aktualisieren
-    const farbe = (h !== "" && window.hallenConfig && window.hallenConfig[h]) 
-                  ? window.hallenConfig[h].color 
-                  : "";
-    targetBox.style.backgroundColor = farbe;
-
-    // 5. Schloss-Icon für Fix-Buchungen
-    let lockIcon = targetBox.querySelector('.lock-icon-container');
-    if (!lockIcon) {
-        lockIcon = document.createElement('div');
-        lockIcon.className = 'lock-icon-container';
-        Object.assign(lockIcon.style, {
-            position: 'absolute', right: '-3px', bottom: '5px',
-            display: 'flex', alignItems: 'center'
-        });
-        targetBox.appendChild(lockIcon);
-    }
-    
-    lockIcon.innerHTML = (t === "fix") 
-        ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' 
-        : '';
-};
-
     
     /* ============================================================
        4. SICHERHEITSABFRAGE (Falls doch mal was hängt)
@@ -3124,7 +3071,7 @@ window.closeModal = function(id) {
 /* ============================================================
    SYNC PLAN - NEU
    ============================================================ */
-/*window.syncPlan = async function() {
+window.syncPlan = async function() {
     if (window.isSaving) return; 
 
     const dp = document.getElementById('datePicker');
@@ -3214,7 +3161,7 @@ window.closeModal = function(id) {
     } catch(e) {
         console.error("Hintergrund-Sync fehlgeschlagen:", e);
     }
-}; */
+};
 
 
 
@@ -4685,20 +4632,6 @@ window.syncBlockierteSlots = window.syncBlockierteSlots || {};
     
 window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
     if (!btn) return;
-
-    // 1. UI SOFORT AKTUALISIEREN (Optimistic UI)
-    // Wir nutzen die globale Funktion, um das Flackern zu verhindern
-    if (typeof window.updateBoxVisuals === 'function') {
-        window.updateBoxVisuals(slot, neueHalle, typ);
-    }
-
-    // 2. MODAL SOFORT SCHLIESSEN
-    // Da das UI bereits aktualisiert ist, stört das Zerstören des Modals nicht mehr
-    if (typeof closeEditor === 'function') {
-        closeEditor();
-    }
-
-    // 3. SERVER-AKTION IM HINTERGRUND
     const payload = {
         action: "saveBooking",
         pw: userPw,
@@ -4711,14 +4644,58 @@ window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
         typ: typ || ""
     };
 
+    const visuelleAktualisierung = function(p) {
+        const h = p.halle;
+        const s = p.slot;
+        const t = p.typ;
+        const targetBox = document.querySelector(`[data-slot="${s}"]`);
+        
+        if (window.lastPlanData && window.lastPlanData[s]) {
+            window.lastPlanData[s].halle = h;
+            window.lastPlanData[s].typ = t;
+        }
+
+        if (targetBox) {
+            const label = targetBox.querySelector('.halle-label');
+            if (label) label.innerText = h;
+            targetBox.classList.remove('ausfall-mode');
+            
+            // --- HIER DIE ANPASSUNG: Zugriff auf window.hallenConfig ---
+            const farbe = (h !== "" && window.hallenConfig && window.hallenConfig[h]) 
+                          ? window.hallenConfig[h].color 
+                          : "";
+            targetBox.style.backgroundColor = farbe;
+            // ----------------------------------------------------------
+            
+            if (h === "Ausfall") targetBox.classList.add('ausfall-mode');
+
+            // 🔥 UI: Schloss-Icon bei Fix-Buchung anzeigen
+            let lockIcon = targetBox.querySelector('.lock-icon-container');
+            if (!lockIcon) {
+                lockIcon = document.createElement('div');
+                lockIcon.className = 'lock-icon-container';
+                Object.assign(lockIcon.style, {
+                    position: 'absolute',
+                    right: '-3px',
+                    bottom: '5px',
+                    display: 'flex',
+                    alignItems: 'center'
+                });
+                targetBox.appendChild(lockIcon);
+            }
+            
+            lockIcon.innerHTML = (t === "fix") 
+                ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' 
+                : '';
+        }
+    };
+
     if (typeof window.prozessiereAktion === 'function') {
-        // Wir übergeben eine leere Funktion als Callback, da das UI 
-        // bereits durch Schritt 1 aktualisiert wurde.
-        window.prozessiereAktion(payload, () => {
-            console.log("Speichervorgang auf dem Server bestätigt.");
-        });
+        window.prozessiereAktion(payload, visuelleAktualisierung);
     }
+    if (typeof closeModal === 'function') closeModal();
 };
+
 
 
 window.handleNotizUI = function(time, slot, klasse) {
@@ -4825,6 +4802,9 @@ window.loescheNotizVomModal = function(slot, klasse) {
 
 
     
+/**
+ * 🔥 Phase 2: Korrigierte Klammerstruktur & Daten-Merge zur Wahrung bestehender Felder
+ */
 window.speichereNotizVomModal = async function(slot, klasse) {
     const textFeld = document.getElementById('notiz-text-feld');
     const saveBtn = document.getElementById('btn-save-notiz');
@@ -4838,8 +4818,10 @@ window.speichereNotizVomModal = async function(slot, klasse) {
         saveBtn.style.pointerEvents = "none";
     }
 
+    // 1. Hole das existierende Datenobjekt des Slots, um existierende Felder (wie "fix") zu erhalten
     const currentSlotData = (window.lastPlanData && window.lastPlanData[slot]) ? window.lastPlanData[slot] : {};
 
+    // 2. Erstelle das Payload als Merge aus bestehenden Daten und den neuen Änderungen
     const payload = {
         action: "saveBooking",
         pw: userPw,
@@ -4847,56 +4829,58 @@ window.speichereNotizVomModal = async function(slot, klasse) {
         date: dateVal,
         slot: slot.toString(),
         klasse: klasse,
-        ...currentSlotData,    
-        kommentar: notizText   
+        ...currentSlotData,    // <--- WICHTIG: Erhält existierende Felder wie 'fix' (Spalte J)
+        kommentar: notizText   // <--- Überschreibt/setzt nur den Kommentar neu
     };
 
-    // ============================================================
-    // --- NEU: SOFORTIGES LOKALES UPDATE (VOR DEM FETCH) ---
-    // ============================================================
-    if (window.lastPlanData) {
-        if (!window.lastPlanData[slot.toString()]) window.lastPlanData[slot.toString()] = {};
-        window.lastPlanData[slot.toString()] = {
-            ...window.lastPlanData[slot.toString()],
-            kommentar: notizText
-        };
-    }
-
-    const box = document.querySelector(`[data-slot="${slot.toString()}"]`);
-    if (box) {
-        box.setAttribute('data-notiz', notizText);
-        const altesIcon = box.querySelector('.box-notiz-icon');
-        if (altesIcon) altesIcon.remove();
-
-        if (notizText !== "") {
-            const neuesNotizIcon = document.createElement('span');
-            neuesNotizIcon.className = 'box-notiz-icon';
-            neuesNotizIcon.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
-            neuesNotizIcon.title = notizText;
-            
-            Object.assign(neuesNotizIcon.style, {
-                position: 'absolute',
-                top: '-2px',
-                left: '4px',
-                cursor: 'pointer',
-                zIndex: '5'
-            });
-            
-            neuesNotizIcon.onclick = function(event) {
-                event.stopPropagation();
-                if (typeof showNotizDetailPopup === "function") {
-                    showNotizDetailPopup(box.querySelector('.klasse-label')?.innerText || "", notizText);
-                }
-            };
-            box.appendChild(neuesNotizIcon);
-        }
-    }
-    // ============================================================
-
-    // Das onCompleteVisuals kümmert sich jetzt nur noch um das Schließen des Menüs
     const onCompleteVisuals = function(p) {
-        console.log("Server-Bestätigung erhalten für Notiz in Slot:", p.slot);
-        if (p.slot === slot.toString() && typeof closeEditor === 'function') {
+        const n = p.kommentar;
+        const s = p.slot;
+        
+        console.log("Triggere Sofort-Update für Notiz in Slot:", s);
+        
+        const box = document.querySelector(`[data-slot="${s}"]`);
+        if (box) {
+            box.setAttribute('data-notiz', n);
+
+            const altesIcon = box.querySelector('.box-notiz-icon');
+            if (altesIcon) altesIcon.remove();
+
+            if (n !== "") {
+                const neuesNotizIcon = document.createElement('span');
+                neuesNotizIcon.className = 'box-notiz-icon';
+                neuesNotizIcon.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
+                neuesNotizIcon.title = n;
+                
+                Object.assign(neuesNotizIcon.style, {
+                    position: 'absolute',
+                    top: '-2px',
+                    left: '4px',
+                    cursor: 'pointer',
+                    zIndex: '5'
+                });
+                
+                neuesNotizIcon.onclick = function(event) {
+                    event.stopPropagation();
+                    if (typeof showNotizDetailPopup === "function") {
+                        showNotizDetailPopup(box.querySelector('.klasse-label')?.innerText || "", n);
+                    }
+                };
+                box.appendChild(neuesNotizIcon);
+            }
+        }
+
+        // Update der lokalen Datenstruktur unter Erhalt anderer Felder
+        if (window.lastPlanData) {
+            if (!window.lastPlanData[s]) window.lastPlanData[s] = {};
+            // Auch hier nutzen wir den Merge für das lokale Objekt
+            window.lastPlanData[s] = {
+                ...window.lastPlanData[s],
+                kommentar: n
+            };
+        }
+
+        if (s === slot.toString() && typeof closeEditor === 'function') {
             closeEditor();
         }
     };
@@ -6408,3 +6392,5 @@ window.markIdeeResolved = function(id, btnElement) {
 
 
 </html>
+
+
