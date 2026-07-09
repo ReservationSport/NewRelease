@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOvwevwe</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -5194,14 +5194,21 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
 
     modalContainer.insertAdjacentHTML('beforeend', html);
 
-    // 5. Wrapper für die Ausführung (ohne sofortigen Sync)
-    const executeOhneSync = (payloads) => {
-        executePayloads(payloads, (p) => {
-            // Nur das lokale UI-Update für den betroffenen Slot
-            if (onCompleteVisuals) onCompleteVisuals(p);
-        });
-        if (typeof closeEditor === "function") closeEditor();
-    };
+ // 5. Wrapper für die Ausführung (ohne sofortigen Sync)
+const executeOhneSync = (payloads) => {
+    executePayloads(payloads, (p) => {
+        if (onCompleteVisuals) onCompleteVisuals(p);
+    });
+
+    // SICHERHEITS-PRÜFUNG:
+    // Schließe nur, wenn die Funktion existiert UND ein Modal tatsächlich im DOM ist
+    if (typeof closeEditor === "function") {
+        const modal = document.querySelector('.eigenesmenu-container');
+        if (modal) {
+            closeEditor();
+        }
+    }
+};
 
     // 6. Event Listener
     const btnBeide = document.getElementById('btn-doppel-beide');
