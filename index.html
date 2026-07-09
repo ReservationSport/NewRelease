@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOadad</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2422,6 +2422,14 @@ body {
 
 <script>
 
+
+    // Temporärer Schutz
+window.originalCloseModal = window.closeModal;
+window.closeModal = function(id) {
+    console.log("!!! GEISTER-AUFRUF: closeModal() wurde mit ID " + id + " aufgerufen !!!");
+    // Wir lassen es einfach gar nicht mehr zu, dass das Modal schließt
+    // window.originalCloseModal(id); 
+};
 
 
     /* ============================================================
