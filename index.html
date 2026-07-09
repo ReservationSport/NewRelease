@@ -4596,27 +4596,29 @@ function handleReservationUI(time, slot, klasse) {
     const aktuelleHalleInBox = window.currentEditBox?.querySelector('.halle-label')?.innerText.trim() || "";
     
     // Logik für besetzte Hallen
-const currentSlot = parseInt(slot);
-const rowIndex = Math.floor((currentSlot - 1) / 5);
-const startSlot = (rowIndex * 5) + 1;
-const endSlot = startSlot + 4;
-let besetzteEinzelHallen = []; // Hier speichern wir nur die atomaren Teile
-
-for (let s = startSlot; s <= endSlot; s++) {
-    if (s === currentSlot) continue;
+    const currentSlot = parseInt(slot);
+    const rowIndex = Math.floor((currentSlot - 1) / 5);
+    const startSlot = (rowIndex * 5) + 1;
+    const endSlot = startSlot + 4;
     
-    const data = window.lastPlanData ? window.lastPlanData[s] : null;
-    if (data && data.halle && data.halle !== "Ausfall") {
-        // Hallen-String am "+" trennen und jedes Teil trimmen
-        const teile = data.halle.split('+').map(h => h.trim().toLowerCase());
+    // Wir sammeln hier alle atomaren Hallenteile (z.B. "halle 1", "halle 2")
+    let besetzteEinzelHallen = []; 
+
+    for (let s = startSlot; s <= endSlot; s++) {
+        if (s === currentSlot) continue;
         
-        teile.forEach(teil => {
-            if (teil !== "outdoor" && teil !== "badi") {
-                besetzteEinzelHallen.push(teil);
-            }
-        });
+        const data = window.lastPlanData ? window.lastPlanData[s] : null;
+        if (data && data.halle && data.halle !== "Ausfall") {
+            // Hallen-String am "+" trennen, trimmen und kleinschreiben
+            const teile = data.halle.split('+').map(h => h.trim().toLowerCase());
+            
+            teile.forEach(teil => {
+                if (teil !== "outdoor" && teil !== "badi") {
+                    besetzteEinzelHallen.push(teil);
+                }
+            });
+        }
     }
-}
 
     let html = `
         <div class="eigenesmenu-liste" id="menu-options-list">
@@ -4634,16 +4636,20 @@ for (let s = startSlot; s <= endSlot; s++) {
     }
 
     const hallen = window.hallenConfig ? Object.keys(window.hallenConfig) : [];
+    
     hallen.forEach(h => {
-        const istGesperrt = besetzteHallen.some(b => b.toLowerCase().includes(h.trim().toLowerCase()) || h.trim().toLowerCase().includes(b.toLowerCase()));
-        const istAktiv = (h.trim() === aktuelleHalleInBox);
+        // Option aufbrechen, um Einzelteile zu vergleichen
+        const optionTeile = h.trim().toLowerCase().split('+').map(part => part.trim());
         
-        // Wir setzen die Klassen basierend auf dem Status
+        // Prüfen, ob irgendein Teil dieser Option in den besetzten Hallen vorkommt
+        const istGesperrt = optionTeile.some(teil => besetzteEinzelHallen.includes(teil));
+        
+        const istAktiv = (h.trim() === aktuelleHalleInBox);
         const wrapperClass = `hallen-option-wrapper ${istGesperrt ? 'disabled' : ''} ${istAktiv ? 'selected' : ''}`;
 
         if (istGesperrt) {
             html += `
-                <div class="${wrapperClass}">
+                <div class="${wrapperClass}" style="opacity: 0.5; pointer-events: none;">
                     <div class="opt-locker" style="display: flex; align-items: center; padding-left: 15px; color: #fff;">
                         <span class="material-symbols-outlined" style="margin-right:12px;">${window.hallenConfig[h]?.icon || "meeting_room"}</span>${h}
                     </div>
@@ -4675,7 +4681,6 @@ for (let s = startSlot; s <= endSlot; s++) {
     modalContainer.appendChild(header);
     modalContainer.insertAdjacentHTML('beforeend', html);
 }
-                         
 
 
 
