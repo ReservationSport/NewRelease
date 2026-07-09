@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO23423424</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -5262,7 +5262,7 @@ function executePayloads(payloadArray, onCompleteVisuals) {
 
 
 /* ============================================================
-   15. Lektion verschieben (Optimiert & Vollständig)
+   15. Lektion verschieben
    ============================================================ */
 
 function createMoveOverlay() {
@@ -5287,9 +5287,6 @@ function createMoveOverlay() {
     }
 }
 
-/* ============================================================
-   15. Lektion verschieben
-   ============================================================ */
 
 window.cancelMoveMode = function() {
     console.log("Starte radikalen Abbruch...");
@@ -5333,6 +5330,7 @@ window.cancelMoveMode = function() {
     console.log("Alle Boxen und UI-Elemente zurückgesetzt.");
 };
 
+    
 window.highlightFreeSlots = function() {
     const boxes = document.querySelectorAll('.box');
 
@@ -5398,65 +5396,40 @@ if (!window.moveMode) {
 window.handleMoveConfirm = async function(targetSlot) {
     if (!window.moveMode) return;
 
-    // 1. Sofortiges Flag setzen, um zu verhindern, dass loadPlan() den Modus neu startet
     const tempMoveMode = window.moveMode;
     window.moveMode = null; 
 
-    // 2. Overlay mit dem Status 'saving' starten
     showLoading('saving');
 
-    // 3. Sofortige UI-Bereinigung
-    const panel = document.getElementById('move-panel-ui');
-    if (panel) panel.remove();
-    const overlay = document.getElementById('move-overlay');
-    if (overlay) overlay.remove();
+    // Entferne UI sofort
+    document.getElementById('move-panel-ui')?.remove();
+    document.getElementById('move-overlay')?.remove();
 
-    // A. Ziel vorbereiten (alles leer machen)
-    const payloadClear = {
-        action: "saveBooking",
+    // Wir senden NUR EIN JSON-Objekt mit allen Infos
+    const movePayload = {
+        action: "moveBooking", // Neuer Action-Typ für den Server
         date: tempMoveMode.date,
-        slot: targetSlot,
-        klasse: "", halle: "", lehrer: "", material: "", kommentar: "", typ: "",
-        pw: userPw
-    };
-
-    // B. Quell-Slot leeren
-    const payloadOld = { 
-        ...payloadClear, 
-        slot: tempMoveMode.sourceSlot,
-        klasse: "verschoben" 
-    };
-
-    // C. Ziel-Slot belegen
-    const payloadNew = {
-        ...tempMoveMode, 
-        action: "saveBooking",
-        slot: targetSlot,  
+        sourceSlot: tempMoveMode.sourceSlot,
+        targetSlot: targetSlot,
+        bookingData: { ...tempMoveMode }, // Die Lektion selbst
         pw: userPw
     };
 
     try {
-        await fetch(url, { method: "POST", body: JSON.stringify(payloadOld) });
-        await fetch(url, { method: "POST", body: JSON.stringify(payloadClear) });
-        await fetch(url, { method: "POST", body: JSON.stringify(payloadNew) });
+        await fetch(url, { 
+            method: "POST", 
+            body: JSON.stringify(movePayload) 
+        });
 
-        // Finales Laden
+        // Erst wenn der Server "Ok" sagt, laden wir neu
         await loadPlan(); 
         
     } catch (err) {
         console.error("Fehler beim Verschieben:", err);
-        // Bei Fehler Modus wiederherstellen, falls nötig
         window.moveMode = tempMoveMode;
         await loadPlan();
     } finally {
-        // UI Aufräumarbeiten nach dem Laden
         document.getElementById('plan-container')?.classList.remove('move-mode-active');
-        document.querySelectorAll('.move-mode-active').forEach(el => el.classList.remove('move-mode-active'));
-        
-        // Letzte Instanz: Panel entfernen falls es durch loadPlan() wieder entstand
-        document.getElementById('move-panel-ui')?.remove();
-        document.getElementById('move-overlay')?.remove();
-        
         hideLoading();
     }
 };
