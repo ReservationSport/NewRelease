@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOadsdad</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2525,8 +2525,6 @@ async function checkGlobalSync() {
     }
 }
 
-
-
     
 async function handleLogin() {
     const btn = document.getElementById('loginBtn');
@@ -2676,6 +2674,56 @@ function getDataBySlotIndex(index) {
         document.getElementById('global-loader').style.display = show ? 'block' : 'none';
     }
 
+
+/* ============================================================
+   4. WARTESCHLANGE FÜR SYNC
+   ============================================================ */
+
+// Globale Variablen für die Warteschlange
+window.actionQueue = [];
+window.isProcessingQueue = false;
+
+    
+// Funktion zum Hinzufügen
+function addToQueue(payload, onCompleteVisuals) {
+    window.actionQueue.push({ payload, onCompleteVisuals });
+    processQueue();
+}
+
+
+    
+// Die zentrale Verarbeitungs-Logik
+async function processQueue() {
+    if (window.isProcessingQueue || window.actionQueue.length === 0) return;
+    
+    window.isProcessingQueue = true;
+    const { payload, onCompleteVisuals } = window.actionQueue.shift();
+    
+    // 1. Slot blockieren, BEVOR wir loslegen
+    if (!window.syncBlockierteSlots) window.syncBlockierteSlots = {};
+    window.syncBlockierteSlots[payload.slot] = true;
+    
+    // 2. UI-Update (Optimistisch)
+    if (onCompleteVisuals) onCompleteVisuals(payload);
+    
+    // 3. Server-Call (Warten bis er fertig ist)
+    try {
+        await saveImmediately(payload);
+    } catch (e) {
+        console.error("Fehler beim Speichern:", e);
+    } finally {
+        // 4. Blockade erst HIER aufheben (nachdem der Server fertig ist)
+        delete window.syncBlockierteSlots[payload.slot];
+        
+        window.isProcessingQueue = false;
+        
+        // 5. Nächste Aktion verarbeiten
+        processQueue();
+    }
+}
+
+
+    
 
 /* ============================================================
    5. DATUMSSTEUERUNG, NAVIGATION & INITIALISIERUNG
@@ -3072,6 +3120,7 @@ window.closeModal = function(id) {
    SYNC PLAN - NEU
    ============================================================ */
 window.syncPlan = async function() {
+    // Wenn wir gerade lokal speichern, unterbrechen wir den Sync für diesen Durchlauf
     if (window.isSaving) return; 
 
     const dp = document.getElementById('datePicker');
@@ -3096,7 +3145,15 @@ window.syncPlan = async function() {
         Object.keys(newPlan).forEach(slot => {
             const slotData = newPlan[slot] || {};
             const box = container.querySelector(`[data-slot="${slot}"]`);
+            
+            // Wenn die Box im DOM nicht existiert, abbrechen
             if (!box) return;
+
+            // --- SCHUTZSCHILD: Überspringen, wenn wir gerade in der Queue sind 
+            // oder der Slot explizit durch eine Aktion blockiert ist ---
+            if (window.isProcessingQueue || (window.syncBlockierteSlots && window.syncBlockierteSlots[slot])) {
+                return; // Dieser Slot wird nicht überschrieben
+            }
 
             const klasse = slotData.klasse || "";
             const verfasser = slotData.verfasser || "";
@@ -3105,7 +3162,7 @@ window.syncPlan = async function() {
             const isAusfall = (halle === "Ausfall");
             const isKlasseLeer = (klasse.trim() === "");
             
-            // --- Logik (analog zu loadPlan) ---
+            // --- Logik ---
             const lehrer = (verfasser !== "") ? verfasser : ((slotData.lehrer !== "") ? slotData.lehrer : (allClassTeachers[klasse] || ""));
             const isMyClass = !isKlasseLeer && myClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
             const isMyBooking = (verfasser.trim().toLowerCase() === userKuerzel.toLowerCase());
@@ -5125,11 +5182,9 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
     const modalContainer = document.querySelector('.eigenesmenu-container');
     const subtitle = document.getElementById('dynamic-header-subtitle');
 
-    // 1. Wenn kein Partner-Slot existiert oder Modal fehlt, direkt ausführen
+    // 1. Wenn kein Partner-Slot existiert oder Modal fehlt, direkt in Queue
     if (!partnerSlot || !modalContainer) {
-        executePayloads([payload], (p) => {
-            if (onCompleteVisuals) onCompleteVisuals(p);
-        });
+        addToQueue(payload, onCompleteVisuals);
         if (typeof closeEditor === "function") closeEditor();
         return;
     }
@@ -5196,31 +5251,26 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
 
     modalContainer.insertAdjacentHTML('beforeend', html);
 
- // 5. Wrapper für die Ausführung (ohne sofortigen Sync)
-const executeOhneSync = (payloads) => {
-    executePayloads(payloads, (p) => {
-        if (onCompleteVisuals) onCompleteVisuals(p);
-    });
+    // 5. Wrapper für die Ausführung via Warteschlange
+    const executeMitQueue = (payloads) => {
+        payloads.forEach(p => addToQueue(p, onCompleteVisuals));
 
-    // SICHERHEITS-PRÜFUNG:
-    // Schließe nur, wenn die Funktion existiert UND ein Modal tatsächlich im DOM ist
-    if (typeof closeEditor === "function") {
-        const modal = document.querySelector('.eigenesmenu-container');
-        if (modal) {
-            closeEditor();
+        // SICHERHEITS-PRÜFUNG: Schließen nur, wenn noch da
+        if (typeof closeEditor === "function") {
+            const modal = document.querySelector('.eigenesmenu-container');
+            if (modal) closeEditor();
         }
-    }
-};
+    };
 
     // 6. Event Listener
     const btnBeide = document.getElementById('btn-doppel-beide');
     if (btnBeide) {
-        btnBeide.onclick = () => executeOhneSync([payload, { ...payload, slot: partnerSlot.toString() }]);
+        btnBeide.onclick = () => executeMitQueue([payload, { ...payload, slot: partnerSlot.toString() }]);
     }
     
     const btnEinzel = document.getElementById('btn-doppel-einzel');
     if (btnEinzel) {
-        btnEinzel.onclick = () => executeOhneSync([payload]);
+        btnEinzel.onclick = () => executeMitQueue([payload]);
     }
 };
 
