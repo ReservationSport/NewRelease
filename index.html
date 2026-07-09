@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1234</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -5127,7 +5127,6 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
     if (!partnerSlot || !modalContainer) {
         executePayloads([payload], (p) => {
             if (onCompleteVisuals) onCompleteVisuals(p);
-            if (typeof syncPlan === 'function') syncPlan();
         });
         if (typeof closeEditor === "function") closeEditor();
         return;
@@ -5195,13 +5194,11 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
 
     modalContainer.insertAdjacentHTML('beforeend', html);
 
-    // 5. Wrapper für die Ausführung inkl. Echtzeit-Sync
-    const executeMitSync = (payloads) => {
+    // 5. Wrapper für die Ausführung (ohne sofortigen Sync)
+    const executeOhneSync = (payloads) => {
         executePayloads(payloads, (p) => {
-            // Erst lokales UI-Update für den geklickten Slot
+            // Nur das lokale UI-Update für den betroffenen Slot
             if (onCompleteVisuals) onCompleteVisuals(p);
-            // Danach Sofort-Sync für alle Nutzer im Plan
-            if (typeof syncPlan === 'function') syncPlan();
         });
         if (typeof closeEditor === "function") closeEditor();
     };
@@ -5209,12 +5206,12 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
     // 6. Event Listener
     const btnBeide = document.getElementById('btn-doppel-beide');
     if (btnBeide) {
-        btnBeide.onclick = () => executeMitSync([payload, { ...payload, slot: partnerSlot.toString() }]);
+        btnBeide.onclick = () => executeOhneSync([payload, { ...payload, slot: partnerSlot.toString() }]);
     }
     
     const btnEinzel = document.getElementById('btn-doppel-einzel');
     if (btnEinzel) {
-        btnEinzel.onclick = () => executeMitSync([payload]);
+        btnEinzel.onclick = () => executeOhneSync([payload]);
     }
 };
 
