@@ -4600,22 +4600,21 @@ const currentSlot = parseInt(slot);
 const rowIndex = Math.floor((currentSlot - 1) / 5);
 const startSlot = (rowIndex * 5) + 1;
 const endSlot = startSlot + 4;
-let besetzteHallen = [];
+let besetzteEinzelHallen = []; // Hier speichern wir nur die atomaren Teile
 
 for (let s = startSlot; s <= endSlot; s++) {
     if (s === currentSlot) continue;
     
     const data = window.lastPlanData ? window.lastPlanData[s] : null;
     if (data && data.halle && data.halle !== "Ausfall") {
-        const hName = data.halle.trim();
-        const lowerName = hName.toLowerCase();
+        // Hallen-String am "+" trennen und jedes Teil trimmen
+        const teile = data.halle.split('+').map(h => h.trim().toLowerCase());
         
-        // "outdoor" und "badi" werden ignoriert (nicht als besetzt gezählt)
-        if (lowerName.includes("outdoor") || lowerName.includes("badi")) {
-            continue;
-        }
-        
-        besetzteHallen.push(hName);
+        teile.forEach(teil => {
+            if (teil !== "outdoor" && teil !== "badi") {
+                besetzteEinzelHallen.push(teil);
+            }
+        });
     }
 }
 
