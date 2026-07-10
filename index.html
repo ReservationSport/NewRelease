@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOasadasd</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2692,28 +2692,28 @@ function addToQueue(payload, onCompleteVisuals) {
 
 
     
-// Die zentrale Verarbeitungs-Logik
 async function processQueue() {
     if (window.isProcessingQueue || window.actionQueue.length === 0) return;
     
     window.isProcessingQueue = true;
     const { payload, onCompleteVisuals } = window.actionQueue.shift();
     
-    // 1. Slot blockieren, BEVOR wir loslegen
-    if (!window.syncBlockierteSlots) window.syncBlockierteSlots = {};
-    window.syncBlockierteSlots[payload.slot] = true;
+    // 1. KEINE globale Blockade mehr, wir nutzen das DOM-Attribut
+    // (Dies wurde bereits in applyHalleSelection beim Klick gesetzt)
     
     // 2. UI-Update (Optimistisch)
     if (onCompleteVisuals) onCompleteVisuals(payload);
     
-    // 3. Server-Call (Warten bis er fertig ist)
+    // 3. Server-Call
     try {
         await saveImmediately(payload);
     } catch (e) {
         console.error("Fehler beim Speichern:", e);
+        // Falls Fehler, Sperre im DOM entfernen, damit die Box nicht für immer "pending" bleibt
+        const box = document.querySelector(`[data-slot="${payload.slot}"]`);
+        if (box) box.removeAttribute('data-sync-status');
     } finally {
-        // 4. Blockade erst HIER aufheben (nachdem der Server fertig ist)
-        delete window.syncBlockierteSlots[payload.slot];
+        // 4. Keine globale Blockade mehr löschen
         
         window.isProcessingQueue = false;
         
@@ -2721,7 +2721,6 @@ async function processQueue() {
         processQueue();
     }
 }
-
 
     
 
@@ -3117,9 +3116,10 @@ window.closeModal = function(id) {
 
     
 /* ============================================================
-   SYNC PLAN - NEU (Flacker-frei)
+   SYNC PLAN - DOM-Sicher (Flacker-frei)
    ============================================================ */
 window.syncPlan = async function() {
+    // Wenn wir gerade lokal speichern, unterbrechen wir den Sync für diesen Durchlauf
     if (window.isSaving) return; 
 
     const dp = document.getElementById('datePicker');
@@ -3140,25 +3140,28 @@ window.syncPlan = async function() {
         window.hallenConfig = json.hallenConfig || window.hallenConfig;
         const myClasses = json.userClasses || [];
         
+        // Gehe durch alle Slots des neuen Plans
         Object.keys(newPlan).forEach(slot => {
             const slotData = newPlan[slot] || {};
             const box = container.querySelector(`[data-slot="${slot}"]`);
+            
+            // Wenn die Box im DOM nicht existiert, abbrechen
             if (!box) return;
 
-            // --- NEUER SKEPTIKER-CHECK ---
-            const slotStatus = window.syncBlockierteSlots ? window.syncBlockierteSlots[slot] : false;
-            if (slotStatus === "pending") {
-                const serverHalle = slotData.halle || "";
-                const currentUIHalle = box.querySelector('.halle-label')?.innerText.trim() || "";
-                
-                // Wenn Server und UI sich einig sind, Sperre aufheben, sonst Update überspringen
+            // --- DOM-BASIERTER SCHUTZSCHILD (Skeptiker-Check) ---
+            const syncStatus = box.getAttribute('data-sync-status');
+            const serverHalle = (slotData.halle || "").trim().toLowerCase();
+            const currentUIHalle = (box.querySelector('.halle-label')?.innerText.trim() || "").toLowerCase();
+
+            if (syncStatus === "pending") {
+                // Hat der Server bereits unseren Wunschstand erreicht?
                 if (serverHalle === currentUIHalle) {
-                    window.syncBlockierteSlots[slot] = false;
+                    box.removeAttribute('data-sync-status'); // Sperre aufheben
                 } else {
-                    return; // UI-Update für diesen Slot überspringen, um Flackern zu verhindern
+                    return; // UI-Update für diesen Slot überspringen (kein Flackern!)
                 }
             } else if (window.isProcessingQueue) {
-                return; // Fallback für globale Queue-Sperre
+                return; // Globale Queue-Sperre
             }
 
             const klasse = slotData.klasse || "";
@@ -3168,11 +3171,13 @@ window.syncPlan = async function() {
             const isAusfall = (halle === "Ausfall");
             const isKlasseLeer = (klasse.trim() === "");
             
+            // --- Logik ---
             const lehrer = (verfasser !== "") ? verfasser : ((slotData.lehrer !== "") ? slotData.lehrer : (allClassTeachers[klasse] || ""));
             const isMyClass = !isKlasseLeer && myClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
             const isMyBooking = (verfasser.trim().toLowerCase() === userKuerzel.toLowerCase());
             const canEdit = isMyClass || isMyBooking;
             
+            // --- Update UI ---
             box.className = [
                 "box",
                 isKlasseLeer ? "empty" : "",
@@ -3183,6 +3188,7 @@ window.syncPlan = async function() {
             box.style.backgroundColor = (window.hallenConfig[halle] && !isAusfall) ? window.hallenConfig[halle].color : '';
             box.style.cursor = canEdit ? 'pointer' : 'default';
 
+            // Inhalte aktualisieren
             const klassenEl = box.querySelector('.klasse-label');
             const lehrerEl = box.querySelector('.lehrer-info');
             const halleEl = box.querySelector('.halle-label');
@@ -3191,11 +3197,13 @@ window.syncPlan = async function() {
             if (lehrerEl) lehrerEl.innerText = lehrer;
             if (halleEl) halleEl.innerText = halle;
 
+            // Lock Icon
             let lockContainer = box.querySelector('.lock-icon-container');
             if (lockContainer) {
                 lockContainer.innerHTML = (typ === 'fix') ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
             }
 
+            // --- ICONS AUFRÄUMEN & NEU ZEICHNEN ---
             const altesNotizIcon = box.querySelector('.box-notiz-icon');
             if (altesNotizIcon) altesNotizIcon.remove();
             
@@ -3222,7 +3230,6 @@ window.syncPlan = async function() {
         console.error("Hintergrund-Sync fehlgeschlagen:", e);
     }
 };
-
     
 
 // Variable außerhalb der Funktion definieren
@@ -4685,17 +4692,17 @@ function handleReservationUI(time, slot, klasse) {
     
 // --- GLOBALE VARIABLEN UND FUNKTIONEN (AUẞERHALB DER FUNKTIONEN) ---
 window.currentSaveController = null;
-window.syncBlockierteSlots = window.syncBlockierteSlots || {};
-
 
 
     
 window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
     if (!btn) return;
-
-    // --- NEU: Sperre setzen ---
-    if (!window.syncBlockierteSlots) window.syncBlockierteSlots = {};
-    window.syncBlockierteSlots[slot] = "pending";
+    
+    // 1. Die Box suchen und den Status direkt im DOM markieren ("pending")
+    const targetBox = document.querySelector(`[data-slot="${slot}"]`);
+    if (targetBox) {
+        targetBox.setAttribute('data-sync-status', 'pending');
+    }
 
     const payload = {
         action: "saveBooking",
@@ -4713,26 +4720,28 @@ window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
         const h = p.halle;
         const s = p.slot;
         const t = p.typ;
-        const targetBox = document.querySelector(`[data-slot="${s}"]`);
+        const box = document.querySelector(`[data-slot="${s}"]`);
         
+        // Lokalen Cache aktualisieren
         if (window.lastPlanData && window.lastPlanData[s]) {
             window.lastPlanData[s].halle = h;
             window.lastPlanData[s].typ = t;
         }
 
-        if (targetBox) {
-            const label = targetBox.querySelector('.halle-label');
+        if (box) {
+            // UI sofort updaten
+            const label = box.querySelector('.halle-label');
             if (label) label.innerText = h;
-            targetBox.classList.remove('ausfall-mode');
+            box.classList.remove('ausfall-mode');
             
             const farbe = (h !== "" && window.hallenConfig && window.hallenConfig[h]) 
                           ? window.hallenConfig[h].color 
                           : "";
-            targetBox.style.backgroundColor = farbe;
+            box.style.backgroundColor = farbe;
             
-            if (h === "Ausfall") targetBox.classList.add('ausfall-mode');
+            if (h === "Ausfall") box.classList.add('ausfall-mode');
 
-            let lockIcon = targetBox.querySelector('.lock-icon-container');
+            let lockIcon = box.querySelector('.lock-icon-container');
             if (!lockIcon) {
                 lockIcon = document.createElement('div');
                 lockIcon.className = 'lock-icon-container';
@@ -4743,7 +4752,7 @@ window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
                     display: 'flex',
                     alignItems: 'center'
                 });
-                targetBox.appendChild(lockIcon);
+                box.appendChild(lockIcon);
             }
             
             lockIcon.innerHTML = (t === "fix") 
@@ -4751,13 +4760,10 @@ window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
                 : '';
         }
 
+        // Modal schließen
         if (typeof closeModal === 'function') {
             closeModal('eigenesmenu-modal'); 
         }
-        
-        // --- HINWEIS ---
-        // Die Sperre bleibt hier auf "pending", bis syncPlan beim 
-        // nächsten Durchlauf den Server-Wert validiert hat.
     };
 
     if (typeof window.prozessiereAktion === 'function') {
@@ -5288,15 +5294,15 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
 
     
     
-// Interne Hilfsfunktion, die die Payloads nacheinander an saveImmediately übergibt
 function executePayloads(payloadArray, onCompleteVisuals) {
     payloadArray.forEach(p => {
-        // Sync-Schutz
-        if (window.syncBlockierteSlots) {
-            window.syncBlockierteSlots[p.slot] = true;
+        // 1. NEU: Box suchen und DOM-Attribut als Sperre setzen
+        const box = document.querySelector(`[data-slot="${p.slot}"]`);
+        if (box) {
+            box.setAttribute('data-sync-status', 'pending');
         }
 
-        // Visuelles UI-Update sofort triggern
+        // 2. Visuelles UI-Update sofort triggern
         if (typeof onCompleteVisuals === "function") {
             onCompleteVisuals(p); 
         }
@@ -5305,22 +5311,21 @@ function executePayloads(payloadArray, onCompleteVisuals) {
         saveImmediately(p)
             .then(result => {
                 if (result && result.status === "success") {
-                    // --- NEWS NUR BEI ERFOLG AUSLÖSEN ---
                     if (p.halle === "Ausfall" || (p.halle && p.halle.includes("Outdoor"))) {
                         window.triggerNewsWrapper(p.halle, p.slot, p.klasse);
                     }
                     
-                    setTimeout(() => {
-                        if (window.syncBlockierteSlots) delete window.syncBlockierteSlots[p.slot];
-                    }, 2500);
+                    // --- WICHTIG: KEIN Timeout zum Löschen mehr! ---
+                    // Die Sperre bleibt jetzt bestehen, bis syncPlan 
+                    // beim nächsten Takt den Erfolg validiert hat.
                 } else {
-                    if (window.syncBlockierteSlots) delete window.syncBlockierteSlots[p.slot];
-                    // Sync-Aufruf entfernt
+                    // Falls Server-Fehler: Sperre sofort entfernen
+                    if (box) box.removeAttribute('data-sync-status');
                 }
             })
             .catch(() => {
-                if (window.syncBlockierteSlots) delete window.syncBlockierteSlots[p.slot];
-                // Sync-Aufruf entfernt
+                // Falls Network-Fehler: Sperre sofort entfernen
+                if (box) box.removeAttribute('data-sync-status');
             });
     });
 }
