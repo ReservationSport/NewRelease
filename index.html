@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOasdasdsa</title>
+    <title>Reservation Sport - BBZO/title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -4521,34 +4521,13 @@ window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
     // 1. SYNC PAUSIEREN
     window.pauseSync();
 
-    // 2. OPTIMISTISCHES UI-UPDATE FÜR BEIDE SLOTS
-    const partnerSlot = getDoppellektionPartnerSlot(slot);
-    const slotsToUpdate = [slot, partnerSlot].filter(Boolean);
+    // 2. UI-LOADER (Optisch am Button)
+    if (btn) {
+        btn.style.pointerEvents = "none";
+        btn.style.opacity = "0.6";
+    }
 
-    const updateUI = (s, h) => {
-        const box = document.querySelector(`[data-slot="${s}"]`);
-        if (!box) return;
-
-        const label = box.querySelector('.halle-label');
-        if (label) label.innerText = h;
-        
-        if (h === "Ausfall") {
-            box.classList.add('ausfall-mode');
-            box.style.backgroundColor = ""; 
-        } else {
-            box.classList.remove('ausfall-mode');
-            if (typeof hallenConfig !== 'undefined' && hallenConfig[h]) {
-                box.style.backgroundColor = hallenConfig[h].color;
-            } else {
-                box.style.backgroundColor = "";
-            }
-        }
-    };
-
-    // Beide Slots sofort aktualisieren
-    slotsToUpdate.forEach(s => updateUI(s, zielHalle));
-
-    // 3. SERVER-AKTION
+    // 3. SERVER-PAYLOAD (Kein UI-Update hier mehr!)
     const payload = {
         action: "saveBooking",
         pw: userPw,
@@ -4559,6 +4538,7 @@ window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
         halle: zielHalle
     };
 
+    // 4. VISUELLE AKTUALISIERUNG (Wird erst durch prozessiereAktion aufgerufen)
     const visuelleAktualisierung = function(p) {
         // Button-Feedback zurücksetzen
         if (btn) {
@@ -4571,23 +4551,35 @@ window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
             window.lastPlanData[p.slot].halle = p.halle;
         }
 
-        // 4. SYNC WIEDER FREIGEBEN
-        // Hinweis: Da prozessiereAktion das für beide Slots macht, 
-        // wird resumeSync hier eventuell doppelt gerufen, was unproblematisch ist.
-        window.resumeSync(); 
+        // UI für den spezifischen Slot aktualisieren
+        const box = document.querySelector(`[data-slot="${p.slot}"]`);
+        if (box) {
+            const label = box.querySelector('.halle-label');
+            if (label) label.innerText = p.halle;
+            
+            if (p.halle === "Ausfall") {
+                box.classList.add('ausfall-mode');
+                box.style.backgroundColor = ""; 
+            } else {
+                box.classList.remove('ausfall-mode');
+                if (typeof hallenConfig !== 'undefined' && hallenConfig[p.halle]) {
+                    box.style.backgroundColor = hallenConfig[p.halle].color;
+                } else {
+                    box.style.backgroundColor = "";
+                }
+            }
+        }
+        
+        // Hinweis: resumeSync wird hier NICHT mehr aufgerufen, 
+        // falls du es zentral über die Queue steuerst.
     };
 
-    // UI-Loader (optisch)
-    if (btn) {
-        btn.style.pointerEvents = "none";
-        btn.style.opacity = "0.6";
-    }
-
+    // 5. AUSFÜHRUNG
     try {
         window.prozessiereAktion(payload, visuelleAktualisierung);
     } catch (e) {
         window.isSyncPaused = false;
-        console.error("Fehler:", e);
+        console.error("Fehler bei Ausfall-Click:", e);
     }
 };
     
@@ -4709,32 +4701,10 @@ window.currentSaveController = null;
 window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
     if (!btn) return;
     
-    // 1. SYNC PAUSIEREN: Globale Sperre aktivieren
+    // 1. SYNC PAUSIEREN: Globale Sperre aktivieren, bis alles fertig ist
     window.pauseSync();
 
-    // 2. OPTIMISTISCHES UI-UPDATE FÜR BEIDE SLOTS
-    const partnerSlot = getDoppellektionPartnerSlot(slot);
-    const slotsToUpdate = [slot, partnerSlot].filter(Boolean); // Array mit 1 oder 2 Slots
-
-    slotsToUpdate.forEach(s => {
-        const box = document.querySelector(`[data-slot="${s}"]`);
-        if (box) {
-            const label = box.querySelector('.halle-label');
-            if (label) label.innerText = neueHalle;
-            
-            box.classList.remove('ausfall-mode');
-            if (neueHalle === "Ausfall") {
-                box.classList.add('ausfall-mode');
-                box.style.backgroundColor = "";
-            } else {
-                const farbe = (neueHalle !== "" && window.hallenConfig && window.hallenConfig[neueHalle]) 
-                            ? window.hallenConfig[neueHalle].color 
-                            : "";
-                box.style.backgroundColor = farbe;
-            }
-        }
-    });
-
+    // 2. PAYLOAD ERSTELLEN (Kein UI-Update hier mehr!)
     const payload = {
         action: "saveBooking",
         pw: userPw,
@@ -4747,6 +4717,7 @@ window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
         typ: typ || ""
     };
 
+    // 3. VISUELLE AKTUALISIERUNG (Wird erst durch prozessiereAktion aufgerufen)
     const visuelleAktualisierung = function(p) {
         // Lokalen Cache aktualisieren
         if (window.lastPlanData && window.lastPlanData[p.slot]) {
@@ -4756,17 +4727,29 @@ window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
 
         const box = document.querySelector(`[data-slot="${p.slot}"]`);
         if (box) {
+            // Label und Farbe/Ausfall-Mode setzen
+            const label = box.querySelector('.halle-label');
+            if (label) label.innerText = p.halle;
+            
+            box.classList.remove('ausfall-mode');
+            if (p.halle === "Ausfall") {
+                box.classList.add('ausfall-mode');
+                box.style.backgroundColor = "";
+            } else {
+                const farbe = (p.halle !== "" && window.hallenConfig && window.hallenConfig[p.halle]) 
+                            ? window.hallenConfig[p.halle].color 
+                            : "";
+                box.style.backgroundColor = farbe;
+            }
+
             // Icon-Logik (fix/lock)
             let lockIcon = box.querySelector('.lock-icon-container');
             if (!lockIcon) {
                 lockIcon = document.createElement('div');
                 lockIcon.className = 'lock-icon-container';
                 Object.assign(lockIcon.style, {
-                    position: 'absolute',
-                    right: '-3px',
-                    bottom: '5px',
-                    display: 'flex',
-                    alignItems: 'center'
+                    position: 'absolute', right: '-3px', bottom: '5px',
+                    display: 'flex', alignItems: 'center'
                 });
                 box.appendChild(lockIcon);
             }
@@ -4775,17 +4758,18 @@ window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
                 : '';
         }
 
-        // Modal schließen und Sync freigeben
-        // Hinweis: Da prozessiereAktion bei Doppellektionen ggf. mehrere Aufrufe macht, 
-        // wird resumeSync hier zwar mehrmals aufgerufen, aber da es nur einen Flag umschaltet, 
-        // ist das unproblematisch.
+        // Modal schließen
         if (typeof closeModal === 'function') {
             closeModal('eigenesmenu-modal'); 
         }
 
-        window.resumeSync(); 
+        // WICHTIG: Das resumeSync hier nur aufrufen, wenn es kein Teil der Queue-Logik ist.
+        // Wenn du mein vorgeschlagenes zentrales Queue-System nutzt, 
+        // sollte das resumeSync hier raus, damit es nicht vorzeitig triggert.
+        // window.resumeSync(); 
     };
 
+    // 4. AUSFÜHRUNG
     try {
         if (typeof window.prozessiereAktion === 'function') {
             window.prozessiereAktion(payload, visuelleAktualisierung);
@@ -5217,6 +5201,10 @@ function getDoppellektionPartnerSlot(currentSlot) {
    11. DOPPELLEKTIONS-ABFRAGE (Bereinigt, mit sofortigem UI-Update)
    ============================================================ */
 
+/* ============================================================
+   11. DOPPELLEKTIONS-ABFRAGE (Optimiert für Echtzeit-UI-Update)
+   ============================================================ */
+
 window.prozessiereAktion = function(payload, onCompleteVisuals) {
     const partnerSlot = getDoppellektionPartnerSlot(payload.slot);
     const modalContainer = document.querySelector('.eigenesmenu-container');
@@ -5293,23 +5281,23 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
 
     // 5. Angepasster Wrapper für sofortiges visuelles Feedback
     const executeMitQueue = (payloads) => {
-        // Sofortiges UI-Update für jeden betroffenen Slot, damit es sich "echtzeit" anfühlt
+        // Erst jetzt wird das UI für den/die gewählten Slot(s) aktualisiert
         payloads.forEach(p => {
             if (onCompleteVisuals) {
                 onCompleteVisuals(p);
             }
         });
 
-        // Danach erst die Queue-Verarbeitung für die Server-Kommunikation
+        // Danach die Aktionen sicher in die Warteschlange geben
         payloads.forEach(p => addToQueue(p, null));
 
-        // Schließen nach der Aktion
+        // Schließen des Auswahl-Modals nach der Entscheidung
         if (typeof closeEditor === "function") {
             closeEditor();
         }
     };
 
-    // 6. Event Listener
+    // 6. Event Listener (Verbindung zu executeMitQueue)
     const btnBeide = document.getElementById('btn-doppel-beide');
     if (btnBeide) {
         btnBeide.onclick = () => executeMitQueue([payload, { ...payload, slot: partnerSlot.toString() }]);
