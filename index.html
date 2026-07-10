@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOasdasdsa</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -4517,31 +4517,36 @@ window.handleMenuChoice = function(action, time, slot, klasse) {
 
 window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
     const zielHalle = (mode === 'LOESCHEN') ? "" : "Ausfall";
-    const targetBox = document.querySelector(`[data-slot="${slot}"]`);
-
-    if (!targetBox) return;
-
-    // 1. SYNC PAUSIEREN: Globale Sperre aktivieren
-    window.pauseSync();
     
-    // 2. SOFORTIGES UI-UPDATE (Optimistisch)
-    const updateUI = (h) => {
-        const label = targetBox.querySelector('.halle-label');
+    // 1. SYNC PAUSIEREN
+    window.pauseSync();
+
+    // 2. OPTIMISTISCHES UI-UPDATE FÜR BEIDE SLOTS
+    const partnerSlot = getDoppellektionPartnerSlot(slot);
+    const slotsToUpdate = [slot, partnerSlot].filter(Boolean);
+
+    const updateUI = (s, h) => {
+        const box = document.querySelector(`[data-slot="${s}"]`);
+        if (!box) return;
+
+        const label = box.querySelector('.halle-label');
         if (label) label.innerText = h;
+        
         if (h === "Ausfall") {
-            targetBox.classList.add('ausfall-mode');
-            targetBox.style.backgroundColor = ""; 
+            box.classList.add('ausfall-mode');
+            box.style.backgroundColor = ""; 
         } else {
-            targetBox.classList.remove('ausfall-mode');
+            box.classList.remove('ausfall-mode');
             if (typeof hallenConfig !== 'undefined' && hallenConfig[h]) {
-                targetBox.style.backgroundColor = hallenConfig[h].color;
+                box.style.backgroundColor = hallenConfig[h].color;
             } else {
-                targetBox.style.backgroundColor = "";
+                box.style.backgroundColor = "";
             }
         }
     };
 
-    updateUI(zielHalle); 
+    // Beide Slots sofort aktualisieren
+    slotsToUpdate.forEach(s => updateUI(s, zielHalle));
 
     // 3. SERVER-AKTION
     const payload = {
@@ -4566,7 +4571,9 @@ window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
             window.lastPlanData[p.slot].halle = p.halle;
         }
 
-        // 4. SYNC WIEDER FREIGEBEN: Der Wächter übernimmt
+        // 4. SYNC WIEDER FREIGEBEN
+        // Hinweis: Da prozessiereAktion das für beide Slots macht, 
+        // wird resumeSync hier eventuell doppelt gerufen, was unproblematisch ist.
         window.resumeSync(); 
     };
 
@@ -4579,7 +4586,6 @@ window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
     try {
         window.prozessiereAktion(payload, visuelleAktualisierung);
     } catch (e) {
-        // Bei Fehler: Sperre aufheben und Sync erlauben
         window.isSyncPaused = false;
         console.error("Fehler:", e);
     }
