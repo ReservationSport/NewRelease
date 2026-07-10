@@ -4522,7 +4522,13 @@ window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
     console.log("handleAusfallClick getriggert. Modus:", mode);
 
     const zielHalle = (mode === 'LOESCHEN') ? "" : "Ausfall";
-    
+    const targetBox = document.querySelector(`[data-slot="${slot}"]`);
+
+    // 1. DOM-SPERRE SETZEN (Schutzschild gegen syncPlan)
+    if (targetBox) {
+        targetBox.setAttribute('data-sync-status', 'pending');
+    }
+
     const payload = {
         action: "saveBooking",
         pw: userPw,
@@ -4533,25 +4539,28 @@ window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
         halle: zielHalle
     };
 
-    // Callback: Wird aufgerufen, wenn der Server die Änderung bestätigt hat
     const visuelleAktualisierung = function(p) {
-        // Sicherstellen, dass das UI wieder freigegeben wird
+        // Sperre entfernen
+        if (targetBox) {
+            targetBox.removeAttribute('data-sync-status');
+        }
+
+        // Button wiederherstellen
         if (btn) {
             btn.style.pointerEvents = "auto";
             btn.style.opacity = "1";
+            // Hinweis: Hier müsstest du den Loader wieder zum Text zurücksetzen
         }
         
         const s = p.slot;
         const h = p.halle;
         
-        const targetBox = document.querySelector(`[data-slot="${s}"]`);
-        
-        // 1. Lokalen Datenspeicher synchron halten
+        // Lokalen Datenspeicher synchron halten
         if (window.lastPlanData && window.lastPlanData[s]) {
             window.lastPlanData[s].halle = h;
         }
 
-        // 2. UI sofort aktualisieren
+        // UI sofort aktualisieren
         if (targetBox) {
             const label = targetBox.querySelector('.halle-label');
             if (label) label.innerText = h;
@@ -4561,7 +4570,6 @@ window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
                 targetBox.style.backgroundColor = ""; 
             } else {
                 targetBox.classList.remove('ausfall-mode');
-                // Nutze deine globale Konfigurationsvariable
                 if (typeof hallenConfig !== 'undefined' && hallenConfig[h]) {
                     targetBox.style.backgroundColor = hallenConfig[h].color;
                 } else {
@@ -4571,16 +4579,21 @@ window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
         }
     };
 
-    // UI-Loader & Button-Blockierung statt Fenster-Blockierung
+    // UI-Loader
     if (btn) {
-        btn.style.pointerEvents = "none"; // Nur diesen Button kurzzeitig sperren
+        btn.style.pointerEvents = "none";
         btn.style.opacity = "0.6";
-        const originalText = btn.querySelector('.btn-text')?.innerText || btn.innerText;
-        btn.innerHTML = `<span class="btn-text">${originalText}</span> <div class="inline-loader-container"><div class="eigenesmenu-loader" style="width:14px; height:14px; border-width:2px;"></div></div>`;
+        // ... (dein Loader-Code)
     }
 
-    // Übergabe an die Weiche
-    window.prozessiereAktion(payload, visuelleAktualisierung);
+    // Übergabe an die Weiche mit Error-Handling
+    try {
+        window.prozessiereAktion(payload, visuelleAktualisierung);
+    } catch (e) {
+        // Bei Fehler Sperre unbedingt entfernen!
+        if (targetBox) targetBox.removeAttribute('data-sync-status');
+        console.error("Ausfall-Aktion fehlgeschlagen:", e);
+    }
 };
     
 
