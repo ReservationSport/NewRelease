@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOasdd</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2443,6 +2443,9 @@ body {
 
    window.lastKnownChange = 0;
 
+    window.isSyncPaused = false; // Flag: Darf syncPlan gerade laufen?
+    window.syncPauseTimer = null; // Timer für die "Ruhephase" nach Aktionen
+
     
 /* ============================================================
    2. INITIALISIERUNG
@@ -3114,13 +3117,32 @@ window.closeModal = function(id) {
 };
 
 
+    window.pauseSync = function() {
+    window.isSyncPaused = true;
+    if (window.syncPauseTimer) clearTimeout(window.syncPauseTimer);
+};
+
+window.resumeSync = function() {
+    // Nach Abschluss einer Aktion warten wir 1.5 Sekunden, 
+    // bevor wir den Sync wieder erlauben.
+    window.syncPauseTimer = setTimeout(() => {
+        window.isSyncPaused = false;
+        window.syncPlan(); // Sofortiger Sync, um den aktuellen Server-Stand zu holen
+    }, 1500);
+};
 
 
     
 /* ============================================================
-   SYNC PLAN - DOM-Sicher (Hard-Stop Architektur)
+   SYNC PLAN - DOM-Sicher (Globale Wachhund-Architektur)
    ============================================================ */
 window.syncPlan = async function() {
+    // 1. GLOBALE SPERRE: Wenn wir gerade buchen, pausieren wir den Sync komplett.
+    if (window.isSyncPaused) {
+        console.log("Sync pausiert - überspringe Lauf.");
+        return;
+    }
+
     if (window.isSaving) return; 
 
     const dp = document.getElementById('datePicker');
@@ -3146,24 +3168,10 @@ window.syncPlan = async function() {
             const box = container.querySelector(`[data-slot="${slot}"]`);
             if (!box) return;
 
-            // --- 1. HARD-STOP: Absoluter Schutz gegen Hintergrund-Sync ---
-            const isPending = box.getAttribute('data-sync-status') === 'pending';
-            
-            if (isPending) {
-                // Prüfe, ob der Server den Status schon übernommen hat
-                const serverHalle = (slotData.halle || "").trim().toLowerCase();
-                const currentUIHalle = (box.querySelector('.halle-label')?.innerText.trim() || "").toLowerCase();
-                
-                if (serverHalle === currentUIHalle) {
-                    box.removeAttribute('data-sync-status');
-                } else {
-                    return; // -> STOPP: Diese Box wird vom Sync komplett ignoriert!
-                }
-            } 
-            
+            // Globale Queue-Sperre
             if (window.isProcessingQueue) return;
 
-            // --- 2. AB HIER: NORMALE UI-SYNCHRONISIERUNG ---
+            // --- NORMALE UI-SYNCHRONISIERUNG ---
             const klasse = slotData.klasse || "";
             const verfasser = slotData.verfasser || "";
             const halle = slotData.halle || "";
@@ -3194,7 +3202,7 @@ window.syncPlan = async function() {
                 lockContainer.innerHTML = (typ === 'fix') ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
             }
 
-            // --- 3. ICONS AUFRÄUMEN & NEU ZEICHNEN ---
+            // --- ICONS AUFRÄUMEN & NEU ZEICHNEN ---
             const altesNotizIcon = box.querySelector('.box-notiz-icon');
             if (altesNotizIcon) altesNotizIcon.remove();
             
@@ -4513,10 +4521,10 @@ window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
 
     if (!targetBox) return;
 
-    // 1. SOFORTIGES UI-UPDATE (Optimistisch)
-    // Wir machen das, BEVOR wir den Server rufen, damit es sich sofort anfühlt.
-    targetBox.setAttribute('data-sync-status', 'pending');
+    // 1. SYNC PAUSIEREN: Globale Sperre aktivieren
+    window.pauseSync();
     
+    // 2. SOFORTIGES UI-UPDATE (Optimistisch)
     const updateUI = (h) => {
         const label = targetBox.querySelector('.halle-label');
         if (label) label.innerText = h;
@@ -4533,9 +4541,9 @@ window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
         }
     };
 
-    updateUI(zielHalle); // Hier passiert die Magie: Sofortige Reaktion!
+    updateUI(zielHalle); 
 
-    // 2. SERVER-AKTION
+    // 3. SERVER-AKTION
     const payload = {
         action: "saveBooking",
         pw: userPw,
@@ -4558,10 +4566,8 @@ window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
             window.lastPlanData[p.slot].halle = p.halle;
         }
 
-        // Sperre erst nach kurzem Puffer entfernen
-        setTimeout(() => {
-            if (targetBox) targetBox.removeAttribute('data-sync-status');
-        }, 600); 
+        // 4. SYNC WIEDER FREIGEBEN: Der Wächter übernimmt
+        window.resumeSync(); 
     };
 
     // UI-Loader (optisch)
@@ -4573,9 +4579,8 @@ window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
     try {
         window.prozessiereAktion(payload, visuelleAktualisierung);
     } catch (e) {
-        // Bei Fehler: Rückgängig machen!
-        targetBox.removeAttribute('data-sync-status');
-        // Hier ggf. vorherigen Zustand wiederherstellen
+        // Bei Fehler: Sperre aufheben und Sync erlauben
+        window.isSyncPaused = false;
         console.error("Fehler:", e);
     }
 };
