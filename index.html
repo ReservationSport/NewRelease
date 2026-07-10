@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2697,15 +2697,22 @@ function addToQueue(payload, onCompleteVisuals) {
     
 // Die zentrale Verarbeitungs-Logik
 async function processQueue() {
-    if (window.isProcessingQueue || window.actionQueue.length === 0) return;
+    // 1. Check, ob wir bereits arbeiten oder nichts zu tun haben
+    if (window.isProcessingQueue) return;
+
+    if (window.actionQueue.length === 0) {
+        // WICHTIG: Wenn die Queue leer ist, geben wir den Sync endlich frei
+        window.isSyncPaused = false;
+        if (typeof window.resumeSync === 'function') {
+            window.resumeSync();
+        }
+        return;
+    }
     
     window.isProcessingQueue = true;
     const { payload, onCompleteVisuals } = window.actionQueue.shift();
     
-    // 1. KEINE globale Blockade mehr, wir nutzen das DOM-Attribut
-    // (Dies wurde bereits in applyHalleSelection beim Klick gesetzt)
-    
-    // 2. UI-Update (Optimistisch)
+    // 2. UI-Update (Optimistisch - Falls es nicht schon in prozessiereAktion passierte)
     if (onCompleteVisuals) onCompleteVisuals(payload);
     
     // 3. Server-Call
@@ -2713,15 +2720,14 @@ async function processQueue() {
         await saveImmediately(payload);
     } catch (e) {
         console.error("Fehler beim Speichern:", e);
-        // Falls Fehler, Sperre im DOM entfernen, damit die Box nicht für immer "pending" bleibt
+        // Falls Fehler, Sperre im DOM entfernen
         const box = document.querySelector(`[data-slot="${payload.slot}"]`);
         if (box) box.removeAttribute('data-sync-status');
     } finally {
-        // 4. Keine globale Blockade mehr löschen
-        
+        // 4. Queue-Sperre lösen
         window.isProcessingQueue = false;
         
-        // 5. Nächste Aktion verarbeiten
+        // 5. Nächste Aktion verarbeiten (Rekursion)
         processQueue();
     }
 }
@@ -4242,17 +4248,17 @@ function openMaterialDetail(materialString, time, slot, klasse) {
    ========================================================================== */
 
 async function saveMaterialSelection(mat, detail, time, slot, klasse, btn) {
-    // 1. Gezielte Button-Blockierung statt Fenster-Blockierung
+    // 1. Button blockieren (Optisch)
     if (btn) {
         btn.style.pointerEvents = "none";
         btn.style.opacity = "0.6";
         btn.innerHTML = `<span class="material-symbols-outlined">trolley</span> Speichere...`;
     }
 
-    // 2. Hole den aktuellen Stand des Slots
+    // 2. Aktuellen Stand holen
     const currentSlotData = (window.lastPlanData && window.lastPlanData[slot]) ? window.lastPlanData[slot] : {};
 
-    // 3. Erstelle das Payload
+    // 3. Payload erstellen
     const payload = {
         action: "saveBooking",
         pw: typeof userPw !== 'undefined' ? userPw : "",
@@ -4266,8 +4272,9 @@ async function saveMaterialSelection(mat, detail, time, slot, klasse, btn) {
         halle: currentSlotData.halle || ""
     };
 
+    // 4. Callback für visuelle Änderungen
     const onCompleteVisuals = (p) => {
-        // Button wieder freigeben
+        // Button zurücksetzen
         if (btn) {
             btn.style.pointerEvents = "auto";
             btn.style.opacity = "1";
@@ -4285,21 +4292,33 @@ async function saveMaterialSelection(mat, detail, time, slot, klasse, btn) {
             };
         }
 
+        // Box UI aktualisieren
         const box = document.querySelector(`[data-slot="${s}"]`);
         if (box) markBoxWithMaterialIcon(box, p.material, p.materialDetail);
         
-        if (s === slot && typeof closeEditor === 'function') closeEditor();
+        // WICHTIG: Kein closeEditor() mehr hier, das übernimmt prozessiereAktion.
     };
 
-    if (typeof window.prozessiereAktion === 'function') {
-        window.prozessiereAktion(payload, onCompleteVisuals);
-    } else {
-        onCompleteVisuals(payload);
+    // 5. Übergabe an die zentrale Abfrage-Logik
+    try {
+        if (typeof window.prozessiereAktion === 'function') {
+            window.prozessiereAktion(payload, onCompleteVisuals);
+        } else {
+            // Fallback, falls prozessiereAktion nicht verfügbar (Queue-Umgehung)
+            onCompleteVisuals(payload);
+            addToQueue(payload, null);
+        }
+    } catch (e) {
+        console.error("Fehler bei Material-Speicherung:", e);
+        if (btn) {
+            btn.style.pointerEvents = "auto";
+            btn.style.opacity = "1";
+        }
     }
 }
 
 async function applyMaterialDelete(time, slot, klasse, btn) {
-    // Gezielte Button-Blockierung
+    // 1. Gezielte Button-Blockierung
     if (btn) {
         btn.style.pointerEvents = "none";
         btn.style.opacity = "0.6";
@@ -4328,6 +4347,7 @@ async function applyMaterialDelete(time, slot, klasse, btn) {
 
         const s = p.slot;
         
+        // Lokale Datenstruktur aktualisieren
         if (window.lastPlanData?.[s]) {
             window.lastPlanData[s] = {
                 ...window.lastPlanData[s],
@@ -4336,16 +4356,28 @@ async function applyMaterialDelete(time, slot, klasse, btn) {
             };
         }
         
+        // UI der Box aktualisieren
         const box = document.querySelector(`[data-slot="${s}"]`);
         if (box) markBoxWithMaterialIcon(box, "", "");
         
-        if (s === slot && typeof closeEditor === 'function') closeEditor();
+        // WICHTIG: Kein closeEditor() hier, dies erfolgt zentral über prozessiereAktion
     };
 
-    if (typeof window.prozessiereAktion === 'function') {
-        window.prozessiereAktion(payload, onCompleteVisuals);
-    } else {
-        onCompleteVisuals(payload);
+    // 2. Zentrale Verarbeitung
+    try {
+        if (typeof window.prozessiereAktion === 'function') {
+            window.prozessiereAktion(payload, onCompleteVisuals);
+        } else {
+            // Fallback
+            onCompleteVisuals(payload);
+            addToQueue(payload, null);
+        }
+    } catch (e) {
+        console.error("Fehler beim Löschen des Materials:", e);
+        if (btn) {
+            btn.style.pointerEvents = "auto";
+            btn.style.opacity = "1";
+        }
     }
 }
     
@@ -4527,7 +4559,7 @@ window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
         btn.style.opacity = "0.6";
     }
 
-    // 3. SERVER-PAYLOAD (Kein UI-Update hier mehr!)
+    // 3. SERVER-PAYLOAD
     const payload = {
         action: "saveBooking",
         pw: userPw,
@@ -4557,6 +4589,7 @@ window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
             const label = box.querySelector('.halle-label');
             if (label) label.innerText = p.halle;
             
+            // Logik für Ausfall vs. normale Halle
             if (p.halle === "Ausfall") {
                 box.classList.add('ausfall-mode');
                 box.style.backgroundColor = ""; 
@@ -4569,16 +4602,20 @@ window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
                 }
             }
         }
-        
-        // Hinweis: resumeSync wird hier NICHT mehr aufgerufen, 
-        // falls du es zentral über die Queue steuerst.
     };
 
     // 5. AUSFÜHRUNG
     try {
-        window.prozessiereAktion(payload, visuelleAktualisierung);
+        if (typeof window.prozessiereAktion === 'function') {
+            window.prozessiereAktion(payload, visuelleAktualisierung);
+        }
     } catch (e) {
+        // Fallback: Sync-Sperre lösen, falls der Aufruf komplett fehlschlägt
         window.isSyncPaused = false;
+        if (btn) {
+            btn.style.pointerEvents = "auto";
+            btn.style.opacity = "1";
+        }
         console.error("Fehler bei Ausfall-Click:", e);
     }
 };
@@ -4701,10 +4738,10 @@ window.currentSaveController = null;
 window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
     if (!btn) return;
     
-    // 1. SYNC PAUSIEREN: Globale Sperre aktivieren, bis alles fertig ist
+    // 1. SYNC PAUSIEREN: Globale Sperre aktivieren
     window.pauseSync();
 
-    // 2. PAYLOAD ERSTELLEN (Kein UI-Update hier mehr!)
+    // 2. PAYLOAD ERSTELLEN
     const payload = {
         action: "saveBooking",
         pw: userPw,
@@ -4717,7 +4754,7 @@ window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
         typ: typ || ""
     };
 
-    // 3. VISUELLE AKTUALISIERUNG (Wird erst durch prozessiereAktion aufgerufen)
+    // 3. VISUELLE AKTUALISIERUNG (Wird erst durch prozessiereAktion/Queue aufgerufen)
     const visuelleAktualisierung = function(p) {
         // Lokalen Cache aktualisieren
         if (window.lastPlanData && window.lastPlanData[p.slot]) {
@@ -4757,16 +4794,7 @@ window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
                 ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' 
                 : '';
         }
-
-        // Modal schließen
-        if (typeof closeModal === 'function') {
-            closeModal('eigenesmenu-modal'); 
-        }
-
-        // WICHTIG: Das resumeSync hier nur aufrufen, wenn es kein Teil der Queue-Logik ist.
-        // Wenn du mein vorgeschlagenes zentrales Queue-System nutzt, 
-        // sollte das resumeSync hier raus, damit es nicht vorzeitig triggert.
-        // window.resumeSync(); 
+        // Hinweis: closeModal entfernt, da dies zentral über closeEditor() in prozessiereAktion geschieht.
     };
 
     // 4. AUSFÜHRUNG
@@ -4775,6 +4803,7 @@ window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
             window.prozessiereAktion(payload, visuelleAktualisierung);
         }
     } catch (e) {
+        // Fehler-Reset der Sperre
         window.isSyncPaused = false;
         console.error("Hallen-Auswahl fehlgeschlagen:", e);
     }
@@ -4877,9 +4906,22 @@ window.handleNotizUI = function(time, slot, klasse) {
  */
 window.loescheNotizVomModal = function(slot, klasse) {
     const textFeld = document.getElementById('notiz-text-feld');
+    const saveBtn = document.getElementById('btn-save-notiz');
+    
+    // 1. Textfeld leeren
     if (textFeld) {
         textFeld.value = ""; 
     }
+    
+    // 2. Optional: Button-Feedback, falls der User sieht, dass gelöscht wird
+    if (saveBtn) {
+        saveBtn.innerText = "Lösche...";
+        saveBtn.style.pointerEvents = "none";
+    }
+    
+    // 3. Bestehende Speicherkette aufrufen
+    // Da speichereNotizVomModal die Logik zentralisiert, 
+    // läuft hier jetzt der gesamte "prozessiereAktion" -> "Queue" -> "Sync" Workflow ab.
     window.speichereNotizVomModal(slot, klasse);
 };
 
@@ -4901,10 +4943,10 @@ window.speichereNotizVomModal = async function(slot, klasse) {
         saveBtn.style.pointerEvents = "none";
     }
 
-    // 1. Hole das existierende Datenobjekt des Slots, um existierende Felder (wie "fix") zu erhalten
+    // 1. Datenobjekt holen
     const currentSlotData = (window.lastPlanData && window.lastPlanData[slot]) ? window.lastPlanData[slot] : {};
 
-    // 2. Erstelle das Payload als Merge aus bestehenden Daten und den neuen Änderungen
+    // 2. Payload
     const payload = {
         action: "saveBooking",
         pw: userPw,
@@ -4912,15 +4954,14 @@ window.speichereNotizVomModal = async function(slot, klasse) {
         date: dateVal,
         slot: slot.toString(),
         klasse: klasse,
-        ...currentSlotData,    // <--- WICHTIG: Erhält existierende Felder wie 'fix' (Spalte J)
-        kommentar: notizText   // <--- Überschreibt/setzt nur den Kommentar neu
+        ...currentSlotData,
+        kommentar: notizText
     };
 
+    // 3. Callback
     const onCompleteVisuals = function(p) {
         const n = p.kommentar;
         const s = p.slot;
-        
-        console.log("Triggere Sofort-Update für Notiz in Slot:", s);
         
         const box = document.querySelector(`[data-slot="${s}"]`);
         if (box) {
@@ -4936,11 +4977,8 @@ window.speichereNotizVomModal = async function(slot, klasse) {
                 neuesNotizIcon.title = n;
                 
                 Object.assign(neuesNotizIcon.style, {
-                    position: 'absolute',
-                    top: '-2px',
-                    left: '4px',
-                    cursor: 'pointer',
-                    zIndex: '5'
+                    position: 'absolute', top: '-2px', left: '4px',
+                    cursor: 'pointer', zIndex: '5'
                 });
                 
                 neuesNotizIcon.onclick = function(event) {
@@ -4953,26 +4991,26 @@ window.speichereNotizVomModal = async function(slot, klasse) {
             }
         }
 
-        // Update der lokalen Datenstruktur unter Erhalt anderer Felder
+        // Lokales Update
         if (window.lastPlanData) {
             if (!window.lastPlanData[s]) window.lastPlanData[s] = {};
-            // Auch hier nutzen wir den Merge für das lokale Objekt
             window.lastPlanData[s] = {
                 ...window.lastPlanData[s],
                 kommentar: n
             };
         }
-
-        if (s === slot.toString() && typeof closeEditor === 'function') {
-            closeEditor();
-        }
+        // WICHTIG: Kein closeEditor() hier mehr!
     };
 
+    // 4. Prozessierung
     if (typeof window.prozessiereAktion === "function") {
         window.prozessiereAktion(payload, onCompleteVisuals);
+    } else {
+        // Fallback
+        onCompleteVisuals(payload);
+        addToQueue(payload, null);
     }
 };
-    
 
     
 
@@ -5196,11 +5234,6 @@ function getDoppellektionPartnerSlot(currentSlot) {
 
 
 
-
-/* ============================================================
-   11. DOPPELLEKTIONS-ABFRAGE (Bereinigt, mit sofortigem UI-Update)
-   ============================================================ */
-
 /* ============================================================
    11. DOPPELLEKTIONS-ABFRAGE (Optimiert für Echtzeit-UI-Update)
    ============================================================ */
@@ -5281,23 +5314,24 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
 
     // 5. Angepasster Wrapper für sofortiges visuelles Feedback
     const executeMitQueue = (payloads) => {
-        // Erst jetzt wird das UI für den/die gewählten Slot(s) aktualisiert
+        // UI-Update für jeden Slot
         payloads.forEach(p => {
-            if (onCompleteVisuals) {
-                onCompleteVisuals(p);
-            }
+            if (onCompleteVisuals) onCompleteVisuals(p);
         });
 
-        // Danach die Aktionen sicher in die Warteschlange geben
+        // Aktionen in die Warteschlange geben
         payloads.forEach(p => addToQueue(p, null));
 
-        // Schließen des Auswahl-Modals nach der Entscheidung
-        if (typeof closeEditor === "function") {
-            closeEditor();
+        // Schließen des Auswahl-Modals
+        if (typeof closeEditor === "function") closeEditor();
+        
+        // WICHTIG: Queue manuell anstoßen, falls sie gerade schläft
+        if (typeof processQueue === "function") {
+            processQueue();
         }
     };
 
-    // 6. Event Listener (Verbindung zu executeMitQueue)
+    // 6. Event Listener
     const btnBeide = document.getElementById('btn-doppel-beide');
     if (btnBeide) {
         btnBeide.onclick = () => executeMitQueue([payload, { ...payload, slot: partnerSlot.toString() }]);
@@ -5308,7 +5342,6 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
         btnEinzel.onclick = () => executeMitQueue([payload]);
     }
 };
-
 
     
     
