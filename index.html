@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOasdd</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3116,7 +3116,7 @@ window.closeModal = function(id) {
 
     
 /* ============================================================
-   SYNC PLAN - DOM-Sicher (Korrekt geschlossene Klammern)
+   SYNC PLAN - DOM-Sicher (Optimiert für Icon-Stabilität)
    ============================================================ */
 window.syncPlan = async function() {
     if (window.isSaving) return; 
@@ -3142,10 +3142,9 @@ window.syncPlan = async function() {
         Object.keys(newPlan).forEach(slot => {
             const slotData = newPlan[slot] || {};
             const box = container.querySelector(`[data-slot="${slot}"]`);
-            
             if (!box) return;
 
-            // 1. SCHUTZSCHILD
+            // 1. SCHUTZSCHILD: Skeptiker-Check
             const syncStatus = box.getAttribute('data-sync-status');
             const serverHalle = (slotData.halle || "").trim().toLowerCase();
             const currentUIHalle = (box.querySelector('.halle-label')?.innerText.trim() || "").toLowerCase();
@@ -3154,12 +3153,13 @@ window.syncPlan = async function() {
                 if (serverHalle === currentUIHalle) {
                     box.removeAttribute('data-sync-status');
                 } else {
-                    return; 
+                    return; // Slot ist "pending", wir rühren nichts an!
                 }
             } else if (window.isProcessingQueue) {
                 return;
             }
 
+            // 2. UI-UPDATE (Klassen, Lehrer, Halle)
             const klasse = slotData.klasse || "";
             const verfasser = slotData.verfasser || "";
             const halle = slotData.halle || "";
@@ -3172,13 +3172,7 @@ window.syncPlan = async function() {
             const isMyBooking = (verfasser.trim().toLowerCase() === userKuerzel.toLowerCase());
             const canEdit = isMyClass || isMyBooking;
             
-            box.className = [
-                "box",
-                isKlasseLeer ? "empty" : "",
-                canEdit ? "is-mine" : "not-mine",
-                isAusfall ? "ausfall-mode" : ""
-            ].filter(Boolean).join(" ");
-            
+            box.className = ["box", isKlasseLeer ? "empty" : "", canEdit ? "is-mine" : "not-mine", isAusfall ? "ausfall-mode" : ""].filter(Boolean).join(" ");
             box.style.backgroundColor = (window.hallenConfig[halle] && !isAusfall) ? window.hallenConfig[halle].color : '';
             box.style.cursor = canEdit ? 'pointer' : 'default';
 
@@ -3195,8 +3189,8 @@ window.syncPlan = async function() {
                 lockContainer.innerHTML = (typ === 'fix') ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
             }
 
-            // --- ICONS AUFRÄUMEN & NEU ZEICHNEN ---
-            // Nur ausführen, wenn NICHT pending
+            // 3. ICONS AUFRÄUMEN & NEU ZEICHNEN
+            // WICHTIG: Nur wenn NICHT pending, damit manuelle Icons stabil bleiben
             if (box.getAttribute('data-sync-status') !== 'pending') {
                 const altesNotizIcon = box.querySelector('.box-notiz-icon');
                 if (altesNotizIcon) altesNotizIcon.remove();
@@ -3219,12 +3213,14 @@ window.syncPlan = async function() {
                     };
                     box.appendChild(notizElement);
                 }
-            } // Ende if (status !== 'pending')
-        }); // Ende forEach
+            }
+        });
     } catch(e) {
         console.error("Hintergrund-Sync fehlgeschlagen:", e);
     }
 };
+
+
     
 
 // Variable außerhalb der Funktion definieren
@@ -4241,16 +4237,14 @@ async function saveMaterialSelection(mat, detail, time, slot, klasse, btn) {
         btn.innerHTML = `<span class="material-symbols-outlined">trolley</span> Speichere...`;
     }
 
-    // 2. DOM-Sperre setzen (damit syncPlan skeptisch bleibt)
+    // 2. DOM-Sperre setzen
     const targetBox = document.querySelector(`[data-slot="${slot}"]`);
     if (targetBox) {
         targetBox.setAttribute('data-sync-status', 'pending');
     }
 
-    // 3. Hole den aktuellen Stand des Slots
     const currentSlotData = (window.lastPlanData && window.lastPlanData[slot]) ? window.lastPlanData[slot] : {};
 
-    // 4. Erstelle das Payload
     const payload = {
         action: "saveBooking",
         pw: typeof userPw !== 'undefined' ? userPw : "",
@@ -4269,11 +4263,13 @@ async function saveMaterialSelection(mat, detail, time, slot, klasse, btn) {
         if (btn) {
             btn.style.pointerEvents = "auto";
             btn.style.opacity = "1";
+            // Button-Text zurücksetzen (optional, je nach deinem UI)
+            btn.innerHTML = `<span class="material-symbols-outlined">trolley</span> Speichern`; 
         }
 
         const s = p.slot;
         
-        // Lokale Datenstruktur aktualisieren
+        // Lokale Daten aktualisieren
         if (window.lastPlanData) {
             if (!window.lastPlanData[s]) window.lastPlanData[s] = {};
             window.lastPlanData[s] = {
@@ -4285,15 +4281,27 @@ async function saveMaterialSelection(mat, detail, time, slot, klasse, btn) {
 
         const box = document.querySelector(`[data-slot="${s}"]`);
         if (box) {
-            // UI sofort updaten
             markBoxWithMaterialIcon(box, p.material, p.materialDetail);
         }
         
         if (s === slot && typeof closeEditor === 'function') closeEditor();
     };
 
+    // 3. Aktion ausführen mit expliziter Fehlerbehandlung
     if (typeof window.prozessiereAktion === 'function') {
-        window.prozessiereAktion(payload, onCompleteVisuals);
+        try {
+            await window.prozessiereAktion(payload, onCompleteVisuals);
+        } catch (err) {
+            console.error("Fehler bei Materialbuchung:", err);
+            // SPERRE LÖSCHEN bei Fehler, damit das UI nicht hängt
+            if (targetBox) targetBox.removeAttribute('data-sync-status');
+            
+            // UI-Button wiederherstellen
+            if (btn) {
+                btn.style.pointerEvents = "auto";
+                btn.style.opacity = "1";
+            }
+        }
     } else {
         onCompleteVisuals(payload);
     }
@@ -4301,10 +4309,16 @@ async function saveMaterialSelection(mat, detail, time, slot, klasse, btn) {
     
 
 async function applyMaterialDelete(time, slot, klasse, btn) {
-    // Gezielte Button-Blockierung
+    // 1. Gezielte Button-Blockierung
     if (btn) {
         btn.style.pointerEvents = "none";
         btn.style.opacity = "0.6";
+    }
+
+    // 2. DOM-Sperre setzen (damit syncPlan nicht "zurückschlägt")
+    const targetBox = document.querySelector(`[data-slot="${slot}"]`);
+    if (targetBox) {
+        targetBox.setAttribute('data-sync-status', 'pending');
     }
 
     const currentSlotData = (window.lastPlanData && window.lastPlanData[slot]) ? window.lastPlanData[slot] : {};
@@ -4338,14 +4352,29 @@ async function applyMaterialDelete(time, slot, klasse, btn) {
             };
         }
         
+        // Icon explizit entfernen
         const box = document.querySelector(`[data-slot="${s}"]`);
-        if (box) markBoxWithMaterialIcon(box, "", "");
+        if (box) {
+            markBoxWithMaterialIcon(box, "", "");
+        }
         
         if (s === slot && typeof closeEditor === 'function') closeEditor();
     };
 
+    // 3. Aktion ausführen mit Fehlerbehandlung für die Sperre
     if (typeof window.prozessiereAktion === 'function') {
-        window.prozessiereAktion(payload, onCompleteVisuals);
+        try {
+            await window.prozessiereAktion(payload, onCompleteVisuals);
+        } catch (err) {
+            console.error("Fehler beim Löschen des Materials:", err);
+            // Sperre entfernen bei Fehler
+            if (targetBox) targetBox.removeAttribute('data-sync-status');
+            
+            if (btn) {
+                btn.style.pointerEvents = "auto";
+                btn.style.opacity = "1";
+            }
+        }
     } else {
         onCompleteVisuals(payload);
     }
