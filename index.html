@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOdvsdvsdf</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3118,10 +3118,9 @@ window.closeModal = function(id) {
 
     
 /* ============================================================
-   SYNC PLAN - DOM-Sicher (Flacker-frei)
+   SYNC PLAN - DOM-Sicher (Hard-Stop Architektur)
    ============================================================ */
 window.syncPlan = async function() {
-    // Wenn wir gerade lokal speichern, unterbrechen wir den Sync für diesen Durchlauf
     if (window.isSaving) return; 
 
     const dp = document.getElementById('datePicker');
@@ -3142,30 +3141,29 @@ window.syncPlan = async function() {
         window.hallenConfig = json.hallenConfig || window.hallenConfig;
         const myClasses = json.userClasses || [];
         
-        // Gehe durch alle Slots des neuen Plans
         Object.keys(newPlan).forEach(slot => {
             const slotData = newPlan[slot] || {};
             const box = container.querySelector(`[data-slot="${slot}"]`);
-            
-            // Wenn die Box im DOM nicht existiert, abbrechen
             if (!box) return;
 
-            // --- DOM-BASIERTER SCHUTZSCHILD (Skeptiker-Check) ---
-            const syncStatus = box.getAttribute('data-sync-status');
-            const serverHalle = (slotData.halle || "").trim().toLowerCase();
-            const currentUIHalle = (box.querySelector('.halle-label')?.innerText.trim() || "").toLowerCase();
-
-            if (syncStatus === "pending") {
-                // Hat der Server bereits unseren Wunschstand erreicht?
+            // --- 1. HARD-STOP: Absoluter Schutz gegen Hintergrund-Sync ---
+            const isPending = box.getAttribute('data-sync-status') === 'pending';
+            
+            if (isPending) {
+                // Prüfe, ob der Server den Status schon übernommen hat
+                const serverHalle = (slotData.halle || "").trim().toLowerCase();
+                const currentUIHalle = (box.querySelector('.halle-label')?.innerText.trim() || "").toLowerCase();
+                
                 if (serverHalle === currentUIHalle) {
-                    box.removeAttribute('data-sync-status'); // Sperre aufheben
+                    box.removeAttribute('data-sync-status');
                 } else {
-                    return; // UI-Update für diesen Slot überspringen (kein Flackern!)
+                    return; // -> STOPP: Diese Box wird vom Sync komplett ignoriert!
                 }
-            } else if (window.isProcessingQueue) {
-                return; // Globale Queue-Sperre
-            }
+            } 
+            
+            if (window.isProcessingQueue) return;
 
+            // --- 2. AB HIER: NORMALE UI-SYNCHRONISIERUNG ---
             const klasse = slotData.klasse || "";
             const verfasser = slotData.verfasser || "";
             const halle = slotData.halle || "";
@@ -3173,24 +3171,16 @@ window.syncPlan = async function() {
             const isAusfall = (halle === "Ausfall");
             const isKlasseLeer = (klasse.trim() === "");
             
-            // --- Logik ---
             const lehrer = (verfasser !== "") ? verfasser : ((slotData.lehrer !== "") ? slotData.lehrer : (allClassTeachers[klasse] || ""));
             const isMyClass = !isKlasseLeer && myClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
             const isMyBooking = (verfasser.trim().toLowerCase() === userKuerzel.toLowerCase());
             const canEdit = isMyClass || isMyBooking;
             
-            // --- Update UI ---
-            box.className = [
-                "box",
-                isKlasseLeer ? "empty" : "",
-                canEdit ? "is-mine" : "not-mine",
-                isAusfall ? "ausfall-mode" : ""
-            ].filter(Boolean).join(" ");
-            
+            // UI-Klassen und Style
+            box.className = ["box", isKlasseLeer ? "empty" : "", canEdit ? "is-mine" : "not-mine", isAusfall ? "ausfall-mode" : ""].filter(Boolean).join(" ");
             box.style.backgroundColor = (window.hallenConfig[halle] && !isAusfall) ? window.hallenConfig[halle].color : '';
             box.style.cursor = canEdit ? 'pointer' : 'default';
 
-            // Inhalte aktualisieren
             const klassenEl = box.querySelector('.klasse-label');
             const lehrerEl = box.querySelector('.lehrer-info');
             const halleEl = box.querySelector('.halle-label');
@@ -3199,13 +3189,12 @@ window.syncPlan = async function() {
             if (lehrerEl) lehrerEl.innerText = lehrer;
             if (halleEl) halleEl.innerText = halle;
 
-            // Lock Icon
             let lockContainer = box.querySelector('.lock-icon-container');
             if (lockContainer) {
                 lockContainer.innerHTML = (typ === 'fix') ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
             }
 
-            // --- ICONS AUFRÄUMEN & NEU ZEICHNEN ---
+            // --- 3. ICONS AUFRÄUMEN & NEU ZEICHNEN ---
             const altesNotizIcon = box.querySelector('.box-notiz-icon');
             if (altesNotizIcon) altesNotizIcon.remove();
             
