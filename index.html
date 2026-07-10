@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO22222</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3116,10 +3116,9 @@ window.closeModal = function(id) {
 
     
 /* ============================================================
-   SYNC PLAN - DOM-Sicher (Flacker-frei)
+   SYNC PLAN - DOM-Sicher (Korrekt geschlossene Klammern)
    ============================================================ */
 window.syncPlan = async function() {
-    // Wenn wir gerade lokal speichern, unterbrechen wir den Sync für diesen Durchlauf
     if (window.isSaving) return; 
 
     const dp = document.getElementById('datePicker');
@@ -3140,28 +3139,25 @@ window.syncPlan = async function() {
         window.hallenConfig = json.hallenConfig || window.hallenConfig;
         const myClasses = json.userClasses || [];
         
-        // Gehe durch alle Slots des neuen Plans
         Object.keys(newPlan).forEach(slot => {
             const slotData = newPlan[slot] || {};
             const box = container.querySelector(`[data-slot="${slot}"]`);
             
-            // Wenn die Box im DOM nicht existiert, abbrechen
             if (!box) return;
 
-            // --- DOM-BASIERTER SCHUTZSCHILD (Skeptiker-Check) ---
+            // 1. SCHUTZSCHILD
             const syncStatus = box.getAttribute('data-sync-status');
             const serverHalle = (slotData.halle || "").trim().toLowerCase();
             const currentUIHalle = (box.querySelector('.halle-label')?.innerText.trim() || "").toLowerCase();
 
             if (syncStatus === "pending") {
-                // Hat der Server bereits unseren Wunschstand erreicht?
                 if (serverHalle === currentUIHalle) {
-                    box.removeAttribute('data-sync-status'); // Sperre aufheben
+                    box.removeAttribute('data-sync-status');
                 } else {
-                    return; // UI-Update für diesen Slot überspringen (kein Flackern!)
+                    return; 
                 }
             } else if (window.isProcessingQueue) {
-                return; // Globale Queue-Sperre
+                return;
             }
 
             const klasse = slotData.klasse || "";
@@ -3171,13 +3167,11 @@ window.syncPlan = async function() {
             const isAusfall = (halle === "Ausfall");
             const isKlasseLeer = (klasse.trim() === "");
             
-            // --- Logik ---
             const lehrer = (verfasser !== "") ? verfasser : ((slotData.lehrer !== "") ? slotData.lehrer : (allClassTeachers[klasse] || ""));
             const isMyClass = !isKlasseLeer && myClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
             const isMyBooking = (verfasser.trim().toLowerCase() === userKuerzel.toLowerCase());
             const canEdit = isMyClass || isMyBooking;
             
-            // --- Update UI ---
             box.className = [
                 "box",
                 isKlasseLeer ? "empty" : "",
@@ -3188,7 +3182,6 @@ window.syncPlan = async function() {
             box.style.backgroundColor = (window.hallenConfig[halle] && !isAusfall) ? window.hallenConfig[halle].color : '';
             box.style.cursor = canEdit ? 'pointer' : 'default';
 
-            // Inhalte aktualisieren
             const klassenEl = box.querySelector('.klasse-label');
             const lehrerEl = box.querySelector('.lehrer-info');
             const halleEl = box.querySelector('.halle-label');
@@ -3197,41 +3190,37 @@ window.syncPlan = async function() {
             if (lehrerEl) lehrerEl.innerText = lehrer;
             if (halleEl) halleEl.innerText = halle;
 
-            // Lock Icon
             let lockContainer = box.querySelector('.lock-icon-container');
             if (lockContainer) {
                 lockContainer.innerHTML = (typ === 'fix') ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
             }
 
-         // --- ICONS AUFRÄUMEN & NEU ZEICHNEN ---
-// WICHTIG: Nur ausführen, wenn der Slot NICHT pending ist!
-if (box.getAttribute('data-sync-status') !== 'pending') {
-    
-    // 1. Notiz-Icon entfernen
-    const altesNotizIcon = box.querySelector('.box-notiz-icon');
-    if (altesNotizIcon) altesNotizIcon.remove();
-    
-    // 2. Material-Icon entfernen
-    const altesMaterialIcon = box.querySelector('.material-indicator');
-    if (altesMaterialIcon) altesMaterialIcon.remove();
-    
-    // 3. Neu zeichnen
-    if (slotData.material && slotData.material.trim() !== "") {
-        markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
-    }
-            
-            if (slotData.kommentar && slotData.kommentar.trim() !== "") {
-                const notizElement = document.createElement('span');
-                notizElement.className = 'box-notiz-icon';
-                notizElement.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
-                Object.assign(notizElement.style, { position: 'absolute', top: '-2px', left: '4px', cursor: 'pointer', zIndex: '5' });
-                notizElement.onclick = (e) => { 
-                    e.stopPropagation(); 
-                    if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(klasse, slotData.kommentar); 
-                };
-                box.appendChild(notizElement);
-            }
-        });
+            // --- ICONS AUFRÄUMEN & NEU ZEICHNEN ---
+            // Nur ausführen, wenn NICHT pending
+            if (box.getAttribute('data-sync-status') !== 'pending') {
+                const altesNotizIcon = box.querySelector('.box-notiz-icon');
+                if (altesNotizIcon) altesNotizIcon.remove();
+                
+                const altesMaterialIcon = box.querySelector('.material-indicator');
+                if (altesMaterialIcon) altesMaterialIcon.remove();
+                
+                if (slotData.material && slotData.material.trim() !== "") {
+                    markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
+                }
+                
+                if (slotData.kommentar && slotData.kommentar.trim() !== "") {
+                    const notizElement = document.createElement('span');
+                    notizElement.className = 'box-notiz-icon';
+                    notizElement.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
+                    Object.assign(notizElement.style, { position: 'absolute', top: '-2px', left: '4px', cursor: 'pointer', zIndex: '5' });
+                    notizElement.onclick = (e) => { 
+                        e.stopPropagation(); 
+                        if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(klasse, slotData.kommentar); 
+                    };
+                    box.appendChild(notizElement);
+                }
+            } // Ende if (status !== 'pending')
+        }); // Ende forEach
     } catch(e) {
         console.error("Hintergrund-Sync fehlgeschlagen:", e);
     }
