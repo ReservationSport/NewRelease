@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOasdd</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3189,18 +3189,22 @@ window.syncPlan = async function() {
                 lockContainer.innerHTML = (typ === 'fix') ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
             }
 
-            // 3. ICONS AUFRÄUMEN & NEU ZEICHNEN
-            // WICHTIG: Nur wenn NICHT pending, damit manuelle Icons stabil bleiben
-            if (box.getAttribute('data-sync-status') !== 'pending') {
-                const altesNotizIcon = box.querySelector('.box-notiz-icon');
-                if (altesNotizIcon) altesNotizIcon.remove();
-                
-                const altesMaterialIcon = box.querySelector('.material-indicator');
-                if (altesMaterialIcon) altesMaterialIcon.remove();
-                
-                if (slotData.material && slotData.material.trim() !== "") {
-                    markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
-                }
+            // --- ICONS AUFRÄUMEN & NEU ZEICHNEN ---
+const isPending = box.getAttribute('data-sync-status') === 'pending';
+
+if (!isPending) {
+    // Nur aufräumen, wenn WIRKLICH nicht pending
+    const altesNotizIcon = box.querySelector('.box-notiz-icon');
+    if (altesNotizIcon) altesNotizIcon.remove();
+    
+    // WICHTIG: Hier explizit das Icon suchen
+    const altesMaterialIcon = box.querySelector('.material-indicator');
+    if (altesMaterialIcon) altesMaterialIcon.remove();
+    
+    // Erst jetzt neu zeichnen
+    if (slotData.material && slotData.material.trim() !== "") {
+        markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
+    }
                 
                 if (slotData.kommentar && slotData.kommentar.trim() !== "") {
                     const notizElement = document.createElement('span');
