@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOsdfsfs</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -4706,24 +4706,28 @@ window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
     // 1. SYNC PAUSIEREN: Globale Sperre aktivieren
     window.pauseSync();
 
-    // 2. OPTIMISTISCHES UI-UPDATE
-    // Wir setzen den Zustand direkt, damit sich die App sofort reaktiv anfühlt
-    const targetBox = document.querySelector(`[data-slot="${slot}"]`);
-    if (targetBox) {
-        const label = targetBox.querySelector('.halle-label');
-        if (label) label.innerText = neueHalle;
-        
-        targetBox.classList.remove('ausfall-mode');
-        if (neueHalle === "Ausfall") {
-            targetBox.classList.add('ausfall-mode');
-            targetBox.style.backgroundColor = "";
-        } else {
-            const farbe = (neueHalle !== "" && window.hallenConfig && window.hallenConfig[neueHalle]) 
-                          ? window.hallenConfig[neueHalle].color 
-                          : "";
-            targetBox.style.backgroundColor = farbe;
+    // 2. OPTIMISTISCHES UI-UPDATE FÜR BEIDE SLOTS
+    const partnerSlot = getDoppellektionPartnerSlot(slot);
+    const slotsToUpdate = [slot, partnerSlot].filter(Boolean); // Array mit 1 oder 2 Slots
+
+    slotsToUpdate.forEach(s => {
+        const box = document.querySelector(`[data-slot="${s}"]`);
+        if (box) {
+            const label = box.querySelector('.halle-label');
+            if (label) label.innerText = neueHalle;
+            
+            box.classList.remove('ausfall-mode');
+            if (neueHalle === "Ausfall") {
+                box.classList.add('ausfall-mode');
+                box.style.backgroundColor = "";
+            } else {
+                const farbe = (neueHalle !== "" && window.hallenConfig && window.hallenConfig[neueHalle]) 
+                            ? window.hallenConfig[neueHalle].color 
+                            : "";
+                box.style.backgroundColor = farbe;
+            }
         }
-    }
+    });
 
     const payload = {
         action: "saveBooking",
@@ -4765,13 +4769,14 @@ window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
                 : '';
         }
 
-        // Modal schließen
+        // Modal schließen und Sync freigeben
+        // Hinweis: Da prozessiereAktion bei Doppellektionen ggf. mehrere Aufrufe macht, 
+        // wird resumeSync hier zwar mehrmals aufgerufen, aber da es nur einen Flag umschaltet, 
+        // ist das unproblematisch.
         if (typeof closeModal === 'function') {
             closeModal('eigenesmenu-modal'); 
         }
 
-        // 3. WACHHUND-TIMER STARTEN
-        // Nach der Server-Bestätigung geben wir das System nach einer Ruhezeit wieder frei
         window.resumeSync(); 
     };
 
@@ -4780,7 +4785,6 @@ window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
             window.prozessiereAktion(payload, visuelleAktualisierung);
         }
     } catch (e) {
-        // Bei Fehler: Sperre aufheben, damit der Sync wieder funktioniert
         window.isSyncPaused = false;
         console.error("Hallen-Auswahl fehlgeschlagen:", e);
     }
@@ -5204,7 +5208,7 @@ function getDoppellektionPartnerSlot(currentSlot) {
 
 
 /* ============================================================
-   11. DOPPELLEKTIONS-ABFRAGE (Bereinigt, CSS-basiert & Echtzeit-Sync)
+   11. DOPPELLEKTIONS-ABFRAGE (Bereinigt, mit sofortigem UI-Update)
    ============================================================ */
 
 window.prozessiereAktion = function(payload, onCompleteVisuals) {
@@ -5283,7 +5287,7 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
 
     // 5. Angepasster Wrapper für sofortiges visuelles Feedback
     const executeMitQueue = (payloads) => {
-        // Sofortiges UI-Update für jeden betroffenen Slot
+        // Sofortiges UI-Update für jeden betroffenen Slot, damit es sich "echtzeit" anfühlt
         payloads.forEach(p => {
             if (onCompleteVisuals) {
                 onCompleteVisuals(p);
@@ -5291,7 +5295,7 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
         });
 
         // Danach erst die Queue-Verarbeitung für die Server-Kommunikation
-        payloads.forEach(p => addToQueue(p, null)); // null, da wir das visuelle Update bereits oben forciert haben
+        payloads.forEach(p => addToQueue(p, null));
 
         // Schließen nach der Aktion
         if (typeof closeEditor === "function") {
