@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOsdfsfs</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -5281,14 +5281,21 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
 
     modalContainer.insertAdjacentHTML('beforeend', html);
 
-    // 5. Wrapper für die Ausführung via Warteschlange
+    // 5. Angepasster Wrapper für sofortiges visuelles Feedback
     const executeMitQueue = (payloads) => {
-        payloads.forEach(p => addToQueue(p, onCompleteVisuals));
+        // Sofortiges UI-Update für jeden betroffenen Slot
+        payloads.forEach(p => {
+            if (onCompleteVisuals) {
+                onCompleteVisuals(p);
+            }
+        });
 
-        // SICHERHEITS-PRÜFUNG: Schließen nur, wenn noch da
+        // Danach erst die Queue-Verarbeitung für die Server-Kommunikation
+        payloads.forEach(p => addToQueue(p, null)); // null, da wir das visuelle Update bereits oben forciert haben
+
+        // Schließen nach der Aktion
         if (typeof closeEditor === "function") {
-            const modal = document.querySelector('.eigenesmenu-container');
-            if (modal) closeEditor();
+            closeEditor();
         }
     };
 
@@ -5303,7 +5310,6 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
         btnEinzel.onclick = () => executeMitQueue([payload]);
     }
 };
-
 
 
     
