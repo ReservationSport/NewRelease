@@ -3116,7 +3116,7 @@ window.closeModal = function(id) {
 
     
 /* ============================================================
-   SYNC PLAN - DOM-Sicher (Optimiert für Icon-Stabilität)
+   SYNC PLAN - DOM-Sicher (Mit Hard-Stop für Pending-Slots)
    ============================================================ */
 window.syncPlan = async function() {
     if (window.isSaving) return; 
@@ -3144,22 +3144,25 @@ window.syncPlan = async function() {
             const box = container.querySelector(`[data-slot="${slot}"]`);
             if (!box) return;
 
-            // 1. SCHUTZSCHILD: Skeptiker-Check
-            const syncStatus = box.getAttribute('data-sync-status');
-            const serverHalle = (slotData.halle || "").trim().toLowerCase();
-            const currentUIHalle = (box.querySelector('.halle-label')?.innerText.trim() || "").toLowerCase();
-
-            if (syncStatus === "pending") {
+            // --- HARD-STOP (Skeptiker-Check) ---
+            const isPending = box.getAttribute('data-sync-status') === 'pending';
+            
+            if (isPending) {
+                // Nur prüfen, ob der Server-Stand schon mit unserem Wunsch übereinstimmt,
+                // um die Sperre bei Erfolg aufzuheben. Ansonsten: KOMPLETTES RETURN.
+                const serverHalle = (slotData.halle || "").trim().toLowerCase();
+                const currentUIHalle = (box.querySelector('.halle-label')?.innerText.trim() || "").toLowerCase();
+                
                 if (serverHalle === currentUIHalle) {
                     box.removeAttribute('data-sync-status');
                 } else {
-                    return; // Slot ist "pending", wir rühren nichts an!
+                    return; // HIER WIRD DIE SCHLEIFE FÜR DIESEN SLOT BEENDET.
                 }
-            } else if (window.isProcessingQueue) {
-                return;
-            }
+            } 
+            
+            if (window.isProcessingQueue) return;
 
-            // 2. UI-UPDATE (Klassen, Lehrer, Halle)
+            // --- AB HIER: NORMALE UI-SYNCHRONISIERUNG ---
             const klasse = slotData.klasse || "";
             const verfasser = slotData.verfasser || "";
             const halle = slotData.halle || "";
@@ -3190,33 +3193,27 @@ window.syncPlan = async function() {
             }
 
             // --- ICONS AUFRÄUMEN & NEU ZEICHNEN ---
-const isPending = box.getAttribute('data-sync-status') === 'pending';
-
-if (!isPending) {
-    // Nur aufräumen, wenn WIRKLICH nicht pending
-    const altesNotizIcon = box.querySelector('.box-notiz-icon');
-    if (altesNotizIcon) altesNotizIcon.remove();
-    
-    // WICHTIG: Hier explizit das Icon suchen
-    const altesMaterialIcon = box.querySelector('.material-indicator');
-    if (altesMaterialIcon) altesMaterialIcon.remove();
-    
-    // Erst jetzt neu zeichnen
-    if (slotData.material && slotData.material.trim() !== "") {
-        markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
-    }
-                
-                if (slotData.kommentar && slotData.kommentar.trim() !== "") {
-                    const notizElement = document.createElement('span');
-                    notizElement.className = 'box-notiz-icon';
-                    notizElement.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
-                    Object.assign(notizElement.style, { position: 'absolute', top: '-2px', left: '4px', cursor: 'pointer', zIndex: '5' });
-                    notizElement.onclick = (e) => { 
-                        e.stopPropagation(); 
-                        if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(klasse, slotData.kommentar); 
-                    };
-                    box.appendChild(notizElement);
-                }
+            // Da wir oben "isPending" abgefangen haben, sind wir hier sicher.
+            const altesNotizIcon = box.querySelector('.box-notiz-icon');
+            if (altesNotizIcon) altesNotizIcon.remove();
+            
+            const altesMaterialIcon = box.querySelector('.material-indicator');
+            if (altesMaterialIcon) altesMaterialIcon.remove();
+            
+            if (slotData.material && slotData.material.trim() !== "") {
+                markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
+            }
+            
+            if (slotData.kommentar && slotData.kommentar.trim() !== "") {
+                const notizElement = document.createElement('span');
+                notizElement.className = 'box-notiz-icon';
+                notizElement.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
+                Object.assign(notizElement.style, { position: 'absolute', top: '-2px', left: '4px', cursor: 'pointer', zIndex: '5' });
+                notizElement.onclick = (e) => { 
+                    e.stopPropagation(); 
+                    if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(klasse, slotData.kommentar); 
+                };
+                box.appendChild(notizElement);
             }
         });
     } catch(e) {
@@ -4241,7 +4238,7 @@ async function saveMaterialSelection(mat, detail, time, slot, klasse, btn) {
         btn.innerHTML = `<span class="material-symbols-outlined">trolley</span> Speichere...`;
     }
 
-    // 2. DOM-Sperre setzen
+    // 2. DOM-Sperre setzen (damit syncPlan skeptisch bleibt)
     const targetBox = document.querySelector(`[data-slot="${slot}"]`);
     if (targetBox) {
         targetBox.setAttribute('data-sync-status', 'pending');
@@ -4267,7 +4264,6 @@ async function saveMaterialSelection(mat, detail, time, slot, klasse, btn) {
         if (btn) {
             btn.style.pointerEvents = "auto";
             btn.style.opacity = "1";
-            // Button-Text zurücksetzen (optional, je nach deinem UI)
             btn.innerHTML = `<span class="material-symbols-outlined">trolley</span> Speichern`; 
         }
 
@@ -4285,25 +4281,34 @@ async function saveMaterialSelection(mat, detail, time, slot, klasse, btn) {
 
         const box = document.querySelector(`[data-slot="${s}"]`);
         if (box) {
-            markBoxWithMaterialIcon(box, p.material, p.materialDetail);
+            // SICHERHEITS-INTEGRATION:
+            // Erst entfernen, dann neu zeichnen
+            const oldIcon = box.querySelector('.material-indicator');
+            if (oldIcon) oldIcon.remove();
+            
+            // Jetzt neu zeichnen (nur wenn wirklich Material da ist)
+            if (p.material && p.material.trim() !== "") {
+                markBoxWithMaterialIcon(box, p.material, p.materialDetail);
+                console.log("Material-Icon stabil gesetzt für Slot:", s);
+            }
         }
         
         if (s === slot && typeof closeEditor === 'function') closeEditor();
     };
 
-    // 3. Aktion ausführen mit expliziter Fehlerbehandlung
+    // 3. Aktion ausführen
     if (typeof window.prozessiereAktion === 'function') {
         try {
             await window.prozessiereAktion(payload, onCompleteVisuals);
         } catch (err) {
             console.error("Fehler bei Materialbuchung:", err);
-            // SPERRE LÖSCHEN bei Fehler, damit das UI nicht hängt
+            // SPERRE LÖSCHEN bei Fehler
             if (targetBox) targetBox.removeAttribute('data-sync-status');
             
-            // UI-Button wiederherstellen
             if (btn) {
                 btn.style.pointerEvents = "auto";
                 btn.style.opacity = "1";
+                btn.innerHTML = `<span class="material-symbols-outlined">trolley</span> Speichern`;
             }
         }
     } else {
@@ -4319,7 +4324,7 @@ async function applyMaterialDelete(time, slot, klasse, btn) {
         btn.style.opacity = "0.6";
     }
 
-    // 2. DOM-Sperre setzen (damit syncPlan nicht "zurückschlägt")
+    // 2. DOM-Sperre setzen
     const targetBox = document.querySelector(`[data-slot="${slot}"]`);
     if (targetBox) {
         targetBox.setAttribute('data-sync-status', 'pending');
@@ -4348,6 +4353,7 @@ async function applyMaterialDelete(time, slot, klasse, btn) {
 
         const s = p.slot;
         
+        // Lokale Daten bereinigen
         if (window.lastPlanData?.[s]) {
             window.lastPlanData[s] = {
                 ...window.lastPlanData[s],
@@ -4356,22 +4362,26 @@ async function applyMaterialDelete(time, slot, klasse, btn) {
             };
         }
         
-        // Icon explizit entfernen
         const box = document.querySelector(`[data-slot="${s}"]`);
         if (box) {
+            // SPERRE AUFHEBEN: WICHTIG! 
+            // Erst wenn der Löschvorgang bestätigt ist, darf der syncPlan wieder ran.
+            box.removeAttribute('data-sync-status');
+            
+            // Icon entfernen
             markBoxWithMaterialIcon(box, "", "");
         }
         
         if (s === slot && typeof closeEditor === 'function') closeEditor();
     };
 
-    // 3. Aktion ausführen mit Fehlerbehandlung für die Sperre
+    // 3. Aktion ausführen mit Fehlerbehandlung
     if (typeof window.prozessiereAktion === 'function') {
         try {
             await window.prozessiereAktion(payload, onCompleteVisuals);
         } catch (err) {
             console.error("Fehler beim Löschen des Materials:", err);
-            // Sperre entfernen bei Fehler
+            // Sperre entfernen bei Fehler, damit der User es erneut versuchen kann
             if (targetBox) targetBox.removeAttribute('data-sync-status');
             
             if (btn) {
