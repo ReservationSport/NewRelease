@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZOadadas</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -4513,7 +4513,7 @@ window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
     const zielHalle = (mode === 'LOESCHEN') ? "" : "Ausfall";
     const targetBox = document.querySelector(`[data-slot="${slot}"]`);
 
-    // 1. DOM-SPERRE SETZEN (Schutzschild gegen syncPlan)
+    // 1. DOM-SPERRE SETZEN (Schutz gegen syncPlan)
     if (targetBox) {
         targetBox.setAttribute('data-sync-status', 'pending');
     }
@@ -4529,57 +4529,60 @@ window.handleAusfallClick = function(mode, time, slot, klasse, btn) {
     };
 
     const visuelleAktualisierung = function(p) {
-        // Sperre entfernen
-        if (targetBox) {
-            targetBox.removeAttribute('data-sync-status');
-        }
-
-        // Button wiederherstellen
+        // Button wieder freigeben
         if (btn) {
             btn.style.pointerEvents = "auto";
             btn.style.opacity = "1";
-            // Hinweis: Hier müsstest du den Loader wieder zum Text zurücksetzen
+            // Falls Loader vorhanden, Text zurücksetzen (optional)
         }
         
         const s = p.slot;
         const h = p.halle;
+        const box = document.querySelector(`[data-slot="${s}"]`);
         
-        // Lokalen Datenspeicher synchron halten
+        // 1. Lokalen Datenspeicher synchron halten
         if (window.lastPlanData && window.lastPlanData[s]) {
             window.lastPlanData[s].halle = h;
         }
 
-        // UI sofort aktualisieren
-        if (targetBox) {
-            const label = targetBox.querySelector('.halle-label');
+        // 2. UI sofort und performant aktualisieren (KEIN className-Rebuild!)
+        if (box) {
+            // Label aktualisieren
+            const label = box.querySelector('.halle-label');
             if (label) label.innerText = h;
             
+            // Gezieltes Klasse-Toggling (statt className = ... )
             if (h === "Ausfall") {
-                targetBox.classList.add('ausfall-mode');
-                targetBox.style.backgroundColor = ""; 
+                box.classList.add('ausfall-mode');
+                box.style.backgroundColor = ""; 
             } else {
-                targetBox.classList.remove('ausfall-mode');
+                box.classList.remove('ausfall-mode');
+                // Farbe aus Konfig wiederherstellen
                 if (typeof hallenConfig !== 'undefined' && hallenConfig[h]) {
-                    targetBox.style.backgroundColor = hallenConfig[h].color;
+                    box.style.backgroundColor = hallenConfig[h].color;
                 } else {
-                    targetBox.style.backgroundColor = "";
+                    box.style.backgroundColor = "";
                 }
             }
+            
+            // SPERRE AUFHEBEN
+            box.removeAttribute('data-sync-status');
         }
     };
 
-    // UI-Loader
+    // UI-Loader Anzeige
     if (btn) {
         btn.style.pointerEvents = "none";
         btn.style.opacity = "0.6";
-        // ... (dein Loader-Code)
+        const originalText = btn.querySelector('.btn-text')?.innerText || btn.innerText;
+        btn.innerHTML = `<span class="btn-text">${originalText}</span> <div class="inline-loader-container"><div class="eigenesmenu-loader" style="width:14px; height:14px; border-width:2px;"></div></div>`;
     }
 
-    // Übergabe an die Weiche mit Error-Handling
+    // Aktion ausführen
     try {
         window.prozessiereAktion(payload, visuelleAktualisierung);
     } catch (e) {
-        // Bei Fehler Sperre unbedingt entfernen!
+        // Sperre bei Fehler lösen
         if (targetBox) targetBox.removeAttribute('data-sync-status');
         console.error("Ausfall-Aktion fehlgeschlagen:", e);
     }
