@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZOdsdfsf</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2678,6 +2678,53 @@ function getDataBySlotIndex(index) {
     }
 
 
+/* ============================================================
+   4. WARTESCHLANGE FÜR SYNC
+   ============================================================ */
+
+// Globale Variablen für die Warteschlange
+window.actionQueue = [];
+window.isProcessingQueue = false;
+
+    
+// Funktion zum Hinzufügen
+function addToQueue(payload, onCompleteVisuals) {
+    window.actionQueue.push({ payload, onCompleteVisuals });
+    processQueue();
+}
+
+
+    
+// Die zentrale Verarbeitungs-Logik
+async function processQueue() {
+    if (window.isProcessingQueue || window.actionQueue.length === 0) return;
+    
+    window.isProcessingQueue = true;
+    const { payload, onCompleteVisuals } = window.actionQueue.shift();
+    
+    // 1. KEINE globale Blockade mehr, wir nutzen das DOM-Attribut
+    // (Dies wurde bereits in applyHalleSelection beim Klick gesetzt)
+    
+    // 2. UI-Update (Optimistisch)
+    if (onCompleteVisuals) onCompleteVisuals(payload);
+    
+    // 3. Server-Call
+    try {
+        await saveImmediately(payload);
+    } catch (e) {
+        console.error("Fehler beim Speichern:", e);
+        // Falls Fehler, Sperre im DOM entfernen, damit die Box nicht für immer "pending" bleibt
+        const box = document.querySelector(`[data-slot="${payload.slot}"]`);
+        if (box) box.removeAttribute('data-sync-status');
+    } finally {
+        // 4. Keine globale Blockade mehr löschen
+        
+        window.isProcessingQueue = false;
+        
+        // 5. Nächste Aktion verarbeiten
+        processQueue();
+    }
+}
 
 
     
@@ -3086,6 +3133,9 @@ window.resumeSync = function() {
 
 
     
+/* ============================================================
+   SYNC PLAN - DOM-Sicher (Globale Wachhund-Architektur)
+   ============================================================ */
 window.syncPlan = async function() {
     // 1. GLOBALE SPERRE: Wenn wir gerade buchen, pausieren wir den Sync komplett.
     if (window.isSyncPaused) {
@@ -3117,6 +3167,9 @@ window.syncPlan = async function() {
             const slotData = newPlan[slot] || {};
             const box = container.querySelector(`[data-slot="${slot}"]`);
             if (!box) return;
+
+            // Globale Queue-Sperre
+            if (window.isProcessingQueue) return;
 
             // --- NORMALE UI-SYNCHRONISIERUNG ---
             const klasse = slotData.klasse || "";
@@ -3176,6 +3229,7 @@ window.syncPlan = async function() {
         console.error("Hintergrund-Sync fehlgeschlagen:", e);
     }
 };
+
     
 
 // Variable außerhalb der Funktion definieren
@@ -4188,20 +4242,17 @@ function openMaterialDetail(materialString, time, slot, klasse) {
    ========================================================================== */
 
 async function saveMaterialSelection(mat, detail, time, slot, klasse, btn) {
-    // 1. WACHHUND AKTIVIEREN: Sync pausieren
-    window.pauseSync();
-
-    // 2. Button-Blockierung
+    // 1. Gezielte Button-Blockierung statt Fenster-Blockierung
     if (btn) {
         btn.style.pointerEvents = "none";
         btn.style.opacity = "0.6";
         btn.innerHTML = `<span class="material-symbols-outlined">trolley</span> Speichere...`;
     }
 
-    // 3. Hole den aktuellen Stand des Slots
+    // 2. Hole den aktuellen Stand des Slots
     const currentSlotData = (window.lastPlanData && window.lastPlanData[slot]) ? window.lastPlanData[slot] : {};
 
-    // 4. Erstelle das Payload
+    // 3. Erstelle das Payload
     const payload = {
         action: "saveBooking",
         pw: typeof userPw !== 'undefined' ? userPw : "",
@@ -4234,34 +4285,20 @@ async function saveMaterialSelection(mat, detail, time, slot, klasse, btn) {
             };
         }
 
-        // UI-Update
         const box = document.querySelector(`[data-slot="${s}"]`);
         if (box) markBoxWithMaterialIcon(box, p.material, p.materialDetail);
         
         if (s === slot && typeof closeEditor === 'function') closeEditor();
-
-        // 5. WACHHUND-TIMER STARTEN: Sync nach Ruhezeit wieder erlauben
-        window.resumeSync();
     };
 
-    try {
-        if (typeof window.prozessiereAktion === 'function') {
-            window.prozessiereAktion(payload, onCompleteVisuals);
-        } else {
-            onCompleteVisuals(payload);
-        }
-    } catch (e) {
-        // Bei Fehler: Sync sofort wieder freigeben
-        window.isSyncPaused = false;
-        console.error("Material-Speichern fehlgeschlagen:", e);
+    if (typeof window.prozessiereAktion === 'function') {
+        window.prozessiereAktion(payload, onCompleteVisuals);
+    } else {
+        onCompleteVisuals(payload);
     }
 }
 
-    
 async function applyMaterialDelete(time, slot, klasse, btn) {
-    // 1. WACHHUND AKTIVIEREN: Sync pausieren
-    window.pauseSync();
-
     // Gezielte Button-Blockierung
     if (btn) {
         btn.style.pointerEvents = "none";
@@ -4303,21 +4340,12 @@ async function applyMaterialDelete(time, slot, klasse, btn) {
         if (box) markBoxWithMaterialIcon(box, "", "");
         
         if (s === slot && typeof closeEditor === 'function') closeEditor();
-
-        // 2. WACHHUND-TIMER STARTEN: Sync nach Ruhezeit wieder erlauben
-        window.resumeSync();
     };
 
-    try {
-        if (typeof window.prozessiereAktion === 'function') {
-            window.prozessiereAktion(payload, onCompleteVisuals);
-        } else {
-            onCompleteVisuals(payload);
-        }
-    } catch (e) {
-        // Bei Fehler: Sync sofort wieder freigeben
-        window.isSyncPaused = false;
-        console.error("Material-Löschen fehlgeschlagen:", e);
+    if (typeof window.prozessiereAktion === 'function') {
+        window.prozessiereAktion(payload, onCompleteVisuals);
+    } else {
+        onCompleteVisuals(payload);
     }
 }
     
@@ -4850,31 +4878,26 @@ window.handleNotizUI = function(time, slot, klasse) {
 
 
 
-
+/**
+ * 🔥 Hilfsfunktion für den Lösch-Button
+ */
 window.loescheNotizVomModal = function(slot, klasse) {
     const textFeld = document.getElementById('notiz-text-feld');
-    
-    // Das Feld leeren, damit speichereNotizVomModal den leeren String verarbeitet
     if (textFeld) {
         textFeld.value = ""; 
     }
-    
-    // Da diese Funktion speichereNotizVomModal aufruft, 
-    // und dort das window.pauseSync() am Anfang steht, 
-    // ist der Sync hier bereits perfekt geschützt!
     window.speichereNotizVomModal(slot, klasse);
 };
 
 
     
-
+/**
+ * 🔥 Phase 2: Korrigierte Klammerstruktur & Daten-Merge zur Wahrung bestehender Felder
+ */
 window.speichereNotizVomModal = async function(slot, klasse) {
     const textFeld = document.getElementById('notiz-text-feld');
     const saveBtn = document.getElementById('btn-save-notiz');
     if (!textFeld) return;
-
-    // 1. WACHHUND AKTIVIEREN: Sync pausieren
-    window.pauseSync();
 
     const notizText = textFeld.value.trim();
     const dateVal = document.getElementById('datePicker').value;
@@ -4884,8 +4907,10 @@ window.speichereNotizVomModal = async function(slot, klasse) {
         saveBtn.style.pointerEvents = "none";
     }
 
+    // 1. Hole das existierende Datenobjekt des Slots, um existierende Felder (wie "fix") zu erhalten
     const currentSlotData = (window.lastPlanData && window.lastPlanData[slot]) ? window.lastPlanData[slot] : {};
 
+    // 2. Erstelle das Payload als Merge aus bestehenden Daten und den neuen Änderungen
     const payload = {
         action: "saveBooking",
         pw: userPw,
@@ -4893,8 +4918,8 @@ window.speichereNotizVomModal = async function(slot, klasse) {
         date: dateVal,
         slot: slot.toString(),
         klasse: klasse,
-        ...currentSlotData, 
-        kommentar: notizText
+        ...currentSlotData,    // <--- WICHTIG: Erhält existierende Felder wie 'fix' (Spalte J)
+        kommentar: notizText   // <--- Überschreibt/setzt nur den Kommentar neu
     };
 
     const onCompleteVisuals = function(p) {
@@ -4917,7 +4942,11 @@ window.speichereNotizVomModal = async function(slot, klasse) {
                 neuesNotizIcon.title = n;
                 
                 Object.assign(neuesNotizIcon.style, {
-                    position: 'absolute', top: '-2px', left: '4px', cursor: 'pointer', zIndex: '5'
+                    position: 'absolute',
+                    top: '-2px',
+                    left: '4px',
+                    cursor: 'pointer',
+                    zIndex: '5'
                 });
                 
                 neuesNotizIcon.onclick = function(event) {
@@ -4930,8 +4959,10 @@ window.speichereNotizVomModal = async function(slot, klasse) {
             }
         }
 
+        // Update der lokalen Datenstruktur unter Erhalt anderer Felder
         if (window.lastPlanData) {
             if (!window.lastPlanData[s]) window.lastPlanData[s] = {};
+            // Auch hier nutzen wir den Merge für das lokale Objekt
             window.lastPlanData[s] = {
                 ...window.lastPlanData[s],
                 kommentar: n
@@ -4941,21 +4972,10 @@ window.speichereNotizVomModal = async function(slot, klasse) {
         if (s === slot.toString() && typeof closeEditor === 'function') {
             closeEditor();
         }
-
-        // 2. WACHHUND-TIMER STARTEN: Sync nach Ruhezeit wieder erlauben
-        window.resumeSync();
     };
 
-    try {
-        if (typeof window.prozessiereAktion === "function") {
-            window.prozessiereAktion(payload, onCompleteVisuals);
-        } else {
-            onCompleteVisuals(payload);
-        }
-    } catch (e) {
-        // Bei Fehler: Sperre sofort aufheben
-        window.isSyncPaused = false;
-        console.error("Notiz-Speichern fehlgeschlagen:", e);
+    if (typeof window.prozessiereAktion === "function") {
+        window.prozessiereAktion(payload, onCompleteVisuals);
     }
 };
     
@@ -5184,7 +5204,7 @@ function getDoppellektionPartnerSlot(currentSlot) {
 
 
 /* ============================================================
-   11. DOPPELLEKTIONS-ABFRAGE (mit Wachhund)
+   11. DOPPELLEKTIONS-ABFRAGE (Bereinigt, CSS-basiert & Echtzeit-Sync)
    ============================================================ */
 
 window.prozessiereAktion = function(payload, onCompleteVisuals) {
@@ -5192,15 +5212,14 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
     const modalContainer = document.querySelector('.eigenesmenu-container');
     const subtitle = document.getElementById('dynamic-header-subtitle');
 
-    // Wenn kein Partner-Slot existiert oder Modal fehlt: Direkt ausführen
+    // 1. Wenn kein Partner-Slot existiert oder Modal fehlt, direkt in Queue
     if (!partnerSlot || !modalContainer) {
-        
-        window.saveImmediately(payload, onCompleteVisuals); 
+        addToQueue(payload, onCompleteVisuals);
         if (typeof closeEditor === "function") closeEditor();
         return;
     }
 
-    // 2. Konflikt-Logik (bleibt identisch)
+    // 2. Konflikt-Logik
     let partnerKonfliktKlasse = null;
     if (payload.halle && payload.halle.trim() !== "") {
         const rowIndex = Math.floor((partnerSlot - 1) / 5);
@@ -5221,11 +5240,12 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
         }
     }
 
-    // 3. Untertitel & UI-Aufbau
+    // 3. Untertitel aktualisieren
     if (subtitle) {
         subtitle.innerHTML = `Willst du die Aktion für die <b>gesamte Doppellektion</b> durchführen?`;
     }
 
+    // 4. DOM-Säuberung & UI Aufbau
     const header = modalContainer.querySelector('.eigenesmenu-header');
     modalContainer.innerHTML = '';
     modalContainer.appendChild(header);
@@ -5261,34 +5281,30 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
 
     modalContainer.insertAdjacentHTML('beforeend', html);
 
-    // 5. NEUE DIREKTE AUSFÜHRUNG 
-    const executeDirekt = (payloads) => {
-        payloads.forEach((p, index) => {
-            const isLast = (index === payloads.length - 1);
-            
-            // Wir definieren einen Wrapper: Sync erst bei der letzten Aktion wieder aktivieren
-            const finalCallback = (res) => {
-                if (onCompleteVisuals) onCompleteVisuals(res);
-                if (isLast) window.resumeSync(); // Wachhund-Reset nach letzter Aktion
-            };
+    // 5. Wrapper für die Ausführung via Warteschlange
+    const executeMitQueue = (payloads) => {
+        payloads.forEach(p => addToQueue(p, onCompleteVisuals));
 
-            window.saveImmediately(p, finalCallback);
-        });
-
-        if (typeof closeEditor === "function") closeEditor();
+        // SICHERHEITS-PRÜFUNG: Schließen nur, wenn noch da
+        if (typeof closeEditor === "function") {
+            const modal = document.querySelector('.eigenesmenu-container');
+            if (modal) closeEditor();
+        }
     };
 
     // 6. Event Listener
     const btnBeide = document.getElementById('btn-doppel-beide');
     if (btnBeide) {
-        btnBeide.onclick = () => executeDirekt([payload, { ...payload, slot: partnerSlot.toString() }]);
+        btnBeide.onclick = () => executeMitQueue([payload, { ...payload, slot: partnerSlot.toString() }]);
     }
     
     const btnEinzel = document.getElementById('btn-doppel-einzel');
     if (btnEinzel) {
-        btnEinzel.onclick = () => executeDirekt([payload]);
+        btnEinzel.onclick = () => executeMitQueue([payload]);
     }
 };
+
+
 
     
     
