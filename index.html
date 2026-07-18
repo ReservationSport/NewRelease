@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -4820,7 +4820,6 @@ window.handleNotizUI = function(time, slot, klasse) {
     
     if (!modalContainer || !header) return;
 
-    // Header Texte
     const titleEl = modalContainer.querySelector('.eigenesmenu-title');
     const subtitle = document.getElementById('menu-subtitle');
     
@@ -4830,7 +4829,6 @@ window.handleNotizUI = function(time, slot, klasse) {
     }
     
     if (subtitle) { 
-        // Untertitel als Block, damit er bei langen Namen sauber umbricht
         subtitle.style.display = "block";
         subtitle.style.width = "100%";
         subtitle.style.marginBottom = "10px";
@@ -4839,11 +4837,8 @@ window.handleNotizUI = function(time, slot, klasse) {
 
     const bestehendeNotiz = window.currentEditBox ? (window.currentEditBox.getAttribute('data-notiz') || "") : "";
     const hatBestehendeNotiz = bestehendeNotiz.trim() !== "";
-
-    // Basis-Style für beide Buttons (Höhe 60px, dezent, einheitlich)
     const btnCommon = "height: 60px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 8px; box-sizing: border-box; margin: 0; padding: 0 15px; border: 2px solid; transition: all 0.2s ease;";
 
-    // 1. Inhalt bauen
     let html = `
         <div class="eigenesmenu-liste" id="menu-options-list">
             <div class="scroll-wrapper" style="padding: 15px; display: flex; flex-direction: column; gap: 15px;">
@@ -4851,7 +4846,7 @@ window.handleNotizUI = function(time, slot, klasse) {
                           style="width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; font-family: inherit; font-size: 14px; border-radius: 8px; box-sizing: border-box; resize: vertical; outline: none; transition: border 0.2s;">${bestehendeNotiz}</textarea>
                 
                 <div id="save-btn-container" style="display: none; width: 100%;">
-                    <div class="notiz-save-btn" 
+                    <div id="btn-save-notiz" class="notiz-save-btn" 
                          style="${btnCommon} border-color: #444; background: #1a1a1a; color: #666; font-weight: bold;"
                          onclick="window.speichereNotizVomModal('${slot}', '${klasse}')"
                          onmouseover="this.style.transform='scale(1.02)'; this.style.borderColor='#e67e22'; this.style.color='#e67e22'; this.style.background='#222';"
@@ -4861,7 +4856,6 @@ window.handleNotizUI = function(time, slot, klasse) {
                 </div>
     `;
 
-    // Löschen Button: Rand #4a1c1c, Hover dezent rot, Schrift normal
     if (hatBestehendeNotiz) {
         html += `
                 <div class="delete-btn" 
@@ -4874,25 +4868,19 @@ window.handleNotizUI = function(time, slot, klasse) {
     }
 
     html += `</div></div>`; 
-
-    // 2. Footer
     html += renderFooter([
         { text: 'ZURÜCK', class: 'back', icon: 'arrow_back', onclick: `window.openEditor(window.currentEditBox, '${time}', '${slot}', '${klasse}')` },
         { text: 'ABBRECHEN', class: 'cancel', icon: 'close', onclick: 'closeEditor()' }
     ]);
 
-    // 3. Modal aufbauen
     modalContainer.innerHTML = '';
     modalContainer.appendChild(header);
     modalContainer.insertAdjacentHTML('beforeend', html);
 
-    // 4. Logik für Button-Sichtbarkeit
     const textFeld = document.getElementById('notiz-text-feld');
     const saveContainer = document.getElementById('save-btn-container');
     
-    if (textFeld.value.trim().length > 0) {
-        saveContainer.style.display = 'block';
-    }
+    if (textFeld.value.trim().length > 0) saveContainer.style.display = 'block';
 
     textFeld.addEventListener('input', () => {
         saveContainer.style.display = (textFeld.value.trim().length > 0) ? 'block' : 'none';
@@ -4901,121 +4889,65 @@ window.handleNotizUI = function(time, slot, klasse) {
     setTimeout(() => { textFeld.focus(); }, 50);
 };
 
-
-
-
-
-/**
- * 🔥 Hilfsfunktion für den Lösch-Button
- */
 window.loescheNotizVomModal = function(slot, klasse) {
     const textFeld = document.getElementById('notiz-text-feld');
-    const saveBtn = document.getElementById('btn-save-notiz');
-    
-    // 1. Textfeld leeren
-    if (textFeld) {
-        textFeld.value = ""; 
-    }
-    
-    // 2. Optional: Button-Feedback, falls der User sieht, dass gelöscht wird
-    if (saveBtn) {
-        saveBtn.innerText = "Lösche...";
-        saveBtn.style.pointerEvents = "none";
-    }
-    
-    // 3. Bestehende Speicherkette aufrufen
-    // Da speichereNotizVomModal die Logik zentralisiert, 
-    // läuft hier jetzt der gesamte "prozessiereAktion" -> "Queue" -> "Sync" Workflow ab.
+    if (textFeld) textFeld.value = ""; 
     window.speichereNotizVomModal(slot, klasse);
 };
 
-
-    
-/**
- * 🔥 Phase 2: Korrigierte Klammerstruktur & Daten-Merge zur Wahrung bestehender Felder
- */
 window.speichereNotizVomModal = async function(slot, klasse) {
+    // DOUBLE-CLICK SCHUTZ
+    if (window.isSavingNotiz) return;
+    window.isSavingNotiz = true;
+
     const textFeld = document.getElementById('notiz-text-feld');
     const saveBtn = document.getElementById('btn-save-notiz');
-    if (!textFeld) return;
-
-    const notizText = textFeld.value.trim();
-    const dateVal = document.getElementById('datePicker').value;
+    if (!textFeld) { window.isSavingNotiz = false; return; }
 
     if (saveBtn) {
         saveBtn.innerHTML = '<div class="eigenesmenu-loader" style="margin: 0 auto;"></div>';
         saveBtn.style.pointerEvents = "none";
     }
 
-    // 1. Datenobjekt holen
-    const currentSlotData = (window.lastPlanData && window.lastPlanData[slot]) ? window.lastPlanData[slot] : {};
-
-    // 2. Payload
     const payload = {
         action: "saveBooking",
         pw: userPw,
         kuerzel: userKuerzel,
-        date: dateVal,
+        date: document.getElementById('datePicker').value,
         slot: slot.toString(),
         klasse: klasse,
-        ...currentSlotData,
-        kommentar: notizText
+        ...(window.lastPlanData?.[slot] || {}),
+        kommentar: textFeld.value.trim()
     };
 
-    // 3. Callback
     const onCompleteVisuals = function(p) {
-        const n = p.kommentar;
-        const s = p.slot;
-        
-        const box = document.querySelector(`[data-slot="${s}"]`);
+        window.isSavingNotiz = false; // Reset bei Abschluss
+        const box = document.querySelector(`[data-slot="${p.slot}"]`);
         if (box) {
-            box.setAttribute('data-notiz', n);
-
+            box.setAttribute('data-notiz', p.kommentar);
             const altesIcon = box.querySelector('.box-notiz-icon');
             if (altesIcon) altesIcon.remove();
-
-            if (n !== "") {
+            if (p.kommentar !== "") {
                 const neuesNotizIcon = document.createElement('span');
                 neuesNotizIcon.className = 'box-notiz-icon';
                 neuesNotizIcon.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
-                neuesNotizIcon.title = n;
-                
-                Object.assign(neuesNotizIcon.style, {
-                    position: 'absolute', top: '-2px', left: '4px',
-                    cursor: 'pointer', zIndex: '5'
-                });
-                
-                neuesNotizIcon.onclick = function(event) {
-                    event.stopPropagation();
-                    if (typeof showNotizDetailPopup === "function") {
-                        showNotizDetailPopup(box.querySelector('.klasse-label')?.innerText || "", n);
-                    }
-                };
+                Object.assign(neuesNotizIcon.style, { position: 'absolute', top: '-2px', left: '4px', cursor: 'pointer', zIndex: '5' });
+                neuesNotizIcon.onclick = (e) => { e.stopPropagation(); showNotizDetailPopup(p.klasse, p.kommentar); };
                 box.appendChild(neuesNotizIcon);
             }
         }
-
-        // Lokales Update
-        if (window.lastPlanData) {
-            if (!window.lastPlanData[s]) window.lastPlanData[s] = {};
-            window.lastPlanData[s] = {
-                ...window.lastPlanData[s],
-                kommentar: n
-            };
-        }
-        // WICHTIG: Kein closeEditor() hier mehr!
+        if (window.lastPlanData?.[p.slot]) window.lastPlanData[p.slot].kommentar = p.kommentar;
     };
 
-    // 4. Prozessierung
     if (typeof window.prozessiereAktion === "function") {
         window.prozessiereAktion(payload, onCompleteVisuals);
+        // Modal schließen nach Abschuss der Aktion
+        if (typeof closeEditor === "function") closeEditor();
     } else {
-        // Fallback
         onCompleteVisuals(payload);
-        addToQueue(payload, null);
+        window.isSavingNotiz = false;
     }
 };
-
     
 
 /**
