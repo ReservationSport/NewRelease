@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2695,39 +2695,43 @@ function addToQueue(payload, onCompleteVisuals) {
 
 
     
-// Die zentrale Verarbeitungs-Logik
+// Die zentrale Verarbeitungs-Logik (Der Küchenchef)
 async function processQueue() {
-    // 1. Check, ob wir bereits arbeiten oder nichts zu tun haben
+    // 1. Wenn wir gerade arbeiten oder bereits eine Instanz läuft, nichts tun
     if (window.isProcessingQueue) return;
 
+    // 2. Queue leer? Dann ist der Job erledigt: Sync-Wachhund wieder wecken
     if (window.actionQueue.length === 0) {
-        // WICHTIG: Wenn die Queue leer ist, geben wir den Sync endlich frei
-        window.isSyncPaused = false;
-        if (typeof window.resumeSync === 'function') {
-            window.resumeSync();
+        if (window.isSyncPaused) {
+            window.isSyncPaused = false;
+            if (typeof window.resumeSync === 'function') {
+                window.resumeSync();
+            }
         }
         return;
     }
     
+    // 3. Arbeit beginnen
     window.isProcessingQueue = true;
     const { payload, onCompleteVisuals } = window.actionQueue.shift();
     
-    // 2. UI-Update (Optimistisch - Falls es nicht schon in prozessiereAktion passierte)
+    // UI-Update (Optimistisch)
     if (onCompleteVisuals) onCompleteVisuals(payload);
     
-    // 3. Server-Call
+    // 4. Server-Call ausführen
     try {
         await saveImmediately(payload);
     } catch (e) {
         console.error("Fehler beim Speichern:", e);
-        // Falls Fehler, Sperre im DOM entfernen
+        // Falls Fehler, Sperre im DOM entfernen, damit der Plan nicht "hängt"
         const box = document.querySelector(`[data-slot="${payload.slot}"]`);
         if (box) box.removeAttribute('data-sync-status');
     } finally {
-        // 4. Queue-Sperre lösen
+        // 5. Immer sicherstellen, dass wir die Sperre lösen, auch bei Fehlern
         window.isProcessingQueue = false;
         
-        // 5. Nächste Aktion verarbeiten (Rekursion)
+        // 6. Nächste Aktion verarbeiten (Rekursion)
+        // Wir rufen processQueue erneut auf, um den nächsten Auftrag zu prüfen
         processQueue();
     }
 }
@@ -5239,14 +5243,21 @@ function getDoppellektionPartnerSlot(currentSlot) {
    ============================================================ */
 
 window.prozessiereAktion = function(payload, onCompleteVisuals) {
+    // 0. WACHHUND PAUSIEREN: Start jeder Aktion
+    if (typeof window.pauseSync === 'function') window.pauseSync();
+
     const partnerSlot = getDoppellektionPartnerSlot(payload.slot);
     const modalContainer = document.querySelector('.eigenesmenu-container');
     const subtitle = document.getElementById('dynamic-header-subtitle');
 
-    // 1. Wenn kein Partner-Slot existiert oder Modal fehlt, direkt in Queue
+    // 1. Wenn kein Partner-Slot existiert oder Modal fehlt
     if (!partnerSlot || !modalContainer) {
-        addToQueue(payload, onCompleteVisuals);
+        addToQueue(payload, () => {
+            if (typeof onCompleteVisuals === "function") onCompleteVisuals(payload);
+        });
         if (typeof closeEditor === "function") closeEditor();
+        // Queue anstoßen (processQueue wird den Sync bei Leerlauf wieder starten)
+        if (typeof processQueue === "function") processQueue();
         return;
     }
 
@@ -5271,12 +5282,9 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
         }
     }
 
-    // 3. Untertitel aktualisieren
-    if (subtitle) {
-        subtitle.innerHTML = `Willst du die Aktion für die <b>gesamte Doppellektion</b> durchführen?`;
-    }
-
-    // 4. DOM-Säuberung & UI Aufbau
+    // 3. Untertitel & UI
+    if (subtitle) subtitle.innerHTML = `Willst du die Aktion für die <b>gesamte Doppellektion</b> durchführen?`;
+    
     const header = modalContainer.querySelector('.eigenesmenu-header');
     modalContainer.innerHTML = '';
     modalContainer.appendChild(header);
@@ -5312,35 +5320,25 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
 
     modalContainer.insertAdjacentHTML('beforeend', html);
 
-    // 5. Angepasster Wrapper für sofortiges visuelles Feedback
+    // 5. Angepasster Wrapper
     const executeMitQueue = (payloads) => {
-        // UI-Update für jeden Slot
-        payloads.forEach(p => {
-            if (onCompleteVisuals) onCompleteVisuals(p);
-        });
+        // UI-Updates (Optimistisch)
+        payloads.forEach(p => { if (onCompleteVisuals) onCompleteVisuals(p); });
 
-        // Aktionen in die Warteschlange geben
+        // Aktionen in die Queue geben
         payloads.forEach(p => addToQueue(p, null));
 
-        // Schließen des Auswahl-Modals
         if (typeof closeEditor === "function") closeEditor();
-        
-        // WICHTIG: Queue manuell anstoßen, falls sie gerade schläft
-        if (typeof processQueue === "function") {
-            processQueue();
-        }
+        // Queue anstoßen
+        if (typeof processQueue === "function") processQueue();
     };
 
     // 6. Event Listener
     const btnBeide = document.getElementById('btn-doppel-beide');
-    if (btnBeide) {
-        btnBeide.onclick = () => executeMitQueue([payload, { ...payload, slot: partnerSlot.toString() }]);
-    }
+    if (btnBeide) btnBeide.onclick = () => executeMitQueue([payload, { ...payload, slot: partnerSlot.toString() }]);
     
     const btnEinzel = document.getElementById('btn-doppel-einzel');
-    if (btnEinzel) {
-        btnEinzel.onclick = () => executeMitQueue([payload]);
-    }
+    if (btnEinzel) btnEinzel.onclick = () => executeMitQueue([payload]);
 };
 
     
