@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1234</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2446,6 +2446,8 @@ body {
     window.isSyncPaused = false; // Flag: Darf syncPlan gerade laufen?
     window.syncPauseTimer = null; // Timer für die "Ruhephase" nach Aktionen
 
+
+    window.lockedSlots = {}; // Speichert: { "slotID": true }
     
 /* ============================================================
    2. INITIALISIERUNG
@@ -3174,17 +3176,17 @@ window.syncPlan = async function() {
         const myClasses = json.userClasses || [];
         
         Object.keys(newPlan).forEach(slot => {
+            // SICHERHEITS-CHECK: Ist dieser Slot gerade durch prozessiereAktion gesperrt?
+            if (window.lockedSlots && window.lockedSlots[slot]) {
+                console.log("Sync überspringt Slot " + slot + " – wird gerade manuell bearbeitet.");
+                return;
+            }
+
             const slotData = newPlan[slot] || {};
             const box = container.querySelector(`[data-slot="${slot}"]`);
             if (!box) return;
 
-            // 1. ZENTRALE SPERRE: Wenn die Box durch eine Aktion in der Queue geschützt ist,
-            // überspringen wir diesen Slot, damit unsere Änderungen nicht überschrieben werden.
-            if (box.getAttribute('data-syncing') === 'true') {
-                return;
-            }
-
-            // 2. Globale Queue-Sperre (Falls gerade allgemein gearbeitet wird)
+            // Globale Queue-Sperre
             if (window.isProcessingQueue) return;
 
             // --- NORMALE UI-SYNCHRONISIERUNG ---
@@ -3245,7 +3247,6 @@ window.syncPlan = async function() {
         console.error("Hintergrund-Sync fehlgeschlagen:", e);
     }
 };
-
     
 
 // Variable außerhalb der Funktion definieren
@@ -5184,9 +5185,9 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
     // 0. WACHHUND PAUSIEREN: Start jeder Aktion
     if (typeof window.pauseSync === 'function') window.pauseSync();
 
-    // BOX SPERREN: Flag setzen, damit syncPlan die Box ignoriert, solange sie in der Queue ist
-    const targetBox = document.querySelector(`[data-slot="${payload.slot}"]`);
-    if (targetBox) targetBox.setAttribute('data-syncing', 'true');
+    // JS-OBJECT SPERRE: Damit kann der Sync den Slot nicht mehr durch DOM-Änderungen "entlocken"
+    if (!window.lockedSlots) window.lockedSlots = {};
+    window.lockedSlots[payload.slot] = true;
 
     const partnerSlot = getDoppellektionPartnerSlot(payload.slot);
     const modalContainer = document.querySelector('.eigenesmenu-container');
@@ -5196,8 +5197,8 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
     if (!partnerSlot || !modalContainer) {
         addToQueue(payload, () => {
             if (typeof onCompleteVisuals === "function") onCompleteVisuals(payload);
-            // Flag entfernen, sobald der Task in der Queue fertig abgearbeitet wurde
-            if (targetBox) targetBox.removeAttribute('data-syncing');
+            // SPERRE AUFHEBEN: Erst wenn die Queue mit diesem Task fertig ist
+            delete window.lockedSlots[payload.slot];
         });
         if (typeof closeEditor === "function") closeEditor();
         if (typeof processQueue === "function") processQueue();
@@ -5263,16 +5264,15 @@ window.prozessiereAktion = function(payload, onCompleteVisuals) {
 
     modalContainer.insertAdjacentHTML('beforeend', html);
 
-    // 5. Angepasster Wrapper (mit Flag-Management)
+    // 5. Angepasster Wrapper (mit globalem Lock-Management)
     const executeMitQueue = (payloads) => {
         payloads.forEach(p => { 
             // UI-Update lokal
             if (onCompleteVisuals) onCompleteVisuals(p); 
 
-            // Aktionen in die Queue. Callback entfernt das Syncing-Flag
+            // Aktionen in die Queue. Callback entfernt die Sperre
             addToQueue(p, () => {
-                const box = document.querySelector(`[data-slot="${p.slot}"]`);
-                if (box) box.removeAttribute('data-syncing');
+                delete window.lockedSlots[p.slot];
             });
         });
 
