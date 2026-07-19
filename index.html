@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -4844,8 +4844,13 @@ window.handleNotizUI = function(time, slot, klasse) {
         subtitle.innerHTML = `Notiz für Klasse <b>${klasse}</b>:`; 
     }
 
-    const bestehendeNotiz = window.currentEditBox ? (window.currentEditBox.getAttribute('data-notiz') || "") : "";
+    // --- FIX: Datenquelle auf lastPlanData umgestellt ---
+    // Wir holen den Kommentar direkt aus dem globalen Daten-Objekt, 
+    // da das DOM-Attribut 'data-notiz' bei schnellen Sync-Vorgängen veralten kann.
+    const slotData = (window.lastPlanData && window.lastPlanData[slot]) ? window.lastPlanData[slot] : null;
+    const bestehendeNotiz = (slotData && slotData.kommentar) ? slotData.kommentar : "";
     const hatBestehendeNotiz = bestehendeNotiz.trim() !== "";
+    
     const btnCommon = "height: 60px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 8px; box-sizing: border-box; margin: 0; padding: 0 15px; border: 2px solid; transition: all 0.2s ease;";
 
     let html = `
@@ -4889,6 +4894,7 @@ window.handleNotizUI = function(time, slot, klasse) {
     const textFeld = document.getElementById('notiz-text-feld');
     const saveContainer = document.getElementById('save-btn-container');
     
+    // Initialen Button-Status setzen (auch wenn Notiz vorhanden ist)
     if (textFeld.value.trim().length > 0) saveContainer.style.display = 'block';
 
     textFeld.addEventListener('input', () => {
