@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1234</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3028,7 +3028,7 @@ window.hideLoading = function() {
     
 
 /* ============================================================
-   LOAD PLAN - VOLLSTÄNDIGE & ROBUSTE VERSION (MIT EIGEN-CHECK)
+   LOAD PLAN - PERFEKT MIT INTEGRIERTEM PASTE-MODUS
    ============================================================ */
 window.loadPlan = async function() {
     const dp = document.getElementById('datePicker');
@@ -3052,15 +3052,12 @@ window.loadPlan = async function() {
     try {
         const res = await fetch(fetchUrl);
         const json = await res.json();
-
-        window.lastLinks = json.links || [];
         
         if (json.sperrMsg) {
             container.innerHTML = `<div class="box info-box" style="grid-column: span 6; background: #333; color: #e67e22; padding: 40px; font-size: 1.2rem;">${json.sperrMsg}</div>`;
             return; 
         }
         
-        if (json.verfügbareMaterialien) verfügbareMaterialien = json.verfügbareMaterialien;
         window.hallenConfig = json.hallenConfig || {}; 
         const plan = json.plan || {}; 
         window.lastPlanData = plan; 
@@ -3093,24 +3090,16 @@ window.loadPlan = async function() {
                 const isAusfall = (halle === "Ausfall");
                 const isKlasseLeer = klasse.trim() === "";
                 
-                // --- KÜRZEL/VERFASSER LOGIK ---
                 const verfasser = slotData.verfasser || "";
                 const lehrerDaten = slotData.lehrer || "";
                 const lehrer = (verfasser !== "") ? verfasser : (lehrerDaten !== "" ? lehrerDaten : (allClassTeachers[klasse] || ""));
                 
-                // --- ERWEITERTER EDIT-CHECK ---
                 const isMyClass = !isKlasseLeer && myClasses.some(c => klasse.trim().toLowerCase() === c.trim().toLowerCase());
                 const isMyBooking = (verfasser.trim().toLowerCase() === userKuerzel.toLowerCase());
                 const canEdit = isMyClass || isMyBooking;
 
                 const bgFarbe = (window.hallenConfig[halle] && !isAusfall) ? window.hallenConfig[halle].color : '';
-                
-                const classList = [
-                    "box",
-                    isKlasseLeer ? "empty" : "",
-                    canEdit ? "is-mine" : "not-mine",
-                    isAusfall ? "ausfall-mode" : ""
-                ].filter(Boolean).join(" ");
+                const classList = ["box", isKlasseLeer ? "empty" : "", canEdit ? "is-mine" : "not-mine", isAusfall ? "ausfall-mode" : ""].filter(Boolean).join(" ");
                 
                 html += `
                 <div class="${classList}" 
@@ -3127,6 +3116,31 @@ window.loadPlan = async function() {
         });
         container.innerHTML = html;
 
+        // --- PASTE & EDIT LOGIK ---
+        container.querySelectorAll('.box:not(.zeit-box):not(.header-row)').forEach(box => {
+            const slot = box.getAttribute('data-slot');
+            
+            // 1. Rechtsklick: Kopieren
+            box.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                const slotData = plan[slot] || {};
+                if (!slotData.halle) return;
+                window.copiedSlotData = { halle: slotData.halle, typ: slotData.typ };
+                createPasteOverlay(slotData.halle);
+            });
+
+            // 2. Linksklick: Entweder Pasten oder Editieren
+            box.addEventListener('click', () => {
+                if (window.copiedSlotData) {
+                    // Paste-Modus aktiv
+                    performPaste(slot, window.copiedSlotData);
+                } else {
+                    // Normaler Modus
+                    if (typeof openEditDialog === "function") openEditDialog(slot);
+                }
+            });
+        });
+
         // Icons nachladen
         Object.keys(plan).forEach(slot => {
             const slotData = plan[slot] || {};
@@ -3140,10 +3154,7 @@ window.loadPlan = async function() {
                 notizElement.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
                 notizElement.title = slotData.kommentar;
                 Object.assign(notizElement.style, { position: 'absolute', top: '-2px', left: '4px', cursor: 'pointer', zIndex: '5' });
-                notizElement.onclick = (e) => { 
-                    e.stopPropagation(); 
-                    if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(slotData.klasse || "", slotData.kommentar); 
-                };
+                notizElement.onclick = (e) => { e.stopPropagation(); if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(slotData.klasse || "", slotData.kommentar); };
                 box.appendChild(notizElement);
             }
         });
@@ -3152,6 +3163,7 @@ window.loadPlan = async function() {
         container.innerHTML = `<div class="box info-box" style="color:red; grid-column: span 6;">Fehler: Daten konnten nicht geladen werden.</div>`;
     }
 };
+
 
 
 
@@ -4900,6 +4912,8 @@ window.applyHalleSelection = function(neueHalle, time, slot, klasse, btn, typ) {
 };
     
 
+
+    
 window.handleNotizUI = function(time, slot, klasse) {
     const modalContainer = document.querySelector('.eigenesmenu-container');
     const header = modalContainer ? modalContainer.querySelector('.eigenesmenu-header') : null;
@@ -6512,6 +6526,102 @@ window.markIdeeResolved = function(id, btnElement) {
     });
 };
 
+
+ /* ============================================================
+   21. PASTE-Mode
+   ============================================================ */
+
+    
+
+window.createPasteOverlay = function(halleName) {
+    // 1. Overlay (für die Verdunkelung)
+    if (!document.getElementById('paste-overlay')) {
+        const overlay = document.createElement('div');
+        overlay.className = 'move-mode-overlay'; // Wir nutzen dasselbe Design wie beim Verschieben
+        overlay.id = 'paste-overlay';
+        document.body.appendChild(overlay);
+    }
+    
+    // 2. Panel
+    if (!document.getElementById('paste-panel-ui')) {
+        const panel = document.createElement('div');
+        panel.id = 'paste-panel-ui';
+        panel.className = 'move-panel'; // Nutzt dieselben Styles wie beim Verschieben
+        panel.innerHTML = `
+            <span>Halle <strong>${halleName}</strong> kopiert. Wähle ein Ziel-Feld zum Einfügen...</span>
+            <button onclick="cancelPasteMode()" class="btn-cancel">Abbrechen</button>
+        `;
+        document.body.appendChild(panel);
+    }
+    document.body.classList.add('move-mode-active');
+};
+
+
+  window.cancelPasteMode = function() {
+    window.copiedSlotData = null; // Speicher leeren
+    
+    // UI-Elemente entfernen
+    const overlay = document.getElementById('paste-overlay');
+    if (overlay) overlay.remove();
+    const panel = document.getElementById('paste-panel-ui');
+    if (panel) panel.remove();
+    
+    document.body.classList.remove('move-mode-active');
+};  
+
+
+// --- HILFSFUNKTION FÜR PASTE ---
+async function performPaste(targetSlot, data) {
+    const dp = document.getElementById('datePicker');
+    
+    // 1. Sicherheit: Vor der Aktion prüfen
+    const aktuellBelegt = window.lastPlanData[targetSlot]?.halle;
+    if (aktuellBelegt && aktuellBelegt === data.halle) {
+        alert("Die Halle ist bereits in diesem Slot aktiv!");
+        return;
+    }
+
+    // 2. Daten für den Ziel-Slot (Klasse beibehalten)
+    const zielSlotData = window.lastPlanData[targetSlot] || {};
+    const klasseImZiel = zielSlotData.klasse || "";
+
+    // 3. Payload erstellen (analog zu applyHalleSelection)
+    const payload = {
+        action: "saveBooking",
+        pw: userPw,
+        kuerzel: userKuerzel,
+        date: dp.value,
+        slot: targetSlot,
+        klasse: klasseImZiel, // Erhält die existierende Klasse im Ziel
+        origin: 'pasteMode',
+        halle: data.halle,
+        typ: data.typ || ""
+    };
+
+    // 4. SYNC PAUSIEREN
+    window.pauseSync();
+
+    // 5. AUSFÜHRUNG über dein zentrales Aktions-System
+    try {
+        if (typeof window.prozessiereAktion === 'function') {
+            console.log(`Paste: Kopiere ${data.halle} nach Slot ${targetSlot}`);
+            
+            window.prozessiereAktion(payload, async (p) => {
+                // Callback nach Erfolg
+                console.log("Paste erfolgreich!");
+                cancelPasteMode();
+                await changeDayAndLoad(dp.value);
+            });
+        } else {
+            // Fallback, falls prozessiereAktion nicht verfügbar ist
+            throw new Error("prozessiereAktion nicht gefunden");
+        }
+    } catch (e) {
+        window.isSyncPaused = false;
+        console.error("Paste-Aktion fehlgeschlagen:", e);
+        alert("Fehler beim Einfügen.");
+    }
+}
     
     
 </script>
