@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -5670,7 +5670,10 @@ window.confirmInlineAdd = async function(targetSlot) {
     const name = document.getElementById('inline-klasse-name').value;
     if (!name) return alert("Bitte Namen eingeben!");
 
-    document.getElementById('inline-input-panel').remove();
+    // Panel entfernen
+    document.getElementById('inline-input-panel')?.remove();
+    
+    // Lade-Overlay starten
     showLoading('saving');
 
     const payload = {
@@ -5689,7 +5692,7 @@ window.confirmInlineAdd = async function(targetSlot) {
     try {
         await fetch(url, { method: "POST", body: JSON.stringify(payload) });
 
-        // UI-Update
+        // 1. UI-Update für den Slot
         const box = document.querySelector(`[data-slot="${targetSlot}"]`);
         if (box) {
             box.classList.remove('empty', 'not-mine');
@@ -5703,11 +5706,15 @@ window.confirmInlineAdd = async function(targetSlot) {
             setBoxClick(box, name, targetSlot, true);
         }
 
-        // Modus beenden und Sync-Sperre aufheben
+        // 2. Modus beenden (das ruft auch cancelAddMode auf, was Sync triggert)
         cancelAddMode(); 
+        
     } catch (err) {
         console.error("Fehler:", err);
-        hideLoading();
+    } finally {
+        // --- DAS HIER WAR DAS PROBLEM ---
+        // Das Overlay muss in jedem Fall verschwinden, egal ob Erfolg oder Fehler
+        hideLoading(); 
     }
 };
 
