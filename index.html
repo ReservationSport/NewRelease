@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1621,8 +1621,10 @@ body {
     border-color: #555;
     color: #999;
 }
+
+    
 /* ============================================================
-   16. Meldungen (Defekte)
+   16. Meldungen (Defekte) - OPTIMIERT FÜR MOBILE & LANDSCAPE
    ============================================================ */
 
 /* Das Overlay zentriert beide Fenster über den ganzen Screen */
@@ -1641,23 +1643,46 @@ body {
 
 .modal-content {
     background: #1e1e1e;
-    padding: 25px;
+    padding: 20px;
     border-radius: 8px;
     border: 1px solid #444;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     color: white;
-}
-
-#meldungen-overlay .modal-content {
     width: 90%;
     max-width: 600px;
+    
+    /* WICHTIG: Flexbox für Layout-Kontrolle auf kleinen Bildschirmen */
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh; /* Verhindert Überlaufen des Bildschirms */
+}
+
+/* Scrollbarer Bereich für die Liste */
+.meldungen-list {
+    margin: 15px 0;
+    flex: 1;           /* Nimmt dynamisch den restlichen Platz ein */
+    overflow-y: auto;  /* Scrollt nur innerhalb dieses Bereichs */
+    padding-right: 5px;
+    min-height: 100px;
 }
 
 .modal-actions {
     display: flex;
     gap: 10px;
-    margin-top: 20px;
+    margin-top: 10px;
     justify-content: flex-end;
+    flex-shrink: 0;    /* Buttons bleiben immer am unteren Rand sichtbar */
+}
+
+/* Mobile Optimierung für Querformat (Landscape) */
+@media screen and (max-height: 500px) {
+    .modal-content {
+        padding: 10px;
+        max-height: 95vh;
+    }
+    .meldungen-list {
+        margin: 5px 0;
+    }
 }
 
 .btn-action {
@@ -1670,35 +1695,17 @@ body {
     color: white;
 }
 
-/* PRIMÄR: Dein Akzent-Orange für Aktionen */
-.btn-primary { 
-    background: #e67e22; 
-}
-.btn-primary:hover { 
-    background: #d35400; 
-}
+.btn-primary { background: #e67e22; }
+.btn-primary:hover { background: #d35400; }
 
-/* SEKUNDÄR: Grau für Abbrechen/Schließen */
-.btn-secondary { 
-    background: #444; 
-}
-.btn-secondary:hover { 
-    background: #555; 
-}
-
-/* Meldungs-Liste */
-.meldungen-list {
-    margin: 20px 0;
-    max-height: 400px;
-    overflow-y: auto;
-    padding-right: 5px;
-}
+.btn-secondary { background: #444; }
+.btn-secondary:hover { background: #555; }
 
 .meldung-item {
     background: #2c2c2c;
     border-left: 4px solid #e67e22;
-    padding: 15px;
-    margin-bottom: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
     border-radius: 4px;
     color: white;
     display: flex;
@@ -1713,7 +1720,6 @@ body {
     display: block;
 }
 
-/* Erledigt-Button als Icon-Button */
 .btn-erledigt {
     background: #e67e22;
     border: none;
@@ -1726,36 +1732,25 @@ body {
     margin-left: 15px;
     flex-shrink: 0;
     transition: background 0.3s ease;
-    
-    /* Perfekte Zentrierung */
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden; 
 }
 
-.btn-erledigt:hover {
-    background: #d35400;
-}
+.btn-erledigt:hover { background: #d35400; }
+.btn-erledigt.is-success { background: #27ae60 !important; }
 
-/* Erfolg-Status (Grün) */
-.btn-erledigt.is-success {
-    background: #27ae60 !important;
-}
-
-/* WICHTIG: Korrektur für das Icon spezifisch im Erledigt-Button */
 .btn-erledigt .material-symbols-outlined {
     font-size: 24px;
     line-height: 1;
     display: block;
-    margin-right: 0 !important; /* Entfernt das störende globale Margin */
+    margin-right: 0 !important;
 }
 
-/* Input-Feld */
 #meldung-text {
     width: 100%;
     padding: 12px;
-    margin: 15px 0;
+    margin: 10px 0;
     border: 1px solid #444;
     border-radius: 4px;
     background: #2c2c2c;
@@ -1767,9 +1762,7 @@ body {
     outline: none;
     border-color: #e67e22;
 }
-    
 
-/* Spinner-Container */
 .loader-container {
     display: flex;
     align-items: center;
@@ -1779,7 +1772,6 @@ body {
     color: #888;
 }
 
-/* Der spezifische kleine orange Spinner */
 .littlespinner {
     width: 20px;
     height: 20px;
