@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1234</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2195,7 +2195,37 @@ body {
     color: #e67e22 !important;
 }
 
-    
+/* Eigener Style für das Paste-Overlay */
+.paste-mode-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.2); /* Neutrales Grau */
+    z-index: 9998;
+    pointer-events: none;
+}
+
+/* Eigener Modus-Indikator */
+.paste-mode-active *:hover {
+    cursor: default !important;
+}
+
+/* Freigabe für das Crosshair auf den Ziel-Boxen */
+.paste-mode-active .box.paste-mode-highlight:hover {
+    cursor: crosshair !important;
+}
+
+/* Abdunkelung aller anderen Boxen (außer den Zielen) */
+.paste-mode-active .box:not(.paste-mode-highlight) {
+    opacity: 0.3 !important;
+    pointer-events: none !important;
+}
+
+/* Sicherstellen, dass Highlight-Boxen voll sichtbar bleiben */
+.paste-mode-highlight {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+} 
     
 </style>
 
@@ -6566,28 +6596,25 @@ window.markIdeeResolved = function(id, btnElement) {
 };
 
 
- /* ============================================================
-   21. PASTE-Mode
+/* ============================================================
+   21. PASTE-MODE (ISOLIERT)
    ============================================================ */
 
-    
-
 window.createPasteOverlay = function(halleName) {
-    // 1. Overlay (Abdunkelung)
+    // 1. Overlay (Eigene ID & Klasse)
     if (!document.getElementById('paste-overlay')) {
         const overlay = document.createElement('div');
-        overlay.className = 'move-mode-overlay'; 
+        overlay.className = 'paste-mode-overlay'; // CSS-Klasse für Paste
         overlay.id = 'paste-overlay';
         document.body.appendChild(overlay);
     }
     
-    // 2. Panel (Orange, oben platziert)
+    // 2. Panel (Eigene ID)
     if (!document.getElementById('paste-panel-ui')) {
         const panel = document.createElement('div');
         panel.id = 'paste-panel-ui';
-        panel.className = 'move-panel'; 
+        panel.className = 'move-panel'; // CSS-Design bleibt gleich
         
-        // Explizites Styling für Orange & Top-Position
         Object.assign(panel.style, {
             position: 'fixed',
             top: '20px',
@@ -6605,32 +6632,32 @@ window.createPasteOverlay = function(halleName) {
         document.body.appendChild(panel);
     }
     
-    // 3. Modus aktivieren
-    document.body.classList.add('move-mode-active');
+    // 3. EIGENER Modus-Status
+    document.body.classList.add('paste-mode-active');
 
-    // 4. Highlight NUR für EIGENE Boxen setzen (anstatt alle Boxen)
+    // 4. Highlight NUR für eigene Boxen
     document.querySelectorAll('.box.is-mine').forEach(box => {
         box.classList.add('paste-mode-highlight');
     });
 };
-    
 
 window.cancelPasteMode = function() {
-    window.copiedSlotData = null;
+    window.copiedSlotData = null; // Copy-Daten löschen
     
+    // UI entfernen
     const overlay = document.getElementById('paste-overlay');
     if (overlay) overlay.remove();
     const panel = document.getElementById('paste-panel-ui');
     if (panel) panel.remove();
     
-    document.body.classList.remove('move-mode-active');
+    // EIGENEN Modus-Status entfernen
+    document.body.classList.remove('paste-mode-active');
     
-    // Highlight-Klassen von allen Boxen entfernen
+    // ALLE Boxen von Paste-Markierungen befreien
     document.querySelectorAll('.box').forEach(box => {
-        box.classList.remove('move-mode-highlight');
+        box.classList.remove('paste-mode-highlight', 'is-being-copied');
     });
 };
-
 
 // --- HILFSFUNKTION FÜR PASTE ---
 async function performPaste(targetSlot, data) {
@@ -6644,7 +6671,7 @@ async function performPaste(targetSlot, data) {
         return; 
     }
 
-    // 2. Daten für den Ziel-Slot (Klasse beibehalten)
+    // 2. Daten für den Ziel-Slot
     const zielSlotData = window.lastPlanData[targetSlot] || {};
     const klasseImZiel = zielSlotData.klasse || "";
 
@@ -6661,40 +6688,33 @@ async function performPaste(targetSlot, data) {
         typ: data.typ || ""
     };
 
-    // 4. SYNC PAUSIEREN
     window.pauseSync();
 
-    // 5. AUSFÜHRUNG über dein zentrales Aktions-System
     try {
         if (typeof window.prozessiereAktion === 'function') {
             console.log(`Paste: Kopiere ${data.halle} nach Slot ${targetSlot}`);
             
-            // --- VIRE-UI UPDATE (Direkt) ---
-            // Lokale Daten aktualisieren
+            // UI Update (Direkt)
             window.lastPlanData[targetSlot] = { 
                 ...zielSlotData, 
                 halle: data.halle, 
                 typ: data.typ,
-                verfasser: userKuerzel // Markiere als eigene Buchung
+                verfasser: userKuerzel 
             };
 
-            // Visuelle Anpassung der Box
             box.style.backgroundColor = window.hallenConfig[data.halle]?.color || "";
             box.querySelector('.klasse-label').textContent = klasseImZiel;
             box.querySelector('.halle-label').textContent = data.halle;
             box.classList.remove('empty', 'not-mine');
             box.classList.add('is-mine');
             
-            // Icon für Lock-Status anpassen
             const lockContainer = box.querySelector('.lock-icon-container');
             if (lockContainer) {
                 lockContainer.innerHTML = data.typ === 'fix' ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
             }
 
             window.prozessiereAktion(payload, (p) => {
-                // Callback nach Erfolg
                 console.log("Paste erfolgreich!");
-                // Modus bleibt aktiv, kein Neuladen nötig
             });
         } else {
             throw new Error("prozessiereAktion nicht gefunden");
