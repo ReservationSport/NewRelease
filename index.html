@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1234</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3203,27 +3203,29 @@ window.loadPlan = async function() {
             // 1. Rechtsklick: Kopieren
             box.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
-                const slotData = plan[slot] || {};
-                if (!slotData.halle) return;
                 
-                window.copiedSlotData = { halle: slotData.halle, typ: slotData.typ };
+                // AKTUELL: Zugriff auf das "lebende" Objekt window.lastPlanData
+                const currentData = window.lastPlanData[slot] || {};
+                if (!currentData.halle) return;
                 
-                // Optisches Feedback
+                window.copiedSlotData = { halle: currentData.halle, typ: currentData.typ };
+                
+                // Optisches Feedback: Alte Markierung entfernen, neue setzen
+                document.querySelectorAll('.is-being-copied').forEach(el => el.classList.remove('is-being-copied'));
                 box.classList.add('is-being-copied'); 
-                createPasteOverlay(slotData.halle);
+                
+                createPasteOverlay(currentData.halle);
             });
 
             // 2. Linksklick: Entweder Pasten oder Editieren
             box.addEventListener('click', (e) => {
                 if (window.copiedSlotData) {
-                    // Nur wenn die Box 'is-mine' ist, darf eingefügt werden
                     if (box.classList.contains('is-mine')) {
                         e.stopPropagation();
                         e.preventDefault();
                         performPaste(slot, window.copiedSlotData);
                     }
                 } else {
-                    // Normaler Modus
                     if (typeof openEditDialog === "function") openEditDialog(slot);
                 }
             });
@@ -6671,7 +6673,7 @@ async function performPaste(targetSlot, data) {
         return; 
     }
 
-    // 2. Daten für den Ziel-Slot
+    // 2. Daten für den Ziel-Slot (WICHTIG: Klasse behalten, falls vorhanden)
     const zielSlotData = window.lastPlanData[targetSlot] || {};
     const klasseImZiel = zielSlotData.klasse || "";
 
@@ -6688,13 +6690,14 @@ async function performPaste(targetSlot, data) {
         typ: data.typ || ""
     };
 
+    // 4. SYNC PAUSIEREN
     window.pauseSync();
 
     try {
         if (typeof window.prozessiereAktion === 'function') {
             console.log(`Paste: Kopiere ${data.halle} nach Slot ${targetSlot}`);
             
-            // UI Update (Direkt)
+            // UI Update: Lokale Daten aktualisieren
             window.lastPlanData[targetSlot] = { 
                 ...zielSlotData, 
                 halle: data.halle, 
@@ -6702,19 +6705,32 @@ async function performPaste(targetSlot, data) {
                 verfasser: userKuerzel 
             };
 
+            // Visuelle Anpassung der Box
             box.style.backgroundColor = window.hallenConfig[data.halle]?.color || "";
-            box.querySelector('.klasse-label').textContent = klasseImZiel;
-            box.querySelector('.halle-label').textContent = data.halle;
+            
+            // Label-Update
+            const kLabel = box.querySelector('.klasse-label');
+            if (kLabel) kLabel.textContent = klasseImZiel;
+            
+            const hLabel = box.querySelector('.halle-label');
+            if (hLabel) hLabel.textContent = data.halle;
+            
+            // CSS Klassen aufräumen
             box.classList.remove('empty', 'not-mine');
             box.classList.add('is-mine');
             
+            // Icon für Lock-Status anpassen
             const lockContainer = box.querySelector('.lock-icon-container');
             if (lockContainer) {
-                lockContainer.innerHTML = data.typ === 'fix' ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
+                lockContainer.innerHTML = data.typ === 'fix' ? 
+                    '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
             }
 
+            // Aktion ausführen
             window.prozessiereAktion(payload, (p) => {
                 console.log("Paste erfolgreich!");
+                // Nach Erfolg Synchronisation wieder erlauben
+                window.isSyncPaused = false;
             });
         } else {
             throw new Error("prozessiereAktion nicht gefunden");
