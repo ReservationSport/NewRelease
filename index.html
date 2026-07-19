@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2622,6 +2622,15 @@ async function handleLogin() {
         userPw = pwVal;
         userKuerzel = kuerzelVal;
         
+        // --- LINKS VORLADEN (Damit sie beim Klick sofort da sind) ---
+        fetch(`${url}?action=getLinks&pw=${encodeURIComponent(userPw)}&kuerzel=${encodeURIComponent(userKuerzel)}`)
+            .then(res => res.json())
+            .then(data => {
+                window.lastLinks = data.links || [];
+                console.log("Links im Hintergrund vorgeladen.");
+            })
+            .catch(e => console.error("Fehler beim Vorladen der Links:", e));
+        
         loadingOverlay.classList.add('is-visible');
         loginOverlay.classList.add('fade-out');
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -2635,7 +2644,6 @@ async function handleLogin() {
         await changeDayAndLoad(dp.value);
 
         // --- G1 GATE INITIALISIERUNG ---
-        // Nutze den Wert aus der ersten Antwort, um den Sync-Startpunkt festzulegen
         window.lastKnownChange = Number(json.g1 || 0);
         console.log("Sync-Startpunkt (g1) gesetzt auf:", window.lastKnownChange);
         
@@ -2645,7 +2653,7 @@ async function handleLogin() {
         
         loadingOverlay.classList.remove('is-visible');
 
-        // --- HINTERGRUND-SYNC (JETZT SAUBER & REUSABLE) ---
+        // --- HINTERGRUND-SYNC ---
         setInterval(async () => {
             if (document.visibilityState === 'visible') {
                 await checkGlobalSync();
