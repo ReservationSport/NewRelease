@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3190,38 +3190,49 @@ window.loadPlan = async function() {
                 const bgFarbe = (window.hallenConfig[halle] && !isAusfall) ? window.hallenConfig[halle].color : '';
                 const classList = ["box", isKlasseLeer ? "empty" : "", canEdit ? "is-mine" : "not-mine", isAusfall ? "ausfall-mode" : ""].filter(Boolean).join(" ");
                 
+                // Wir erstellen das Grundgerüst ohne Icons im String
                 html += `
                 <div class="${classList}" data-slot="${absoluteSlot}" data-time="${zeitStr}" 
                      style="background-color: ${bgFarbe}; cursor: ${canEdit ? 'pointer' : 'default'}; position: relative;">
                      <div class="klasse-label">${klasse}</div>
                      <div class="lehrer-info">${lehrer}</div>
                      <div class="halle-label">${halle}</div>
-                     
                      <div class="lock-icon-container" style="position:absolute; right:-3px; bottom:5px; display:flex; align-items:center;">
-                         ${typ === 'fix' ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : ''}
-                     </div>`;
-
-                // --- HINZUGEFÜGT: ICONS BEIM LADEN ---
-                if (slotData.kommentar && slotData.kommentar.trim() !== "") {
-                    html += `<span class="box-notiz-icon" style="position: absolute; top: -2px; left: 4px; cursor: pointer; z-index: 5;">
-                                <span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>
-                             </span>`;
-                }
-                if (slotData.material && slotData.material.trim() !== "") {
-                    html += `<span class="material-indicator" style="position: absolute; bottom: 5px; left: 4px;">
-                                <span class="material-symbols-outlined" style="color: #4CAF50; font-size: 18px;">deployed_code</span>
-                             </span>`;
-                }
-
-                html += `</div>`;
+                        ${typ === 'fix' ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : ''}
+                     </div>
+                </div>`;
             }
         });
+        
         container.innerHTML = html;
 
-        // ... PASTE & EDIT LOGIK ...
+        // --- NACHTRÄGLICHES ZEICHNEN: Icons wie in syncPlan hinzufügen ---
         container.querySelectorAll('.box:not(.zeit-box):not(.header-row)').forEach(box => {
             const slot = box.getAttribute('data-slot');
+            const slotData = window.lastPlanData[slot] || {};
+            const klasse = slotData.klasse || "";
             
+            // 1. Notiz-Icon zeichnen
+            if (slotData.kommentar && slotData.kommentar.trim() !== "") {
+                const notizElement = document.createElement('span');
+                notizElement.className = 'box-notiz-icon';
+                notizElement.innerHTML = '<span class="material-symbols-outlined" style="color: #ff9800; font-size: 22px; line-height: 1;">stylus_note</span>';
+                Object.assign(notizElement.style, { position: 'absolute', top: '-2px', left: '4px', cursor: 'pointer', zIndex: '5' });
+                notizElement.onclick = (e) => { 
+                    e.stopPropagation(); 
+                    if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(klasse, slotData.kommentar); 
+                };
+                box.appendChild(notizElement);
+            }
+
+            // 2. Material-Icon zeichnen (Verwendet deine Funktion aus syncPlan)
+            if (slotData.material && slotData.material.trim() !== "") {
+                if (typeof markBoxWithMaterialIcon === "function") {
+                    markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
+                }
+            }
+
+            // --- PASTE & EDIT LOGIK ---
             box.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 const currentData = window.lastPlanData[slot] || {};
@@ -3233,13 +3244,6 @@ window.loadPlan = async function() {
             });
 
             box.addEventListener('click', (e) => {
-                // Notiz-Click abfangen
-                if (e.target.closest('.box-notiz-icon')) {
-                    const slotData = window.lastPlanData[slot] || {};
-                    if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(slotData.klasse, slotData.kommentar);
-                    return;
-                }
-
                 if (window.copiedSlotData) {
                     if (box.classList.contains('is-mine')) {
                         e.stopPropagation();
