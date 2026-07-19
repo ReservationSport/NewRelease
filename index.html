@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1234</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2706,18 +2706,20 @@ async function handleLogin() {
 });   
 
 
-// Diese Funktion lädt NUR die Links, unabhängig vom Plan
 window.fetchLinksOnly = async function() {
     try {
         const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-        // Nutze hier den Basispfad deiner API ohne Datums-Parameter
         const fetchUrl = isLocal ? 'data.json' : `${url}?action=getLinks`; 
         
         const res = await fetch(fetchUrl);
         const json = await res.json();
         
+        // --- HIER DIE ÄNDERUNG ZUM DEBUGGEN ---
+        console.log("Was sendet der Server wirklich?:", json); 
+        // ---------------------------------------
+        
         window.lastLinks = json.links || [];
-        console.log("Links unabhängig vom Plan geladen.");
+        console.log("Links geladen. Anzahl:", window.lastLinks.length);
     } catch (e) {
         console.error("Fehler beim Laden der Links:", e);
     }
