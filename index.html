@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -6634,11 +6634,9 @@ window.createPasteOverlay = function(halleName) {
         document.body.appendChild(panel);
     }
     
-    // 3. EIGENER Modus-Status aktivieren & SYNC PAUSIEREN
+    // 3. Modus-Status setzen (BLOCKIERT SYNC)
+    window.currentInteractionMode = 'PASTEN';
     document.body.classList.add('paste-mode-active');
-    if (typeof window.pauseSync === 'function') {
-        window.pauseSync();
-    }
 
     // 4. Highlight NUR für eigene Boxen
     document.querySelectorAll('.box.is-mine').forEach(box => {
@@ -6648,6 +6646,7 @@ window.createPasteOverlay = function(halleName) {
 
 window.cancelPasteMode = function() {
     window.copiedSlotData = null; // Copy-Daten löschen
+    window.currentInteractionMode = null; // SYNC WIEDER ERLAUBEN
     
     // UI entfernen
     const overlay = document.getElementById('paste-overlay');
@@ -6655,13 +6654,22 @@ window.cancelPasteMode = function() {
     const panel = document.getElementById('paste-panel-ui');
     if (panel) panel.remove();
     
-    // EIGENEN Modus-Status entfernen & SYNC WIEDER FREIGEBEN
     document.body.classList.remove('paste-mode-active');
-    window.isSyncPaused = false;
     
     // ALLE Boxen von Paste-Markierungen befreien
     document.querySelectorAll('.box').forEach(box => {
         box.classList.remove('paste-mode-highlight', 'is-being-copied');
+        
+        // Klick-Events wiederherstellen (analog zum Verschiebe-Modus)
+        const slot = box.getAttribute('data-slot');
+        if (slot) {
+            const klasse = box.querySelector('.klasse-label')?.innerText || "";
+            const isMine = box.classList.contains('is-mine');
+            // Hier sollte deine Standard-Click-Event-Zuweisung stehen
+            if (typeof setBoxClick === 'function') {
+                setBoxClick(box, klasse, slot, isMine);
+            }
+        }
     });
 };
 
@@ -6671,7 +6679,6 @@ async function performPaste(targetSlot, data) {
     const box = document.querySelector(`[data-slot="${targetSlot}"]`);
     
     // 1. Sicherheit: Kollisionsprüfung
-    // Wir prüfen, ob die zu pastende Halle in diesem Zeitfenster bereits belegt ist
     if (data.halle !== "Ausfall") {
         const rowIndex = Math.floor((targetSlot - 1) / 5);
         const startSlot = (rowIndex * 5) + 1;
@@ -6681,14 +6688,11 @@ async function performPaste(targetSlot, data) {
         let istGesperrt = false;
 
         for (let s = startSlot; s <= endSlot; s++) {
-            // Überspringe den Slot, auf den wir gerade pasten
             if (s === parseInt(targetSlot)) continue;
             
             const andereData = window.lastPlanData[s];
             if (andereData && andereData.halle && andereData.halle !== "Ausfall") {
                 const besetzteTeile = andereData.halle.toLowerCase().split('+').map(h => h.trim());
-                
-                // Prüfen, ob ein Teil der zu pastenden Halle in diesem Slot belegt ist
                 if (zuPruefendeTeile.some(t => t !== "outdoor" && t !== "badi" && besetzteTeile.includes(t))) {
                     istGesperrt = true;
                     break;
@@ -6724,7 +6728,6 @@ async function performPaste(targetSlot, data) {
         if (typeof window.prozessiereAktion === 'function') {
             console.log(`Paste: Kopiere ${data.halle} nach Slot ${targetSlot}`);
             
-            // UI Update: Lokale Daten aktualisieren
             window.lastPlanData[targetSlot] = { 
                 ...zielSlotData, 
                 halle: data.halle, 
@@ -6732,7 +6735,6 @@ async function performPaste(targetSlot, data) {
                 verfasser: userKuerzel 
             };
 
-            // Visuelle Anpassung der Box
             box.style.backgroundColor = isAusfall ? "" : (window.hallenConfig[data.halle]?.color || "");
             
             const kLabel = box.querySelector('.klasse-label');
@@ -6744,21 +6746,18 @@ async function performPaste(targetSlot, data) {
             box.classList.remove('empty', 'not-mine');
             box.classList.add('is-mine');
             
-            // Ausfall-Status verwalten
             if (isAusfall) {
                 box.classList.add('ausfall-mode');
             } else {
                 box.classList.remove('ausfall-mode');
             }
             
-            // Lock-Icon
             const lockContainer = box.querySelector('.lock-icon-container');
             if (lockContainer) {
                 lockContainer.innerHTML = (!isAusfall && data.typ === 'fix') ? 
                     '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
             }
 
-            // Aktion ausführen
             window.prozessiereAktion(payload, (p) => {
                 console.log("Paste erfolgreich!");
             });
@@ -6766,7 +6765,6 @@ async function performPaste(targetSlot, data) {
             throw new Error("prozessiereAktion nicht gefunden");
         }
     } catch (e) {
-        window.isSyncPaused = false;
         console.error("Paste-Aktion fehlgeschlagen:", e);
         alert("Fehler beim Einfügen.");
     }
