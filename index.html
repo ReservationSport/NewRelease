@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3201,16 +3201,15 @@ window.syncPlan = async function() {
             const lastUpdate = box.dataset.lastManualUpdate ? parseInt(box.dataset.lastManualUpdate) : 0;
             const isProtected = (Date.now() - lastUpdate) < 5000;
 
-            // --- SCHUTZ-LOGIK ---
-            // Wenn geschützt, überspringen wir das komplette DOM-Update für diesen Slot!
             if (isProtected) {
                 return; 
             }
 
-            // --- NORMALE UI-SYNCHRONISIERUNG (Wird nur ausgeführt, wenn NICHT geschützt) ---
+            // --- NORMALE UI-SYNCHRONISIERUNG ---
             const klasse = slotData.klasse || "";
             const verfasser = slotData.verfasser || "";
             const halle = slotData.halle || "";
+            const typ = slotData.typ || "";
             const isAusfall = (halle === "Ausfall");
             const isKlasseLeer = (klasse.trim() === "");
             
@@ -3229,19 +3228,32 @@ window.syncPlan = async function() {
             
             if (klassenEl) klassenEl.innerText = klasse;
             if (lehrerEl) lehrerEl.innerText = lehrer;
-            if (halleEl) halleEl.innerText = halle;
+            if (halleEl) lehalleEl.innerText = halle;
 
             // --- ICONS AUFRÄUMEN & NEU ZEICHNEN ---
+            
+            // 1. Notizen & Material aufräumen
             const altesNotizIcon = box.querySelector('.box-notiz-icon');
             if (altesNotizIcon) altesNotizIcon.remove();
             
             const altesMaterialIcon = box.querySelector('.material-indicator');
             if (altesMaterialIcon) altesMaterialIcon.remove();
             
-            if (slotData.material && slotData.material.trim() !== "") {
-                markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
+            // 2. Schloss-Container handhaben
+            let lockContainer = box.querySelector('.lock-icon-container');
+            if (!lockContainer) {
+                lockContainer = document.createElement('div');
+                lockContainer.className = 'lock-icon-container';
+                Object.assign(lockContainer.style, { 
+                    position: 'absolute', right: '-3px', bottom: '5px', display: 'flex', alignItems: 'center' 
+                });
+                box.appendChild(lockContainer);
             }
-            
+            lockContainer.innerHTML = (typ === 'fix') 
+                ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' 
+                : '';
+
+            // 3. Notiz neu zeichnen
             if (slotData.kommentar && slotData.kommentar.trim() !== "") {
                 const notizElement = document.createElement('span');
                 notizElement.className = 'box-notiz-icon';
@@ -3252,6 +3264,11 @@ window.syncPlan = async function() {
                     if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(klasse, slotData.kommentar); 
                 };
                 box.appendChild(notizElement);
+            }
+
+            // 4. Material neu zeichnen
+            if (slotData.material && slotData.material.trim() !== "") {
+                markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
             }
         });
     } catch(e) {
