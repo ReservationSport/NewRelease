@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -5594,13 +5594,16 @@ window.showPlaceholder = function(name) {
 
     
 /* ============================================================
-   15. Lektion hinzufügen
+   15. Lektion hinzufügen (Modus-geschützt)
    ============================================================ */
-    
 
 window.startAddMode = function() {
     document.getElementById('extra-menu').style.display = 'none';
+    
+    // MODUS STARTEN: Sync pausieren
+    window.currentInteractionMode = 'HINZUFUEGEN';
     window.addMode = { date: document.getElementById('datePicker')?.value || "" };
+    
     document.body.classList.add('move-mode-active');
     
     // Panel oben anzeigen
@@ -5613,10 +5616,9 @@ window.startAddMode = function() {
     `;
     document.body.appendChild(panel);
 
-    // 1. Klasse für CSS-Highlighting hinzufügen
     document.getElementById('plan-container').classList.add('move-mode-active');
 
-    // 2. Event-Delegation am Container: Überlebt jeden Sync/Refresh
+    // Event-Delegation am Container
     const container = document.getElementById('plan-container');
     container.onclick = function(e) {
         if (!window.addMode) return;
@@ -5627,28 +5629,20 @@ window.startAddMode = function() {
         }
     };
 
-    // 3. Optisches Highlight für leere Boxen (wird ggf. bei jedem Sync neu gerufen)
-    // Damit die User sehen, was klickbar ist
-    const applyHighlights = () => {
-        document.querySelectorAll('.box.empty:not(.header-row)').forEach(box => {
-            box.classList.add('is-selectable', 'move-mode-highlight');
-        });
-    };
-    applyHighlights();
+    // Optisches Highlight
+    document.querySelectorAll('.box.empty:not(.header-row)').forEach(box => {
+        box.classList.add('is-selectable', 'move-mode-highlight');
+    });
 };
 
-    
 window.showInlineInput = function(box) {
-    // 1. Altes Panel entfernen, falls vorhanden
     const existing = document.getElementById('inline-input-panel');
     if (existing) existing.remove();
 
-    // 2. Panel-Element erstellen
     const panel = document.createElement('div');
     panel.id = 'inline-input-panel';
     panel.className = 'inline-input-panel';
     
-    // 3. Inhalt im passenden Style
     panel.innerHTML = `
         <div class="inline-content">
             <div style="margin-bottom: 15px; font-weight: bold; text-align: center;">Klasse hinzufügen</div>
@@ -5660,22 +5654,18 @@ window.showInlineInput = function(box) {
         </div>
     `;
 
-    // 4. Panel dem Body hinzufügen
     document.body.appendChild(panel);
 
-    // 5. Enter-Taste zum Bestätigen aktivieren
     panel.querySelector('#inline-klasse-name').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') confirmInlineAdd(box.dataset.slot);
     });
 
-    // 6. Sicherstellen, dass das Feld sofort den Fokus erhält
     setTimeout(() => {
         const input = document.getElementById('inline-klasse-name');
         if (input) input.focus();
     }, 50);
 };
 
-    
 window.confirmInlineAdd = async function(targetSlot) {
     const name = document.getElementById('inline-klasse-name').value;
     if (!name) return alert("Bitte Namen eingeben!");
@@ -5689,7 +5679,7 @@ window.confirmInlineAdd = async function(targetSlot) {
         slot: targetSlot,
         klasse: name,
         halle: "", 
-        lehrer: userKuerzel, // Dein Kürzel
+        lehrer: userKuerzel,
         material: "", 
         kommentar: "", 
         typ: "Zusatz",
@@ -5699,66 +5689,54 @@ window.confirmInlineAdd = async function(targetSlot) {
     try {
         await fetch(url, { method: "POST", body: JSON.stringify(payload) });
 
-        // --- SOFORTIGE UI-AKTUALISIERUNG ---
+        // UI-Update
         const box = document.querySelector(`[data-slot="${targetSlot}"]`);
         if (box) {
             box.classList.remove('empty', 'not-mine');
             box.classList.add('is-mine');
             box.style.cursor = 'pointer';
-            
-            // Inhalt der Box setzen
             box.innerHTML = `
                 <div class="klasse-label">${name}</div>
                 <div class="lehrer-info">${userKuerzel}</div>
                 <div class="halle-label"></div>
             `;
-            
-            // Event-Handler wieder aktivieren (da er durch das manuelle Überschreiben verloren geht)
             setBoxClick(box, name, targetSlot, true);
         }
 
+        // Modus beenden und Sync-Sperre aufheben
         cancelAddMode(); 
     } catch (err) {
         console.error("Fehler:", err);
-    } finally {
         hideLoading();
     }
 };
 
-    
 window.cancelAddMode = function() {
     console.log("Add-Mode wird sauber beendet...");
 
-    // 1. Modus-Flag zurücksetzen
+    // 1. Modus und Sperre zurücksetzen
     window.addMode = null;
-    window.pendingTargetSlot = null;
+    window.currentInteractionMode = null; 
     
     // 2. UI-Panels entfernen
-    const panel = document.getElementById('move-panel-ui');
-    if (panel) panel.remove();
+    document.getElementById('move-panel-ui')?.remove();
+    document.getElementById('inline-input-panel')?.remove();
+    document.getElementById('move-overlay')?.remove();
     
-    const inlineInput = document.getElementById('inline-input-panel');
-    if (inlineInput) inlineInput.remove();
-    
-    // 3. WICHTIG: Overlay entfernen (falls du eines hast)
-    // Wenn dein "blasser Plan" ein Overlay-Element ist, muss es hier weg
-    const overlay = document.getElementById('move-overlay'); // Falls du eins nutzt
-    if (overlay) overlay.remove();
-    
-    // 4. CSS-Klassen entfernen (das macht den Plan wieder "hell")
+    // 3. CSS-Klassen & Container-Cleanup
     document.body.classList.remove('move-mode-active');
     const container = document.getElementById('plan-container');
     if (container) {
         container.classList.remove('move-mode-active');
-        container.onclick = null; // Den Event-Delegation-Handler entfernen!
+        container.onclick = null;
     }
     
-    // 5. Alle Boxen von Highlight-Klassen befreien
+    // 4. Boxen resetten
     document.querySelectorAll('.box').forEach(box => {
         box.classList.remove('is-selectable', 'move-mode-highlight');
     });
 
-    // 6. Optional: Sync erzwingen, um alles in den Normalzustand zu bringen
+    // 5. Sync erzwingen, um aktuelle Daten zu laden
     syncPlan(); 
 };
     
