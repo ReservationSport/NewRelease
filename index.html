@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -6628,7 +6628,7 @@ window.createPasteOverlay = function(halleName) {
         });
 
         panel.innerHTML = `
-            <span>Halle <strong>${halleName}</strong> kopiert. Wähle ein Ziel-Feld zum Einfügen...</span>
+            <span>Wähle ein Ziel-Feld, um <strong>${halleName}</strong> einzufügen...</span>
             <button onclick="cancelPasteMode()" class="btn-cancel">Beenden</button>
         `;
         document.body.appendChild(panel);
@@ -6697,7 +6697,7 @@ async function performPaste(targetSlot, data) {
         }
 
         if (istGesperrt) {
-            alert(`Die Halle ${data.halle} ist in diesem Zeitfenster bereits vergeben!`);
+            alert(`${data.halle} ist in diesem Zeitfenster bereits vergeben!`);
             return; 
         }
     }
