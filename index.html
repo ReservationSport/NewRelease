@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1234</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2147,34 +2147,52 @@ body {
 
 
 /* ============================================================
-   /* --- PASTE MODE HIGHLIGHTS --- */
+   --- PASTE MODE HIGHLIGHTS (EINHEITLICHES DESIGN) ---
    ============================================================ */
 
-
-/* Die Ziel-Boxen beim Pasten: Blau statt Orange */
+/* Die Ziel-Boxen beim Pasten: Orange wie beim Verschieben */
 .box.paste-mode-highlight {
-    border: 2px dashed #3498db !important; /* Blaues Ziel */
+    border: 2px dashed #ff9800 !important;
     animation: pulse 1.5s infinite;
     cursor: crosshair !important;
     position: relative;
     z-index: 9999 !important;
 }
 
-/* Die Quelle, die kopiert wurde (optional zur Bestätigung) */
+/* Die Quelle, die kopiert wurde: Glow-Effekt in Orange */
 .box.is-being-copied {
-    border: 3px solid #3498db !important;
-    box-shadow: 0 0 15px 3px #3498db !important;
+    border: 3px solid #ff9800 !important;
+    box-shadow: 0 0 15px 3px #ff9800 !important;
     position: relative;
     z-index: 9999 !important;
 }
 
-/* Panel für Paste (wir können dieselbe Klasse wie move-panel nutzen) */
+/* Panel für Paste: Identisches Layout wie move-panel-ui */
 #paste-panel-ui {
-    background: #3498db !important; /* Blaues Banner für Paste */
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2147483647;
+    pointer-events: auto;
+    
+    display: flex;
+    width: 95%;
+    max-width: 1000px;
+    height: 50px;
+    background: #e67e22 !important; /* Orange */
+    color: white;
+    padding: 0 30px;
+    border-radius: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
 }
 
+/* Button-Text: Angepasst auf Orange */
 #paste-panel-ui .btn-cancel {
-    color: #3498db !important;
+    color: #e67e22 !important;
 }
 
     
@@ -3160,30 +3178,29 @@ window.loadPlan = async function() {
                 
                 window.copiedSlotData = { halle: slotData.halle, typ: slotData.typ };
                 
-                // Optisches Feedback: Quelle markieren
+                // Optisches Feedback
                 box.classList.add('is-being-copied'); 
                 createPasteOverlay(slotData.halle);
             });
 
             // 2. Linksklick: Entweder Pasten oder Editieren
-            box.addEventListener('click', () => {
+            box.addEventListener('click', (e) => {
                 if (window.copiedSlotData) {
-                    // Paste-Modus aktiv
+                    // Verhindert das Öffnen des Edit-Dialogs
+                    e.stopPropagation();
+                    e.preventDefault();
+                    
+                    // Paste-Modus bleibt aktiv
                     performPaste(slot, window.copiedSlotData);
                 } else {
                     // Normaler Modus
                     if (typeof openEditDialog === "function") openEditDialog(slot);
                 }
             });
-
-            // Highlight für Ziel-Boxen hinzufügen, wenn Paste aktiv ist
-            box.classList.add('paste-mode-highlight');
         });
 
-        // Icons nachladen (wie gehabt)
-        Object.keys(plan).forEach(slot => {
-            // ... (Dein existierender Code zum Icon-Nachladen)
-        });
+        // Icons nachladen (Rest wie gehabt...)
+        Object.keys(plan).forEach(slot => { /* ... */ });
     } catch(e) { 
         console.error("Ladefehler:", e); 
         container.innerHTML = `<div class="box info-box" style="color:red; grid-column: span 6;">Fehler: Daten konnten nicht geladen werden.</div>`;
@@ -6574,7 +6591,7 @@ window.createPasteOverlay = function(halleName) {
         panel.id = 'paste-panel-ui';
         panel.className = 'move-panel'; // Nutzt dein bestehendes CSS
         
-        // Explizites Styling für Orange & Top-Position (falls CSS überschrieben wird)
+        // Explizites Styling für Orange & Top-Position
         Object.assign(panel.style, {
             position: 'fixed',
             top: '20px',
@@ -6585,9 +6602,10 @@ window.createPasteOverlay = function(halleName) {
             zIndex: '2147483647'
         });
 
+        // Button-Text wurde auf "Beenden" angepasst
         panel.innerHTML = `
             <span>Halle <strong>${halleName}</strong> kopiert. Wähle ein Ziel-Feld zum Einfügen...</span>
-            <button onclick="cancelPasteMode()" class="btn-cancel">Abbrechen</button>
+            <button onclick="cancelPasteMode()" class="btn-cancel">Beenden</button>
         `;
         document.body.appendChild(panel);
     }
@@ -6627,21 +6645,21 @@ async function performPaste(targetSlot, data) {
     const aktuellBelegt = window.lastPlanData[targetSlot]?.halle;
     if (aktuellBelegt && aktuellBelegt === data.halle) {
         alert("Die Halle ist bereits in diesem Slot aktiv!");
-        return;
+        return; // Modus bleibt aktiv, da wir nicht abbrechen
     }
 
     // 2. Daten für den Ziel-Slot (Klasse beibehalten)
     const zielSlotData = window.lastPlanData[targetSlot] || {};
     const klasseImZiel = zielSlotData.klasse || "";
 
-    // 3. Payload erstellen (analog zu applyHalleSelection)
+    // 3. Payload erstellen
     const payload = {
         action: "saveBooking",
         pw: userPw,
         kuerzel: userKuerzel,
         date: dp.value,
         slot: targetSlot,
-        klasse: klasseImZiel, // Erhält die existierende Klasse im Ziel
+        klasse: klasseImZiel, 
         origin: 'pasteMode',
         halle: data.halle,
         typ: data.typ || ""
@@ -6658,11 +6676,14 @@ async function performPaste(targetSlot, data) {
             window.prozessiereAktion(payload, async (p) => {
                 // Callback nach Erfolg
                 console.log("Paste erfolgreich!");
-                cancelPasteMode();
+                
+                // --- HIER DIE ÄNDERUNG: ---
+                // Wir rufen KEIN cancelPasteMode() mehr auf, 
+                // damit der Modus für weitere Boxen aktiv bleibt.
+                
                 await changeDayAndLoad(dp.value);
             });
         } else {
-            // Fallback, falls prozessiereAktion nicht verfügbar ist
             throw new Error("prozessiereAktion nicht gefunden");
         }
     } catch (e) {
