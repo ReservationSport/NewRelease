@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1234</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -6345,36 +6345,43 @@ window.markKrueckeResolved = function(id, btnElement) {
    19. LINKS
    ============================================================ */    
 
-window.openLinks = function() {
+window.openLinks = async function() {
     // 1. Menü schließen
     const menu = document.getElementById('extra-menu');
-    if (menu) {
-        menu.style.display = 'none';
-    }
+    if (menu) menu.style.display = 'none';
 
-    // 2. Overlay öffnen und Links rendern
+    // 2. Overlay öffnen
     const overlay = document.getElementById('links-overlay');
     if (overlay) {
         overlay.style.display = 'flex';
-        renderLinks(); // Lädt die Daten direkt aus window.lastLinks
+        
+        // WICHTIG: Links zur Sicherheit nochmal refreshen, 
+        // falls sie beim ersten Versuch leer waren
+        await window.fetchLinksOnly(); 
+        
+        renderLinks(); 
     }
 };
 
-    
 window.renderLinks = function() {
     const container = document.getElementById('links-container');
-    
-    // Wir nehmen die Variable, die wir eben in loadPlan befüllt haben
     const data = window.lastLinks || [];
 
-    if (data.length === 0) {
+    // Debug: Was kommt hier wirklich an?
+    console.log("Debug - Render Data:", data);
+
+    if (!data || data.length === 0) {
         container.innerHTML = "<p>Keine Links hinterlegt.</p>";
         return;
     }
 
+    // Wir schauen uns das erste Element an, um zu prüfen, ob die Felder 'url' und 'name' stimmen
+    console.log("Beispiel-Element:", data[0]);
+
     container.innerHTML = data.map(l => `
-        <a href="${l.url}" target="_blank" class="link-item">
-            <span class="material-symbols-outlined">link</span> ${l.name}
+        <a href="${l.url || '#'}" target="_blank" class="link-item">
+            <span class="material-symbols-outlined">link</span> 
+            ${l.name || 'Unbenannter Link'}
         </a>
     `).join('');
 };
