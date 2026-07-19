@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1234</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3186,8 +3186,8 @@ window.loadPlan = async function() {
             // 2. Linksklick: Entweder Pasten oder Editieren
             box.addEventListener('click', (e) => {
                 if (window.copiedSlotData) {
-                    // Prüfen, ob die Box editierbar ist (nur eigene oder leere)
-                    if (box.classList.contains('is-mine') || box.classList.contains('empty')) {
+                    // Nur wenn die Box 'is-mine' ist, darf eingefügt werden
+                    if (box.classList.contains('is-mine')) {
                         e.stopPropagation();
                         e.preventDefault();
                         performPaste(slot, window.copiedSlotData);
@@ -3197,15 +3197,7 @@ window.loadPlan = async function() {
                     if (typeof openEditDialog === "function") openEditDialog(slot);
                 }
             });
-
-            // Highlight NUR für Boxen, in die wir einfügen dürfen
-            if (box.classList.contains('is-mine') || box.classList.contains('empty')) {
-                box.classList.add('paste-mode-highlight');
-            }
         });
-
-        // Icons nachladen (Rest wie gehabt...)
-        Object.keys(plan).forEach(slot => { /* ... */ });
     } catch(e) { 
         console.error("Ladefehler:", e); 
         container.innerHTML = `<div class="box info-box" style="color:red; grid-column: span 6;">Fehler: Daten konnten nicht geladen werden.</div>`;
@@ -6593,7 +6585,7 @@ window.createPasteOverlay = function(halleName) {
     if (!document.getElementById('paste-panel-ui')) {
         const panel = document.createElement('div');
         panel.id = 'paste-panel-ui';
-        panel.className = 'move-panel'; // Nutzt dein bestehendes CSS
+        panel.className = 'move-panel'; 
         
         // Explizites Styling für Orange & Top-Position
         Object.assign(panel.style, {
@@ -6606,7 +6598,6 @@ window.createPasteOverlay = function(halleName) {
             zIndex: '2147483647'
         });
 
-        // Button-Text wurde auf "Beenden" angepasst
         panel.innerHTML = `
             <span>Halle <strong>${halleName}</strong> kopiert. Wähle ein Ziel-Feld zum Einfügen...</span>
             <button onclick="cancelPasteMode()" class="btn-cancel">Beenden</button>
@@ -6617,9 +6608,9 @@ window.createPasteOverlay = function(halleName) {
     // 3. Modus aktivieren
     document.body.classList.add('move-mode-active');
 
-    // 4. Highlight setzen, damit Boxen klickbar werden
-    document.querySelectorAll('.box').forEach(box => {
-        box.classList.add('move-mode-highlight');
+    // 4. Highlight NUR für EIGENE Boxen setzen (anstatt alle Boxen)
+    document.querySelectorAll('.box.is-mine').forEach(box => {
+        box.classList.add('paste-mode-highlight');
     });
 };
     
