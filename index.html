@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2630,22 +2630,12 @@ async function handleLogin() {
         const newsContainer = document.getElementById('news-btn-container');
         if(newsContainer) newsContainer.style.display = 'block';
         
-        // --- INITIALER LADEVORGANG ---
+        // Initialer Ladevorgang
         await initNewsSystem();
-        
-        // Links beim Login einmalig global laden
-        try {
-            const linkRes = await fetch(`${url}?action=getLinks`);
-            const linkJson = await linkRes.json();
-            window.lastLinks = linkJson.links || [];
-            console.log("Links erfolgreich initialisiert.");
-        } catch (e) {
-            console.warn("Konnte Links beim Start nicht laden:", e);
-        }
-
         await changeDayAndLoad(dp.value);
 
         // --- G1 GATE INITIALISIERUNG ---
+        // Nutze den Wert aus der ersten Antwort, um den Sync-Startpunkt festzulegen
         window.lastKnownChange = Number(json.g1 || 0);
         console.log("Sync-Startpunkt (g1) gesetzt auf:", window.lastKnownChange);
         
@@ -2655,7 +2645,7 @@ async function handleLogin() {
         
         loadingOverlay.classList.remove('is-visible');
 
-        // --- HINTERGRUND-SYNC ---
+        // --- HINTERGRUND-SYNC (JETZT SAUBER & REUSABLE) ---
         setInterval(async () => {
             if (document.visibilityState === 'visible') {
                 await checkGlobalSync();
@@ -2686,6 +2676,7 @@ async function handleLogin() {
         console.error("Login Error:", e);
     }
 }
+
     
    
 
@@ -2705,29 +2696,7 @@ async function handleLogin() {
     }
 });   
 
-
-window.fetchLinksOnly = async function() {
-    try {
-        const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-        
-        // Füge &pw= und &kuerzel= hinzu, damit der Server dich erkennt
-        const fetchUrl = isLocal 
-            ? 'data.json' 
-            : `${url}?action=getLinks&pw=${encodeURIComponent(userPw)}&kuerzel=${encodeURIComponent(userKuerzel)}`; 
-        
-        const res = await fetch(fetchUrl);
-        const json = await res.json();
-        
-        console.log("Server Antwort:", json);
-        
-        // Falls der Server die Links direkt im Root hat oder unter .links
-        window.lastLinks = json.links || [];
-        console.log("Links geladen. Anzahl:", window.lastLinks.length);
-    } catch (e) {
-        console.error("Fehler beim Laden der Links:", e);
-    }
-};
-    
+   
 
 /* ============================================================
    HILFSFUNKTION: Slot-Index zu Daten-Mapping
@@ -3051,7 +3020,7 @@ window.hideLoading = function() {
     
 
 /* ============================================================
-   LOAD PLAN - VOLLSTÄNDIGE & ROBUSTE VERSION
+   LOAD PLAN - VOLLSTÄNDIGE & ROBUSTE VERSION (MIT EIGEN-CHECK)
    ============================================================ */
 window.loadPlan = async function() {
     const dp = document.getElementById('datePicker');
@@ -3075,6 +3044,8 @@ window.loadPlan = async function() {
     try {
         const res = await fetch(fetchUrl);
         const json = await res.json();
+
+        window.lastLinks = json.links || [];
         
         if (json.sperrMsg) {
             container.innerHTML = `<div class="box info-box" style="grid-column: span 6; background: #333; color: #e67e22; padding: 40px; font-size: 1.2rem;">${json.sperrMsg}</div>`;
@@ -3173,6 +3144,8 @@ window.loadPlan = async function() {
         container.innerHTML = `<div class="box info-box" style="color:red; grid-column: span 6;">Fehler: Daten konnten nicht geladen werden.</div>`;
     }
 };
+
+
 
 
 
@@ -6345,7 +6318,6 @@ window.markKrueckeResolved = function(id, btnElement) {
 };
 
 
-
 /* ============================================================
    19. LINKS
    ============================================================ */    
@@ -6353,40 +6325,37 @@ window.markKrueckeResolved = function(id, btnElement) {
 window.openLinks = function() {
     // 1. Menü schließen
     const menu = document.getElementById('extra-menu');
-    if (menu) menu.style.display = 'none';
+    if (menu) {
+        menu.style.display = 'none';
+    }
 
-    // 2. Overlay öffnen
+    // 2. Overlay öffnen und Links rendern
     const overlay = document.getElementById('links-overlay');
     if (overlay) {
         overlay.style.display = 'flex';
-        
-        // Keine await-Funktion mehr hier! 
-        // Wir rendern sofort, was wir im Speicher haben.
-        renderLinks(); 
+        renderLinks(); // Lädt die Daten direkt aus window.lastLinks
     }
 };
 
+    
 window.renderLinks = function() {
     const container = document.getElementById('links-container');
     
-    // Wenn lastLinks leer ist, zeige ein Lade-Icon statt "Keine Links"
-    if (!window.lastLinks || window.lastLinks.length === 0) {
-        container.innerHTML = `<p style="text-align:center;">Lade Links...</p>`;
-        
-        // Jetzt erst im Hintergrund kurz nachladen
-        window.fetchLinksOnly().then(() => {
-            renderLinks(); // Erneuter Aufruf, wenn Daten da sind
-        });
+    // Wir nehmen die Variable, die wir eben in loadPlan befüllt haben
+    const data = window.lastLinks || [];
+
+    if (data.length === 0) {
+        container.innerHTML = "<p>Keine Links hinterlegt.</p>";
         return;
     }
 
-    // Wenn Daten da sind, sofort rendern
-    container.innerHTML = window.lastLinks.map(l => `
+    container.innerHTML = data.map(l => `
         <a href="${l.url}" target="_blank" class="link-item">
             <span class="material-symbols-outlined">link</span> ${l.name}
         </a>
     `).join('');
 };
+
 
 
   /* ============================================================
