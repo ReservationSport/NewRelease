@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1778,10 +1778,10 @@ body {
 
 
 /* ============================================================
-   17. Materialwünsche
+   17. Materialwünsche - OPTIMIERT FÜR MOBILE & LANDSCAPE
    ============================================================ */
 
-/* Overlay und Modal-Grundstruktur - absolut analog zu Defekten */
+/* Overlay - Grundstruktur */
 #material-overlay, #new-wunsch-modal {
     position: fixed;
     top: 0;
@@ -1795,30 +1795,40 @@ body {
     z-index: 2000;
 }
 
-#material-overlay .modal-content {
+/* Modale Inhalte - Flex-Layout für dynamische Anpassung */
+#material-overlay .modal-content, #new-wunsch-modal .modal-content {
     background: #1e1e1e;
-    padding: 25px;
+    padding: 15px;
     border-radius: 8px;
     border: 1px solid #444;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     color: white;
-    width: 90%;
+    width: 95%;
     max-width: 600px;
+    
+    /* Layout-Fix: Modal spannt sich zwischen 5% oben und unten auf */
+    position: fixed;
+    top: 5vh;
+    bottom: 5vh;
+    
+    display: flex;
+    flex-direction: column;
 }
 
-/* Materialwunsch-Liste - analog zu Defekten */
+/* Materialwunsch-Liste - nimmt freien Platz ein */
 .wunsch-list {
-    margin: 20px 0;
-    max-height: 400px;
-    overflow-y: auto;
+    margin: 10px 0;
+    flex: 1;           /* Nimmt den Platz zwischen Titel und Buttons ein */
+    overflow-y: auto;  /* Scrollt nur hier */
     padding-right: 5px;
+    min-height: 50px;
 }
 
 .wunsch-item {
     background: #2c2c2c;
-    border-left: 4px solid #e67e22; /* Orange wie bei Defekten */
-    padding: 15px;
-    margin-bottom: 10px;
+    border-left: 4px solid #e67e22;
+    padding: 12px;
+    margin-bottom: 8px;
     border-radius: 4px;
     color: white;
     display: flex;
@@ -1833,11 +1843,11 @@ body {
     display: block;
 }
 
-/* Input-Feld - analog zu Defekten */
+/* Input-Feld */
 #wunsch-text {
     width: 100%;
     padding: 12px;
-    margin: 15px 0;
+    margin: 10px 0;
     border: 1px solid #444;
     border-radius: 4px;
     background: #2c2c2c;
@@ -1847,15 +1857,27 @@ body {
 
 #wunsch-text:focus {
     outline: none;
-    border-color: #e67e22; /* Orange bei Fokus */
+    border-color: #e67e22;
+}
+
+/* Landscape-Optimierung für kleine Bildschirme */
+@media screen and (max-height: 500px) {
+    #material-overlay .modal-content, #new-wunsch-modal .modal-content {
+        padding: 10px;
+        top: 2.5vh;
+        bottom: 2.5vh;
+    }
+    .wunsch-list {
+        margin: 5px 0;
+    }
 }
     
 
-    /* ============================================================
-   18. Krücken-Verwaltung
+   /* ============================================================
+   18. Krücken-Verwaltung - OPTIMIERT FÜR MOBILE & LANDSCAPE
    ============================================================ */
 
-/* Overlay und Modal-Grundstruktur - absolut analog zu Materialwünschen */
+/* Overlay - Grundstruktur */
 #kruecken-overlay, #new-kruecken-modal {
     position: fixed;
     top: 0;
@@ -1869,30 +1891,40 @@ body {
     z-index: 2000;
 }
 
-#kruecken-overlay .modal-content {
+/* Modale Inhalte - Flex-Layout */
+#kruecken-overlay .modal-content, #new-kruecken-modal .modal-content {
     background: #1e1e1e;
-    padding: 25px;
+    padding: 15px;
     border-radius: 8px;
     border: 1px solid #444;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     color: white;
-    width: 90%;
+    width: 95%;
     max-width: 600px;
+    
+    /* Layout-Fix: Modal spannt sich zwischen 5% oben und unten auf */
+    position: fixed;
+    top: 5vh;
+    bottom: 5vh;
+    
+    display: flex;
+    flex-direction: column;
 }
 
-/* Krücken-Liste - analog zu Materialwünschen */
+/* Krücken-Liste - nimmt freien Platz ein */
 .kruecken-list {
-    margin: 20px 0;
-    max-height: 400px;
-    overflow-y: auto;
+    margin: 10px 0;
+    flex: 1;           /* Nimmt den Platz zwischen Titel und Buttons ein */
+    overflow-y: auto;  /* Scrollt nur innerhalb dieses Bereichs */
     padding-right: 5px;
+    min-height: 50px;
 }
 
 .kruecken-item {
     background: #2c2c2c;
-    border-left: 4px solid #e67e22; /* Orange wie bei Materialwünschen */
-    padding: 15px;
-    margin-bottom: 10px;
+    border-left: 4px solid #e67e22;
+    padding: 12px;
+    margin-bottom: 8px;
     border-radius: 4px;
     color: white;
     display: flex;
@@ -1907,7 +1939,7 @@ body {
     display: block;
 }
 
-/* Input-Felder - analog zu Materialwünschen */
+/* Input-Felder */
 #kruecken-schueler, #kruecken-klasse {
     width: 100%;
     padding: 12px;
@@ -1921,9 +1953,20 @@ body {
 
 #kruecken-schueler:focus, #kruecken-klasse:focus {
     outline: none;
-    border-color: #e67e22; /* Orange bei Fokus */
+    border-color: #e67e22;
 }
 
+/* Landscape-Optimierung für kleine Bildschirme */
+@media screen and (max-height: 500px) {
+    #kruecken-overlay .modal-content, #new-kruecken-modal .modal-content {
+        padding: 10px;
+        top: 2.5vh;
+        bottom: 2.5vh;
+    }
+    .kruecken-list {
+        margin: 5px 0;
+    }
+}
 
 /* ============================================================
    19. Links
@@ -1965,10 +2008,10 @@ body {
 
 
 /* ============================================================
-   20. Ideenbrett-Modul
+   20. Ideenbrett-Modul - OPTIMIERT FÜR MOBILE & LANDSCAPE
    ============================================================ */
 
-/* Overlay und Modal-Grundstruktur */
+/* Overlay - Grundstruktur */
 #ideen-overlay, #new-ideen-modal {
     position: fixed;
     top: 0;
@@ -1982,30 +2025,40 @@ body {
     z-index: 2000;
 }
 
+/* Modale Inhalte - Flex-Layout für dynamische Anpassung */
 #ideen-overlay .modal-content, #new-ideen-modal .modal-content {
     background: #1e1e1e;
-    padding: 25px;
+    padding: 15px;
     border-radius: 8px;
     border: 1px solid #444;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     color: white;
-    width: 90%;
+    width: 95%;
     max-width: 600px;
+    
+    /* Layout-Fix: Modal spannt sich zwischen 5% oben und unten auf */
+    position: fixed;
+    top: 5vh;
+    bottom: 5vh;
+    
+    display: flex;
+    flex-direction: column;
 }
 
-/* Ideen-Liste */
+/* Ideen-Liste - nimmt freien Platz ein */
 .ideen-list {
-    margin: 20px 0;
-    max-height: 400px;
-    overflow-y: auto;
+    margin: 10px 0;
+    flex: 1;           /* Nimmt den Platz zwischen Titel und Buttons ein */
+    overflow-y: auto;  /* Scrollt nur innerhalb dieses Bereichs */
     padding-right: 5px;
+    min-height: 50px;
 }
 
 .ideen-item {
     background: #2c2c2c;
-    border-left: 4px solid #e67e22; /* Orange Design */
-    padding: 15px;
-    margin-bottom: 10px;
+    border-left: 4px solid #e67e22;
+    padding: 12px;
+    margin-bottom: 8px;
     border-radius: 4px;
     color: white;
     display: flex;
@@ -2035,15 +2088,16 @@ body {
 
 #ideen-text {
     min-height: 100px;
+    flex: 1; /* Nimmt Platz im Eingabe-Modal ein */
     resize: vertical;
 }
 
 #ideen-kategorie:focus, #ideen-text:focus {
     outline: none;
-    border-color: #e67e22; /* Orange bei Fokus */
+    border-color: #e67e22;
 }
 
-/* Kategorie-Badge (Optionales Feature für die Liste) */
+/* Kategorie-Badge */
 .ideen-kat-badge {
     background: #e67e22;
     color: white;
@@ -2053,6 +2107,7 @@ body {
     text-transform: uppercase;
 }
 
+/* Buttons */
 .btn-erledigt {
     background: transparent;
     border: 1px solid #444;
@@ -2063,7 +2118,7 @@ body {
     display: flex;
     align-items: center;
     transition: all 0.2s;
-    margin-left: 10px; /* Abstand zum Text */
+    margin-left: 10px;
 }
 
 .btn-erledigt:hover {
@@ -2074,6 +2129,18 @@ body {
 .btn-erledigt.is-success {
     color: #27ae60;
     border-color: #27ae60;
+}
+
+/* Landscape-Optimierung für kleine Bildschirme */
+@media screen and (max-height: 500px) {
+    #ideen-overlay .modal-content, #new-ideen-modal .modal-content {
+        padding: 10px;
+        top: 2.5vh;
+        bottom: 2.5vh;
+    }
+    .ideen-list {
+        margin: 5px 0;
+    }
 }
 
     
@@ -2259,7 +2326,7 @@ body {
 
 <!-- Materialwünsche-Overlay (Hauptliste) -->
 <div id="material-overlay" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: 500px; position: relative;">
+    <div class="modal-content">
         
         <!-- Icon oben rechts -->
         <div class="modal-header-icon">
@@ -2281,7 +2348,7 @@ body {
 
 <!-- Neues Eingabe-Modal für Materialwünsche -->
 <div id="new-wunsch-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: 400px;">
+    <div class="modal-content">
         <h3>Materialwunsch eintragen</h3>
         <input type="text" id="wunsch-text" placeholder="Welches Material wird benötigt?">
         
@@ -2292,10 +2359,9 @@ body {
     </div>
 </div>
 
-
 <!-- Krücken-Overlay (Hauptliste) -->
 <div id="kruecken-overlay" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: 500px; position: relative;">
+    <div class="modal-content">
         
         <!-- Icon oben rechts -->
         <div class="modal-header-icon">
@@ -2315,10 +2381,9 @@ body {
     </div>
 </div>
 
-    
 <!-- Neues Eingabe-Modal für Krücken -->
 <div id="new-kruecken-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: 400px;">
+    <div class="modal-content">
         <h3>Krückenausgabe erfassen</h3>
         <input type="text" id="kruecken-schueler" placeholder="Name Schüler/in">
         <input type="text" id="kruecken-klasse" placeholder="Klasse">
@@ -2355,7 +2420,7 @@ body {
 
 <!-- Ideenbrett-Overlay (Hauptliste) -->
 <div id="ideen-overlay" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: 500px; position: relative;">
+    <div class="modal-content">
         
         <!-- Icon oben rechts -->
         <div class="modal-header-icon">
@@ -2364,7 +2429,7 @@ body {
 
         <h2>Ideenbrett</h2>
         
-        <div id="ideen-container" class="ideen-list" style="max-height: 400px; overflow-y: auto;">
+        <div id="ideen-container" class="ideen-list">
             <!-- Hier werden die Ideen dynamisch eingefügt -->
         </div>
         
@@ -2377,17 +2442,17 @@ body {
 
 <!-- Neues Eingabe-Modal für Ideen -->
 <div id="new-ideen-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: 400px;">
+    <div class="modal-content">
         <h3>Idee erfassen</h3>
         
-        <select id="ideen-kategorie" style="width: 100%; margin-bottom: 10px; padding: 8px;">
+        <select id="ideen-kategorie">
             <option value="Web-Tool">Web-Tool</option>
             <option value="Fachschaft">Fachschaft</option>
             <option value="Unterricht">Unterricht</option>
             <option value="Weiteres">Weiteres</option>
         </select>
         
-        <textarea id="ideen-text" placeholder="Deine Idee oder dein Vorschlag..." style="width: 100%; height: 100px; margin-bottom: 10px;"></textarea>
+        <textarea id="ideen-text" placeholder="Deine Idee oder dein Vorschlag..."></textarea>
         
         <div class="modal-actions">
             <button class="btn-action btn-primary" onclick="saveIdee()">Speichern</button>
