@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1234</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -6560,19 +6560,31 @@ window.markIdeeResolved = function(id, btnElement) {
     
 
 window.createPasteOverlay = function(halleName) {
-    // 1. Overlay (benutze dieselbe Klasse wie beim Verschieben)
+    // 1. Overlay (Abdunkelung)
     if (!document.getElementById('paste-overlay')) {
         const overlay = document.createElement('div');
-        overlay.className = 'move-mode-overlay'; // Nutzt dein bestehendes Overlay-CSS
+        overlay.className = 'move-mode-overlay'; 
         overlay.id = 'paste-overlay';
         document.body.appendChild(overlay);
     }
     
-    // 2. Panel
+    // 2. Panel (Orange, oben platziert)
     if (!document.getElementById('paste-panel-ui')) {
         const panel = document.createElement('div');
         panel.id = 'paste-panel-ui';
-        panel.className = 'move-panel'; // Nutzt dein bestehendes Panel-CSS
+        panel.className = 'move-panel'; // Nutzt dein bestehendes CSS
+        
+        // Explizites Styling für Orange & Top-Position (falls CSS überschrieben wird)
+        Object.assign(panel.style, {
+            position: 'fixed',
+            top: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: '#e67e22',
+            color: 'white',
+            zIndex: '2147483647'
+        });
+
         panel.innerHTML = `
             <span>Halle <strong>${halleName}</strong> kopiert. Wähle ein Ziel-Feld zum Einfügen...</span>
             <button onclick="cancelPasteMode()" class="btn-cancel">Abbrechen</button>
@@ -6580,9 +6592,15 @@ window.createPasteOverlay = function(halleName) {
         document.body.appendChild(panel);
     }
     
-    // Aktiviert das globale Abdunkeln deiner Boxen
+    // 3. Modus aktivieren
     document.body.classList.add('move-mode-active');
+
+    // 4. Highlight setzen, damit Boxen klickbar werden
+    document.querySelectorAll('.box').forEach(box => {
+        box.classList.add('move-mode-highlight');
+    });
 };
+    
 
 window.cancelPasteMode = function() {
     window.copiedSlotData = null;
@@ -6594,8 +6612,10 @@ window.cancelPasteMode = function() {
     
     document.body.classList.remove('move-mode-active');
     
-    // Entferne alle Highlights
-    document.querySelectorAll('.paste-mode-highlight').forEach(el => el.classList.remove('paste-mode-highlight'));
+    // Highlight-Klassen von allen Boxen entfernen
+    document.querySelectorAll('.box').forEach(box => {
+        box.classList.remove('move-mode-highlight');
+    });
 };
 
 
