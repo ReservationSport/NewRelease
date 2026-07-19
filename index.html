@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3162,13 +3162,13 @@ window.resumeSync = function() {
    SYNC PLAN - DOM-Sicher (Globale Wachhund-Architektur)
    ============================================================ */
 window.syncPlan = async function() {
-    // 0. MODUS-CHECK: Wenn ein Verschiebe- oder Hinzufüge-Modus aktiv ist, Sync komplett pausieren
+    // 0. MODUS-CHECK
     if (window.currentInteractionMode !== null) {
         console.log(`Sync-Veto: Modus ${window.currentInteractionMode} aktiv. Sync pausiert.`);
         return;
     }
 
-    // 1. EISERNE SPERRE: Wenn die Queue arbeitet oder noch Aufträge hat
+    // 1. EISERNE SPERRE
     if (window.actionQueue.length > 0 || window.isProcessingQueue) {
         console.log("Sync-Veto: Queue aktiv. Sync abgebrochen.");
         return;
@@ -3200,10 +3200,7 @@ window.syncPlan = async function() {
             // --- SCHUTZ-PRÜFUNG ---
             const lastUpdate = box.dataset.lastManualUpdate ? parseInt(box.dataset.lastManualUpdate) : 0;
             const isProtected = (Date.now() - lastUpdate) < 5000;
-
-            if (isProtected) {
-                return; 
-            }
+            if (isProtected) return; 
 
             // --- NORMALE UI-SYNCHRONISIERUNG ---
             const klasse = slotData.klasse || "";
@@ -3228,18 +3225,15 @@ window.syncPlan = async function() {
             
             if (klassenEl) klassenEl.innerText = klasse;
             if (lehrerEl) lehrerEl.innerText = lehrer;
-            if (halleEl) lehalleEl.innerText = halle;
+            if (halleEl) halleEl.innerText = halle; // KORRIGIERT
 
             // --- ICONS AUFRÄUMEN & NEU ZEICHNEN ---
-            
-            // 1. Notizen & Material aufräumen
             const altesNotizIcon = box.querySelector('.box-notiz-icon');
             if (altesNotizIcon) altesNotizIcon.remove();
             
             const altesMaterialIcon = box.querySelector('.material-indicator');
             if (altesMaterialIcon) altesMaterialIcon.remove();
             
-            // 2. Schloss-Container handhaben
             let lockContainer = box.querySelector('.lock-icon-container');
             if (!lockContainer) {
                 lockContainer = document.createElement('div');
@@ -3253,7 +3247,6 @@ window.syncPlan = async function() {
                 ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' 
                 : '';
 
-            // 3. Notiz neu zeichnen
             if (slotData.kommentar && slotData.kommentar.trim() !== "") {
                 const notizElement = document.createElement('span');
                 notizElement.className = 'box-notiz-icon';
@@ -3266,7 +3259,6 @@ window.syncPlan = async function() {
                 box.appendChild(notizElement);
             }
 
-            // 4. Material neu zeichnen
             if (slotData.material && slotData.material.trim() !== "") {
                 markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
             }
