@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2702,7 +2702,7 @@ async function handleLogin() {
         userPw = pwVal;
         userKuerzel = kuerzelVal;
         
-        // --- LINKS VORLADEN (Damit sie beim Klick sofort da sind) ---
+        // --- LINKS VORLADEN ---
         fetch(`${url}?action=getLinks&pw=${encodeURIComponent(userPw)}&kuerzel=${encodeURIComponent(userKuerzel)}`)
             .then(res => res.json())
             .then(data => {
@@ -2710,6 +2710,15 @@ async function handleLogin() {
                 console.log("Links im Hintergrund vorgeladen.");
             })
             .catch(e => console.error("Fehler beim Vorladen der Links:", e));
+        
+        // --- MATERIALIEN VORLADEN ---
+        fetch(`${url}?action=getMaterialien&pw=${encodeURIComponent(userPw)}&kuerzel=${encodeURIComponent(userKuerzel)}`)
+            .then(res => res.json())
+            .then(data => {
+                window.verfügbareMaterialien = data.verfügbareMaterialien || [];
+                console.log("Materialien im Hintergrund vorgeladen:", window.verfügbareMaterialien);
+            })
+            .catch(e => console.error("Fehler beim Vorladen der Materialien:", e));
         
         loadingOverlay.classList.add('is-visible');
         loginOverlay.classList.add('fade-out');
@@ -3304,16 +3313,8 @@ window.resumeSync = function() {
    SYNC PLAN - DOM-Sicher (Globale Wachhund-Architektur)
    ============================================================ */
 window.syncPlan = async function() {
-    // 0. MODUS-CHECK
-    if (window.currentInteractionMode !== null) {
-        console.log(`Sync-Veto: Modus ${window.currentInteractionMode} aktiv. Sync pausiert.`);
-        // WICHTIG: Hier trotzdem noch kurz prüfen, ob Materialien geladen werden können, 
-        // falls die Daten im Hintergrund ankommen.
-    }
-
     // 1. EISERNE SPERRE
     if (window.actionQueue.length > 0 || window.isProcessingQueue) {
-        console.log("Sync-Veto: Queue aktiv. Sync abgebrochen.");
         return;
     }
 
@@ -3328,16 +3329,9 @@ window.syncPlan = async function() {
         const res = await fetch(fetchUrl);
         const json = await res.json();
         
-        // --- FIX: MATERIALIEN IMMER AKTUALISIEREN ---
-        // Auch wenn der Plan selbst gerade wegen eines Modus nicht gezeichnet wird, 
-        // müssen wir die Materialliste für die Auswahl-Menüs aktuell halten.
-        if (json.materialien) {
-            window.verfügbareMaterialien = json.materialien;
-        }
-
         if (json.sperrMsg || !json.plan) return;
         
-        // Wenn Modus aktiv, brechen wir nach dem Material-Update ab
+        // Wenn Modus aktiv, Sync abbrechen
         if (window.currentInteractionMode !== null) return;
 
         const newPlan = json.plan;
