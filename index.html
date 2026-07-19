@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -6665,12 +6665,19 @@ window.cancelPasteMode = function() {
         if (slot) {
             const klasse = box.querySelector('.klasse-label')?.innerText || "";
             const isMine = box.classList.contains('is-mine');
-            // Hier sollte deine Standard-Click-Event-Zuweisung stehen
             if (typeof setBoxClick === 'function') {
                 setBoxClick(box, klasse, slot, isMine);
             }
         }
     });
+
+    // --- DER FIX: Daten neu laden ---
+    // Da wir den Modus beendet haben, MÜSSEN wir jetzt den Sync ausführen, 
+    // um die während der Pause verpassten Änderungen der Kollegen zu laden.
+    console.log("Abbruch erfolgt, starte sofortigen Sync für aktuelle Daten...");
+    if (typeof window.syncPlan === 'function') {
+        window.syncPlan(); 
+    }
 };
 
 // --- HILFSFUNKTION FÜR PASTE ---
