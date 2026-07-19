@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -6670,11 +6670,36 @@ async function performPaste(targetSlot, data) {
     const dp = document.getElementById('datePicker');
     const box = document.querySelector(`[data-slot="${targetSlot}"]`);
     
-    // 1. Sicherheit: Vor der Aktion prüfen
-    const aktuellBelegt = window.lastPlanData[targetSlot]?.halle;
-    if (aktuellBelegt && aktuellBelegt === data.halle) {
-        alert("Die Halle ist bereits in diesem Slot aktiv!");
-        return; 
+    // 1. Sicherheit: Kollisionsprüfung
+    // Wir prüfen, ob die zu pastende Halle in diesem Zeitfenster bereits belegt ist
+    if (data.halle !== "Ausfall") {
+        const rowIndex = Math.floor((targetSlot - 1) / 5);
+        const startSlot = (rowIndex * 5) + 1;
+        const endSlot = startSlot + 4;
+        
+        const zuPruefendeTeile = data.halle.toLowerCase().split('+').map(h => h.trim());
+        let istGesperrt = false;
+
+        for (let s = startSlot; s <= endSlot; s++) {
+            // Überspringe den Slot, auf den wir gerade pasten
+            if (s === parseInt(targetSlot)) continue;
+            
+            const andereData = window.lastPlanData[s];
+            if (andereData && andereData.halle && andereData.halle !== "Ausfall") {
+                const besetzteTeile = andereData.halle.toLowerCase().split('+').map(h => h.trim());
+                
+                // Prüfen, ob ein Teil der zu pastenden Halle in diesem Slot belegt ist
+                if (zuPruefendeTeile.some(t => t !== "outdoor" && t !== "badi" && besetzteTeile.includes(t))) {
+                    istGesperrt = true;
+                    break;
+                }
+            }
+        }
+
+        if (istGesperrt) {
+            alert(`Die Halle ${data.halle} ist in diesem Zeitfenster bereits vergeben!`);
+            return; 
+        }
     }
 
     // 2. Daten für den Ziel-Slot
@@ -6708,31 +6733,27 @@ async function performPaste(targetSlot, data) {
             };
 
             // Visuelle Anpassung der Box
-            // Bei Ausfall keine Hintergrundfarbe, sonst Farbe aus der Konfig
             box.style.backgroundColor = isAusfall ? "" : (window.hallenConfig[data.halle]?.color || "");
             
-            // Label-Update
             const kLabel = box.querySelector('.klasse-label');
             if (kLabel) kLabel.textContent = klasseImZiel;
             
             const hLabel = box.querySelector('.halle-label');
             if (hLabel) hLabel.textContent = data.halle;
             
-            // CSS Klassen verwalten
             box.classList.remove('empty', 'not-mine');
             box.classList.add('is-mine');
             
-            // Ausfall-Status: Klasse hinzufügen oder entfernen
+            // Ausfall-Status verwalten
             if (isAusfall) {
                 box.classList.add('ausfall-mode');
             } else {
                 box.classList.remove('ausfall-mode');
             }
             
-            // Icon für Lock-Status anpassen
+            // Lock-Icon
             const lockContainer = box.querySelector('.lock-icon-container');
             if (lockContainer) {
-                // Bei Ausfall zeigen wir kein Lock-Icon
                 lockContainer.innerHTML = (!isAusfall && data.typ === 'fix') ? 
                     '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
             }
@@ -6740,13 +6761,12 @@ async function performPaste(targetSlot, data) {
             // Aktion ausführen
             window.prozessiereAktion(payload, (p) => {
                 console.log("Paste erfolgreich!");
-                // Sync bleibt pausiert, solange Modus aktiv
             });
         } else {
             throw new Error("prozessiereAktion nicht gefunden");
         }
     } catch (e) {
-        window.isSyncPaused = false; // Fehlerfall: Sync sicherheitshalber freigeben
+        window.isSyncPaused = false;
         console.error("Paste-Aktion fehlgeschlagen:", e);
         alert("Fehler beim Einfügen.");
     }
