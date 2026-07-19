@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1624,10 +1624,10 @@ body {
 
     
 /* ============================================================
-   16. Meldungen (Defekte) - OPTIMIERT FÜR MOBILE & LANDSCAPE
+   16. Meldungen (Defekte) - FIXES FÜR MOBILE & LANDSCAPE
    ============================================================ */
 
-/* Das Overlay zentriert beide Fenster über den ganzen Screen */
+/* Das Overlay zentriert das Modal immer im sichtbaren Bereich */
 #meldungen-overlay, #new-meldung-modal {
     position: fixed;
     top: 0;
@@ -1643,27 +1643,30 @@ body {
 
 .modal-content {
     background: #1e1e1e;
-    padding: 20px;
+    padding: 15px;
     border-radius: 8px;
     border: 1px solid #444;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     color: white;
-    width: 90%;
+    width: 95%;
     max-width: 600px;
     
-    /* WICHTIG: Flexbox für Layout-Kontrolle auf kleinen Bildschirmen */
+    /* Layout-Fix: Modal spannt sich zwischen 5% oben und unten auf */
+    position: fixed;
+    top: 5vh;
+    bottom: 5vh;
+    
     display: flex;
     flex-direction: column;
-    max-height: 90vh; /* Verhindert Überlaufen des Bildschirms */
 }
 
 /* Scrollbarer Bereich für die Liste */
 .meldungen-list {
-    margin: 15px 0;
-    flex: 1;           /* Nimmt dynamisch den restlichen Platz ein */
-    overflow-y: auto;  /* Scrollt nur innerhalb dieses Bereichs */
+    margin: 10px 0;
+    flex: 1;           /* Nimmt den Platz zwischen Titel und Buttons ein */
+    overflow-y: auto;  /* Scrollt nur hier */
     padding-right: 5px;
-    min-height: 100px;
+    min-height: 50px;
 }
 
 .modal-actions {
@@ -1671,27 +1674,16 @@ body {
     gap: 10px;
     margin-top: 10px;
     justify-content: flex-end;
-    flex-shrink: 0;    /* Buttons bleiben immer am unteren Rand sichtbar */
+    flex-shrink: 0;    /* Verhindert, dass Buttons gequetscht werden */
 }
 
-/* Mobile Optimierung für Querformat (Landscape) */
-@media screen and (max-height: 500px) {
-    .modal-content {
-        padding: 10px;
-        max-height: 95vh;
-    }
-    .meldungen-list {
-        margin: 5px 0;
-    }
-}
-
+/* Buttons und Basis-Stile */
 .btn-action {
     padding: 10px 20px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
-    transition: background 0.2s;
     color: white;
 }
 
@@ -1701,6 +1693,7 @@ body {
 .btn-secondary { background: #444; }
 .btn-secondary:hover { background: #555; }
 
+/* Item-Design */
 .meldung-item {
     background: #2c2c2c;
     border-left: 4px solid #e67e22;
@@ -1731,7 +1724,6 @@ body {
     cursor: pointer;
     margin-left: 15px;
     flex-shrink: 0;
-    transition: background 0.3s ease;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1747,6 +1739,7 @@ body {
     margin-right: 0 !important;
 }
 
+/* Input-Feld */
 #meldung-text {
     width: 100%;
     padding: 12px;
@@ -1758,11 +1751,7 @@ body {
     box-sizing: border-box;
 }
 
-#meldung-text:focus {
-    outline: none;
-    border-color: #e67e22;
-}
-
+/* Spinner */
 .loader-container {
     display: flex;
     align-items: center;
@@ -2234,7 +2223,7 @@ body {
 
 <!-- Meldungen-Overlay (Hauptliste) -->
 <div id="meldungen-overlay" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: 500px; position: relative;">
+    <div class="modal-content">
         
         <!-- Icon oben rechts -->
         <div class="modal-header-icon">
@@ -2256,9 +2245,9 @@ body {
 
 <!-- Neues Eingabe-Modal für Defekte -->
 <div id="new-meldung-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: 400px;">
+    <div class="modal-content">
         <h3>Defekt eintragen</h3>
-        <input type="text" id="meldung-text" placeholder="Welchen Defekt hast du gemeldet?" style="width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box;">
+        <input type="text" id="meldung-text" placeholder="Welchen Defekt hast du gemeldet?">
         
         <div class="modal-actions">
             <button class="btn-action btn-primary" onclick="saveMeldung()">Speichern</button>
