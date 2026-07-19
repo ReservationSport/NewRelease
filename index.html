@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -1972,11 +1972,13 @@ body {
    19. Links
    ============================================================ */
 
+/* Links-Liste korrekt in das Flex-Layout einbinden */
 .link-list {
-    margin: 20px 0;
-    max-height: 400px;
-    overflow-y: auto;
+    margin: 10px 0;
+    flex: 1;           /* WICHTIG: Damit nimmt die Liste den Platz ein */
+    overflow-y: auto;  /* Scrollen, falls viele Links da sind */
     padding-right: 5px;
+    min-height: 50px;
 }
 
 .link-item {
@@ -2398,9 +2400,8 @@ body {
 
    <!-- Nützliche Links-Overlay -->
 <div id="links-overlay" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="position: relative;">
+    <div class="modal-content"> <!-- Inline-Style entfernt -->
         
-        <!-- Icon oben rechts -->
         <div class="modal-header-icon">
             <span class="material-symbols-outlined">link</span>
         </div>
