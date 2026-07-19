@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -6620,11 +6620,11 @@ window.markIdeeResolved = function(id, btnElement) {
 
 
 /* ============================================================
-   21. PASTE-MODE (ISOLIERT & ROBUST)
+   21. PASTE-MODE (ISOLIERT)
    ============================================================ */
 
 window.createPasteOverlay = function(halleName) {
-    // 1. Overlay
+    // 1. Overlay (Eigene ID & Klasse)
     if (!document.getElementById('paste-overlay')) {
         const overlay = document.createElement('div');
         overlay.className = 'paste-mode-overlay'; 
@@ -6632,48 +6632,73 @@ window.createPasteOverlay = function(halleName) {
         document.body.appendChild(overlay);
     }
     
-    // 2. Panel
+    // 2. Panel (Eigene ID)
     if (!document.getElementById('paste-panel-ui')) {
         const panel = document.createElement('div');
         panel.id = 'paste-panel-ui';
         panel.className = 'move-panel'; 
+        
         Object.assign(panel.style, {
-            position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)',
-            background: '#e67e22', color: 'white', zIndex: '2147483647', padding: '10px 20px', borderRadius: '5px'
+            position: 'fixed',
+            top: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: '#e67e22',
+            color: 'white',
+            zIndex: '2147483647'
         });
+
         panel.innerHTML = `
             <span>Wähle ein Ziel-Feld, um <strong>${halleName}</strong> einzufügen...</span>
-            <button onclick="cancelPasteMode()" class="btn-cancel" style="margin-left:10px; cursor:pointer;">Beenden</button>
+            <button onclick="cancelPasteMode()" class="btn-cancel">Beenden</button>
         `;
         document.body.appendChild(panel);
     }
     
+    // 3. Modus-Status setzen (BLOCKIERT SYNC)
     window.currentInteractionMode = 'PASTEN';
     document.body.classList.add('paste-mode-active');
 
-    // Highlight NUR für eigene Boxen
+    // 4. Highlight NUR für eigene Boxen
     document.querySelectorAll('.box.is-mine').forEach(box => {
         box.classList.add('paste-mode-highlight');
     });
 };
 
 window.cancelPasteMode = function() {
-    window.copiedSlotData = null; 
-    window.currentInteractionMode = null; 
+    window.copiedSlotData = null; // Copy-Daten löschen
+    window.currentInteractionMode = null; // SYNC WIEDER ERLAUBEN
     
     // UI entfernen
-    document.getElementById('paste-overlay')?.remove();
-    document.getElementById('paste-panel-ui')?.remove();
+    const overlay = document.getElementById('paste-overlay');
+    if (overlay) overlay.remove();
+    const panel = document.getElementById('paste-panel-ui');
+    if (panel) panel.remove();
+    
     document.body.classList.remove('paste-mode-active');
     
-    // Markierungen entfernen
+    // ALLE Boxen von Paste-Markierungen befreien
     document.querySelectorAll('.box').forEach(box => {
         box.classList.remove('paste-mode-highlight', 'is-being-copied');
+        
+        // Klick-Events wiederherstellen (analog zum Verschiebe-Modus)
+        const slot = box.getAttribute('data-slot');
+        if (slot) {
+            const klasse = box.querySelector('.klasse-label')?.innerText || "";
+            const isMine = box.classList.contains('is-mine');
+            if (typeof setBoxClick === 'function') {
+                setBoxClick(box, klasse, slot, isMine);
+            }
+        }
     });
 
-    // Sync anstoßen, um UI-Status zu aktualisieren
-    console.log("Paste-Modus beendet, starte Sync...");
-    if (typeof window.syncPlan === 'function') window.syncPlan(); 
+    // --- DER FIX: Daten neu laden ---
+    // Da wir den Modus beendet haben, MÜSSEN wir jetzt den Sync ausführen, 
+    // um die während der Pause verpassten Änderungen der Kollegen zu laden.
+    console.log("Abbruch erfolgt, starte sofortigen Sync für aktuelle Daten...");
+    if (typeof window.syncPlan === 'function') {
+        window.syncPlan(); 
+    }
 };
 
 // --- HILFSFUNKTION FÜR PASTE ---
@@ -6681,59 +6706,98 @@ async function performPaste(targetSlot, data) {
     const dp = document.getElementById('datePicker');
     const box = document.querySelector(`[data-slot="${targetSlot}"]`);
     
-    // 1. Kollisionsprüfung
+    // 1. Sicherheit: Kollisionsprüfung
     if (data.halle !== "Ausfall") {
         const rowIndex = Math.floor((targetSlot - 1) / 5);
         const startSlot = (rowIndex * 5) + 1;
         const endSlot = startSlot + 4;
+        
         const zuPruefendeTeile = data.halle.toLowerCase().split('+').map(h => h.trim());
         let istGesperrt = false;
 
         for (let s = startSlot; s <= endSlot; s++) {
             if (s === parseInt(targetSlot)) continue;
+            
             const andereData = window.lastPlanData[s];
             if (andereData && andereData.halle && andereData.halle !== "Ausfall") {
                 const besetzteTeile = andereData.halle.toLowerCase().split('+').map(h => h.trim());
                 if (zuPruefendeTeile.some(t => t !== "outdoor" && t !== "badi" && besetzteTeile.includes(t))) {
-                    istGesperrt = true; break;
+                    istGesperrt = true;
+                    break;
                 }
             }
         }
-        if (istGesperrt) { alert(`${data.halle} ist in diesem Zeitfenster bereits vergeben!`); return; }
+
+        if (istGesperrt) {
+            alert(`${data.halle} ist in diesem Zeitfenster bereits vergeben!`);
+            return; 
+        }
     }
 
-    // 2. Daten & UI-Update
+    // 2. Daten für den Ziel-Slot
     const zielSlotData = window.lastPlanData[targetSlot] || {};
-    window.lastPlanData[targetSlot] = { ...zielSlotData, halle: data.halle, typ: data.typ, verfasser: userKuerzel };
+    const klasseImZiel = zielSlotData.klasse || "";
+    const isAusfall = (data.halle === "Ausfall");
 
-    // Optik ohne Reload sofort anpassen
-    box.style.backgroundColor = (data.halle === "Ausfall") ? "" : (window.hallenConfig[data.halle]?.color || "");
-    box.querySelector('.klasse-label').textContent = zielSlotData.klasse || "";
-    box.querySelector('.halle-label').textContent = data.halle;
-    box.classList.remove('empty', 'not-mine');
-    box.classList.add('is-mine');
-    
-    if (data.halle === "Ausfall") box.classList.add('ausfall-mode'); 
-    else box.classList.remove('ausfall-mode');
+    // 3. Payload erstellen
+    const payload = {
+        action: "saveBooking",
+        pw: userPw,
+        kuerzel: userKuerzel,
+        date: dp.value,
+        slot: targetSlot,
+        klasse: klasseImZiel, 
+        origin: 'pasteMode',
+        halle: data.halle,
+        typ: data.typ || ""
+    };
 
-    const lockCont = box.querySelector('.lock-icon-container');
-    if (lockCont) lockCont.innerHTML = (data.halle !== "Ausfall" && data.typ === 'fix') ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
-
-    // 3. Backend-Aktion
     try {
-        await window.prozessiereAktion({
-            action: "saveBooking", pw: userPw, kuerzel: userKuerzel, date: dp.value,
-            slot: targetSlot, klasse: zielSlotData.klasse || "", origin: 'pasteMode',
-            halle: data.halle, typ: data.typ || ""
-        }, () => {
-            console.log("Paste erfolgreich!");
-            cancelPasteMode(); // Automatisches Beenden nach Erfolg
-        });
+        if (typeof window.prozessiereAktion === 'function') {
+            console.log(`Paste: Kopiere ${data.halle} nach Slot ${targetSlot}`);
+            
+            window.lastPlanData[targetSlot] = { 
+                ...zielSlotData, 
+                halle: data.halle, 
+                typ: data.typ,
+                verfasser: userKuerzel 
+            };
+
+            box.style.backgroundColor = isAusfall ? "" : (window.hallenConfig[data.halle]?.color || "");
+            
+            const kLabel = box.querySelector('.klasse-label');
+            if (kLabel) kLabel.textContent = klasseImZiel;
+            
+            const hLabel = box.querySelector('.halle-label');
+            if (hLabel) hLabel.textContent = data.halle;
+            
+            box.classList.remove('empty', 'not-mine');
+            box.classList.add('is-mine');
+            
+            if (isAusfall) {
+                box.classList.add('ausfall-mode');
+            } else {
+                box.classList.remove('ausfall-mode');
+            }
+            
+            const lockContainer = box.querySelector('.lock-icon-container');
+            if (lockContainer) {
+                lockContainer.innerHTML = (!isAusfall && data.typ === 'fix') ? 
+                    '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : '';
+            }
+
+            window.prozessiereAktion(payload, (p) => {
+                console.log("Paste erfolgreich!");
+            });
+        } else {
+            throw new Error("prozessiereAktion nicht gefunden");
+        }
     } catch (e) {
         console.error("Paste-Aktion fehlgeschlagen:", e);
         alert("Fehler beim Einfügen.");
     }
 }
+
     
     
 </script>
