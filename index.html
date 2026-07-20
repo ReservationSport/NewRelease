@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2778,20 +2778,40 @@ async function handleLogin() {
    
 
  document.getElementById('plan-container').addEventListener('click', function(e) {
-    // Suche das nächste Element mit der Klasse .box
-    const box = e.target.closest('.box');
+    // 1. Notiz-Icons zuerst (das sind eigene kleine Klick-Ziele)
+    if (e.target.closest('.box-notiz-icon')) return;
+
+    // 2. Ziel-Box finden
+    const box = e.target.closest('.box:not(.zeit-box):not(.header-row)');
     if (!box) return;
 
-    // Hole Daten aus den Attributen
     const slot = box.getAttribute('data-slot');
-    const klasse = box.querySelector('.klasse-label')?.innerText || "";
-    const zeitStr = box.getAttribute('data-time') || "";
-    
-    // Prüfen, ob die Box editierbar ist (durch die Klasse .is-mine)
-    if (box.classList.contains('is-mine')) {
-        openEditor(box, zeitStr, slot, klasse);
+    const isMine = box.classList.contains('is-mine');
+
+    // 3. ENTSCHEIDUNGSLOGIK: Paste oder Edit?
+    if (window.copiedSlotData) {
+        // PASTE-MODUS IST AKTIV
+        if (isMine) {
+            e.stopPropagation();
+            performPaste(slot, window.copiedSlotData);
+        } else {
+            // Optional: Wenn man auf eine fremde Box klickt, während man pasted
+            console.log("Hier darfst du nicht einfügen!");
+        }
+    } else {
+        // NORMALER MODUS: Editieren
+        if (isMine) {
+            const klasse = box.querySelector('.klasse-label')?.innerText || "";
+            const zeitStr = box.getAttribute('data-time') || "";
+            // Hier deine Edit-Funktion (entweder openEditor oder openEditDialog)
+            if (typeof openEditor === "function") {
+                openEditor(box, zeitStr, slot, klasse);
+            } else if (typeof openEditDialog === "function") {
+                openEditDialog(slot);
+            }
+        }
     }
-});   
+});
 
    
 
@@ -3116,9 +3136,6 @@ window.hideLoading = function() {
 
     
 
-/* ============================================================
-   LOAD PLAN - PERFEKT MIT INTEGRIERTEM PASTE-MODUS (FINAL)
-   ============================================================ */
 window.loadPlan = async function() {
     const dp = document.getElementById('datePicker');
     const container = document.getElementById('plan-container'); 
@@ -3144,7 +3161,7 @@ window.loadPlan = async function() {
         
         if (json.sperrMsg) {
             container.innerHTML = `<div class="box info-box" style="grid-column: span 6; background: #333; color: #e67e22; padding: 40px; font-size: 1.2rem;">${json.sperrMsg}</div>`;
-            return; 
+            return;
         }
         
         window.hallenConfig = json.hallenConfig || {}; 
@@ -3190,29 +3207,25 @@ window.loadPlan = async function() {
                 const bgFarbe = (window.hallenConfig[halle] && !isAusfall) ? window.hallenConfig[halle].color : '';
                 const classList = ["box", isKlasseLeer ? "empty" : "", canEdit ? "is-mine" : "not-mine", isAusfall ? "ausfall-mode" : ""].filter(Boolean).join(" ");
                 
-                // Wir erstellen das Grundgerüst ohne Icons im String
                 html += `
                 <div class="${classList}" data-slot="${absoluteSlot}" data-time="${zeitStr}" 
-                     style="background-color: ${bgFarbe}; cursor: ${canEdit ? 'pointer' : 'default'}; position: relative;">
-                     <div class="klasse-label">${klasse}</div>
-                     <div class="lehrer-info">${lehrer}</div>
-                     <div class="halle-label">${halle}</div>
-                     <div class="lock-icon-container" style="position:absolute; right:-3px; bottom:5px; display:flex; align-items:center;">
-                        ${typ === 'fix' ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : ''}
-                     </div>
+                       style="background-color: ${bgFarbe}; cursor: ${canEdit ? 'pointer' : 'default'}; position: relative;">
+                       <div class="klasse-label">${klasse}</div>
+                       <div class="lehrer-info">${lehrer}</div>
+                       <div class="halle-label">${halle}</div>
+                       <div class="lock-icon-container" style="position:absolute; right:-3px; bottom:5px; display:flex; align-items:center;">
+                         ${typ === 'fix' ? '<span class="material-symbols-outlined" style="font-size:14px; color:#ff9800;">lock</span>' : ''}
+                       </div>
                 </div>`;
             }
         });
         
         container.innerHTML = html;
 
-        // --- NACHTRÄGLICHES ZEICHNEN: Icons wie in syncPlan hinzufügen ---
         container.querySelectorAll('.box:not(.zeit-box):not(.header-row)').forEach(box => {
             const slot = box.getAttribute('data-slot');
             const slotData = window.lastPlanData[slot] || {};
-            const klasse = slotData.klasse || "";
             
-            // 1. Notiz-Icon zeichnen
             if (slotData.kommentar && slotData.kommentar.trim() !== "") {
                 const notizElement = document.createElement('span');
                 notizElement.className = 'box-notiz-icon';
@@ -3220,48 +3233,20 @@ window.loadPlan = async function() {
                 Object.assign(notizElement.style, { position: 'absolute', top: '-2px', left: '4px', cursor: 'pointer', zIndex: '5' });
                 notizElement.onclick = (e) => { 
                     e.stopPropagation(); 
-                    if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(klasse, slotData.kommentar); 
+                    if (typeof showNotizDetailPopup === "function") showNotizDetailPopup(slotData.klasse || "", slotData.kommentar); 
                 };
                 box.appendChild(notizElement);
             }
 
-            // 2. Material-Icon zeichnen (Verwendet deine Funktion aus syncPlan)
             if (slotData.material && slotData.material.trim() !== "") {
-                if (typeof markBoxWithMaterialIcon === "function") {
-                    markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
-                }
+                if (typeof markBoxWithMaterialIcon === "function") markBoxWithMaterialIcon(box, slotData.material, slotData.kommentar || "");
             }
-
-            // --- PASTE & EDIT LOGIK ---
-            box.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                const currentData = window.lastPlanData[slot] || {};
-                if (!currentData.halle) return;
-                window.copiedSlotData = { halle: currentData.halle, typ: currentData.typ };
-                document.querySelectorAll('.is-being-copied').forEach(el => el.classList.remove('is-being-copied'));
-                box.classList.add('is-being-copied'); 
-                createPasteOverlay(currentData.halle);
-            });
-
-            box.addEventListener('click', (e) => {
-                if (window.copiedSlotData) {
-                    if (box.classList.contains('is-mine')) {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        performPaste(slot, window.copiedSlotData);
-                    }
-                } else {
-                    if (typeof openEditDialog === "function") openEditDialog(slot);
-                }
-            });
         });
     } catch(e) { 
         console.error("Ladefehler:", e); 
         container.innerHTML = `<div class="box info-box" style="color:red; grid-column: span 6;">Fehler: Daten konnten nicht geladen werden.</div>`;
     }
 };
-
-
 
 
 
