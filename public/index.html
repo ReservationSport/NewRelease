@@ -5,13 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BBZO Hallenbelegung</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #111; color: #fff; }
-        #info { background: #222; padding: 25px; border-radius: 12px; max-width: 450px; margin: 20px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.5); min-height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .block-titel { font-size: 1.2em; color: #888; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; width: 100%; }
-        .lektion-eintrag { background: #333; margin: 8px 0; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #e67e22; width: 100%; box-sizing: border-box; }
+        body { 
+            font-family: sans-serif; 
+            text-align: center; 
+            padding: 20px; 
+            margin: 0; 
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            
+            /* --- LOGO ALS HINTERGRUND --- */
+            background-image: url('logo.png');
+            background-size: cover;          /* Skaliert das Bild über den ganzen Bildschirm */
+            background-position: center;     /* Zentriert das Logo */
+            background-repeat: no-repeat;    /* Verhindert Wiederholung */
+            background-attachment: fixed;    /* Hält das Bild beim Scrollen fest */
+            position: relative;
+        }
+
+        /* Ein dezenter dunkler Schleier über dem Hintergrund, damit der Text besser lesbar ist */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); /* 70% Schwarz, nach Bedarf anpassbar (z.B. 0.5 für heller) */
+            z-index: -1;
+        }
+
+        h1 {
+            color: #fff;
+            z-index: 1;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 1.5em;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        #info { 
+            background: rgba(34, 34, 34, 0.85); /* Leicht transparentes Dunkelgrau */
+            backdrop-filter: blur(5px);         /* Schöner Unschärfe-Effekt dahinter (optional) */
+            padding: 25px; 
+            border-radius: 12px; 
+            width: 100%;
+            max-width: 450px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6); 
+            min-height: 150px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 1;
+            box-sizing: border-box;
+        }
+
+        .block-titel { font-size: 1.2em; color: #aaa; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; width: 100%; }
+        .lektion-eintrag { background: rgba(51, 51, 51, 0.9); margin: 8px 0; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #e67e22; width: 100%; box-sizing: border-box; }
         .klasse { font-size: 1.5em; color: #e67e22; font-weight: bold; }
         .halle { font-size: 1.2em; color: #ddd; font-weight: bold; }
-        .hinweis { color: #888; font-style: italic; margin-top: 15px; line-height: 1.4; }
+        .hinweis { color: #aaa; font-style: italic; margin-top: 15px; line-height: 1.4; }
 
         /* --- COOLER SPINNER LOADER --- */
         .spinner {
