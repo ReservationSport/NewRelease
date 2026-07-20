@@ -93,18 +93,18 @@
         const URL = "https://script.google.com/macros/s/AKfycbxCHPxDHj0Eoj1NXOgGR85ETN1m-cpRdAC5D1H0Ck27nm--PetaqyUpSbUsWUFUv3dF/exec?action=getPublicPlan";
 
         const blockStartZeiten = [
-            { startStunde: 7,  startMinute: 15, name: "Block 1 (07:15)" },
-            { startStunde: 8,  startMinute: 5,  name: "Block 2 (08:05)" },
-            { startStunde: 8,  startMinute: 55, name: "Block 3 (08:55)" },
-            { startStunde: 10, startMinute: 0,  name: "Block 4 (10:00)" },
-            { startStunde: 10, startMinute: 50, name: "Block 5 (10:50)" },
-            { startStunde: 11, startMinute: 40, name: "Block 6 (11:40)" },
-            { startStunde: 12, startMinute: 50, name: "Block 7 (12:50)" },
-            { startStunde: 13, startMinute: 40, name: "Block 8 (13:40)" },
-            { startStunde: 14, startMinute: 30, name: "Block 9 (14:30)" },
-            { startStunde: 15, startMinute: 35, name: "Block 10 (15:35)" },
-            { startStunde: 16, startMinute: 25, name: "Block 11 (16:25)" },
-            { startStunde: 17, startMinute: 15, name: "Block 12 (17:15)" }
+            { startStunde: 7,  startMinute: 15, name: "Block 1 (07:15)" }, // Index 0
+            { startStunde: 8,  startMinute: 5,  name: "Block 2 (08:05)" }, // Index 1
+            { startStunde: 8,  startMinute: 55, name: "Block 3 (08:55)" }, // Index 2
+            { startStunde: 10, startMinute: 0,  name: "Block 4 (10:00)" }, // Index 3
+            { startStunde: 10, startMinute: 50, name: "Block 5 (10:50)" }, // Index 4
+            { startStunde: 11, startMinute: 40, name: "Block 6 (11:40)" }, // Index 5
+            { startStunde: 12, startMinute: 50, name: "Block 7 (12:50)" }, // Index 6
+            { startStunde: 13, startMinute: 40, name: "Block 8 (13:40)" }, // Index 7
+            { startStunde: 14, startMinute: 30, name: "Block 9 (14:30)" }, // Index 8
+            { startStunde: 15, startMinute: 35, name: "Block 10 (15:35)" },// Index 9
+            { startStunde: 16, startMinute: 25, name: "Block 11 (16:25)" },// Index 10
+            { startStunde: 17, startMinute: 15, name: "Block 12 (17:15)" } // Index 11
         ];
 
         async function updateDisplay() {
@@ -118,20 +118,31 @@
 
                 let aktivBlockIndex = -1;
 
-                for (let i = 0; i < blockStartZeiten.length; i++) {
-                    const b = blockStartZeiten[i];
-                    const startMinuten = b.startStunde * 60 + b.startMinute;
-                    const sichtbarAbMinuten = startMinuten - 10;
+                // ==========================================
+                // TEST-MODUS (Setze hier die Nummer des Blocks 0-11 ein, den du testen willst)
+                // Zum Deaktivieren des Tests setze den Wert einfach auf null
+                const TEST_MODUS_BLOCK = 0; // 0 = Block 1 (07:15), 1 = Block 2 (08:05) usw.
+                // ==========================================
 
-                    let gueltigBisMinuten = startMinuten + 50; 
-                    if (i < blockStartZeiten.length - 1) {
-                        const naechsterB = blockStartZeiten[i + 1];
-                        gueltigBisMinuten = naechsterB.startStunde * 60 + naechsterB.startMinute;
-                    }
+                if (TEST_MODUS_BLOCK !== null && TEST_MODUS_BLOCK >= 0 && TEST_MODUS_BLOCK < blockStartZeiten.length) {
+                    aktivBlockIndex = TEST_MODUS_BLOCK;
+                } else {
+                    // Normale Echtzeit-Logik
+                    for (let i = 0; i < blockStartZeiten.length; i++) {
+                        const b = blockStartZeiten[i];
+                        const startMinuten = b.startStunde * 60 + b.startMinute;
+                        const sichtbarAbMinuten = startMinuten - 10;
 
-                    if (currentMinutesToday >= sichtbarAbMinuten && currentMinutesToday < gueltigBisMinuten) {
-                        aktivBlockIndex = i;
-                        break;
+                        let gueltigBisMinuten = startMinuten + 50; 
+                        if (i < blockStartZeiten.length - 1) {
+                            const naechsterB = blockStartZeiten[i + 1];
+                            gueltigBisMinuten = naechsterB.startStunde * 60 + naechsterB.startMinute;
+                        }
+
+                        if (currentMinutesToday >= sichtbarAbMinuten && currentMinutesToday < gueltigBisMinuten) {
+                            aktivBlockIndex = i;
+                            break;
+                        }
                     }
                 }
 
