@@ -3,63 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hallenplan - BBZO</title>
+    <title>BBZO Sport - Nächste Lektion</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f4; }
-        #display { background: white; padding: 20px; border-radius: 10px; max-width: 400px; margin: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h1 { font-size: 1.2em; color: #333; }
-        h2 { color: #e67e22; }
+        body { font-family: Arial, sans-serif; text-align: center; background: #111; color: #fff; margin: 0; padding: 40px; }
+        .container { background: #222; border-radius: 12px; padding: 30px; max-width: 500px; margin: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h1 { font-size: 1.2em; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; }
+        .klasse { font-size: 2.5em; color: #e67e22; font-weight: bold; margin: 10px 0; }
+        .details { font-size: 1.4em; color: #ddd; margin: 10px 0; }
+        .zeit { font-size: 1em; color: #aaa; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <div id="display">
-        <h1>Nächste Lektion:</h1>
-        <div id="info">Lade Daten...</div>
+    <div class="container">
+        <h1>Nächste Lektion</h1>
+        <div id="info">Lade Plan...</div>
     </div>
 
     <script>
-        // Ersetze die URL in deinem Skript hiermit:
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxCHPxDHj0Eoj1NXOgGR85ETN1m-cpRdAC5D1H0Ck27nm--PetaqyUpSbUsWUFUv3dF/exec?action=getPublicPlan";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxCHPxDHj0Eoj1NXOgGR85ETN1m-cpRdAC5D1H0Ck27nm--PetaqyUpSbUsWUFUv3dF/exec?action=getPublicPlan";
+
+        // Definition deiner Startzeiten für die Slot-Blöcke (1-5 = Block 0, 6-10 = Block 1, etc.)
+        // Stunden und Minuten, wann der Unterricht startet:
+        const blockStartZeiten = [
+            { startStunde: 7, startMinute: 15 }, // Block 1 (Slots 1-5)
+            { startStunde: 8, startMinute: 5 },  // Block 2 (Slots 6-10)
+            { startStunde: 9, startMinute: 0 },  // Block 3 (Slots 11-15) - Passe die Minuten hier an deinen echten Stundenplan an!
+            { startStunde: 9, startMinute: 55 }, // Block 4 (Slots 16-20)
+            { startStunde: 10, startMinute: 50 },// Block 5 (Slots 21-25)
+            { startStunde: 11, startMinute: 45 },// Block 6 (Slots 26-30)
+            { startStunde: 13, startMinute: 15 },// Block 7 (Slots 31-35)
+            { startStunde: 14, startMinute: 10 },// Block 8 (Slots 36-40)
+            { startStunde: 15, startMinute: 5 }, // Block 9 (Slots 41-45)
+            { startStunde: 16, startMinute: 0 }, // Block 10 (Slots 46-50)
+            { startStunde: 16, startMinute: 55 },// Block 11 (Slots 51-55)
+            { startStunde: 17, startMinute: 50 } // Block 12 (Slots 56-60)
+        ];
 
         async function updateDisplay() {
             try {
                 const response = await fetch(WEB_APP_URL);
                 const data = await response.json();
-                
-                // Wir haben jetzt data.plan (Objekt mit Keys 1-60)
-                const plan = data.plan;
+                const plan = data.plan; // Enthält z.B. { "6": {klasse: "M1a", halle: "Halle 1"}, ... }
+
                 const now = new Date();
-                
-                // Wir suchen den ersten Slot, der belegt ist
-                // Hinweis: Da wir keine direkten Uhrzeiten in den Slots haben, 
-                // zeigt dies den ersten gefundenen Eintrag im Plan an.
-                let next = null;
-                for (let i = 1; i <= 60; i++) {
-                    if (plan[i] && plan[i].klasse && plan[i].klasse.trim() !== "") {
-                        next = plan[i];
-                        break; // Nimmt den ersten gefundenen Slot
+                const currentMinutesToday = now.getHours() * 60 + now.getMinutes();
+
+                let naechsterSlot = null;
+                let anzeigeTextZeit = "";
+
+                // Wir suchen den ersten Block, der HEUTE noch kommt oder gerade läuft (abzüglich 10 Min Vorlauf)
+                for (let blockIndex = 0; blockIndex < blockStartZeiten.length; blockIndex++) {
+                    const block = blockStartZeiten[blockIndex];
+                    const blockMinuten = block.startStunde * 60 + block.startMinute;
+                    
+                    // Wir wollen, dass die Anzeige 10 Minuten vor dem Start umschaltet
+                    const schaltZeitMinuten = blockMinuten - 10;
+
+                    if (currentMinutesToday <= schaltZeitMinuten + 45) { // Bleibt bis zum Ende des Blocks aktiv (ca. 45 min)
+                        // Prüfen, ob in diesem Block (5 Slots lang) irgendetwas gebucht ist
+                        let startSlotId = (blockIndex * 5) + 1;
+                        let endSlotId = startSlotId + 4;
+
+                        for (let s = startSlotId; s <= endSlotId; s++) {
+                            if (plan[s] && plan[s].klasse && plan[s].klasse.trim() !== "") {
+                                naechsterSlot = plan[s];
+                                const h = String(block.startStunde).padStart(2, '0');
+                                const m = String(block.startMinute).padStart(2, '0');
+                                anzeigeTextZeit = `${h}:${m} Uhr`;
+                                break;
+                            }
+                        }
+                        if (naechsterSlot) break; // Gefunden, Schleife abbrechen
                     }
                 }
 
                 const div = document.getElementById('info');
-                if (next) {
+                if (naechsterSlot) {
                     div.innerHTML = `
-                        <h2>${next.klasse}</h2>
-                        <p><strong>Halle:</strong> ${next.halle || "Nicht zugewiesen"}</p>
-                        <p><small>Stand: ${new Date().toLocaleTimeString()}</small></p>
+                        <div class="klasse">${naechsterSlot.klasse}</div>
+                        <div class="details">Halle: <strong>${naechsterSlot.halle || "Nicht zugewiesen"}</strong></div>
+                        <div class="zeit">Beginn: ${anzeigeTextZeit}</div>
                     `;
                 } else {
-                    div.innerHTML = "<p>Aktuell keine Lektionen eingetragen.</p>";
+                    div.innerHTML = `<div class="details" style="color: #888;">Aktuell keine anstehenden Lektionen.</div>`;
                 }
+
             } catch (e) {
                 console.error(e);
                 document.getElementById('info').innerText = "Fehler beim Laden.";
             }
         }
-        
-        // Jede Minute aktualisieren
+
         updateDisplay();
-        setInterval(updateDisplay, 60000);
+        setInterval(updateDisplay, 30000); // Alle 30 Sekunden prüfen
     </script>
 </body>
 </html>
