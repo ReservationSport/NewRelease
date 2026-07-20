@@ -2777,34 +2777,56 @@ async function handleLogin() {
     
    
 
- document.getElementById('plan-container').addEventListener('click', function(e) {
-    // 1. Notiz-Icons zuerst (das sind eigene kleine Klick-Ziele)
+/* ============================================================
+   ZENTRALE EVENT-DELEGATION (Einmalig im Skript)
+   ============================================================ */
+const planContainer = document.getElementById('plan-container');
+
+// 1. RECHTSKLICK: Kopieren (Diesen Block brauchst du zwingend!)
+planContainer.addEventListener('contextmenu', function(e) {
+    const box = e.target.closest('.box:not(.zeit-box):not(.header-row)');
+    if (!box) return;
+    
+    e.preventDefault(); // Browser-Menü unterdrücken
+
+    const slot = box.getAttribute('data-slot');
+    const data = window.lastPlanData ? window.lastPlanData[slot] : null;
+    
+    if (!data || !data.halle) return;
+
+    window.copiedSlotData = { halle: data.halle, typ: data.typ };
+    
+    // Highlight setzen
+    document.querySelectorAll('.is-being-copied').forEach(el => el.classList.remove('is-being-copied'));
+    box.classList.add('is-being-copied');
+    
+    if (typeof createPasteOverlay === "function") {
+        createPasteOverlay(data.halle);
+    }
+});
+
+// 2. KLICK: Paste oder Editieren (Das ist der Block, den du vorhin schon hattest)
+planContainer.addEventListener('click', function(e) {
     if (e.target.closest('.box-notiz-icon')) return;
 
-    // 2. Ziel-Box finden
     const box = e.target.closest('.box:not(.zeit-box):not(.header-row)');
     if (!box) return;
 
     const slot = box.getAttribute('data-slot');
     const isMine = box.classList.contains('is-mine');
 
-    // 3. ENTSCHEIDUNGSLOGIK: Paste oder Edit?
     if (window.copiedSlotData) {
-        // PASTE-MODUS IST AKTIV
+        // --- PASTE-MODUS ---
         if (isMine) {
             e.stopPropagation();
             performPaste(slot, window.copiedSlotData);
-        } else {
-            // Optional: Wenn man auf eine fremde Box klickt, während man pasted
-            console.log("Hier darfst du nicht einfügen!");
         }
     } else {
-        // NORMALER MODUS: Editieren
+        // --- NORMALER MODUS ---
         if (isMine) {
-            const klasse = box.querySelector('.klasse-label')?.innerText || "";
-            const zeitStr = box.getAttribute('data-time') || "";
-            // Hier deine Edit-Funktion (entweder openEditor oder openEditDialog)
             if (typeof openEditor === "function") {
+                const klasse = box.querySelector('.klasse-label')?.innerText || "";
+                const zeitStr = box.getAttribute('data-time') || "";
                 openEditor(box, zeitStr, slot, klasse);
             } else if (typeof openEditDialog === "function") {
                 openEditDialog(slot);
