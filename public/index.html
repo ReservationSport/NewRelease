@@ -1,1 +1,65 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hallenplan - BBZO</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f4; }
+        #display { background: white; padding: 20px; border-radius: 10px; max-width: 400px; margin: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h1 { font-size: 1.2em; color: #333; }
+        h2 { color: #e67e22; }
+    </style>
+</head>
+<body>
+    <div id="display">
+        <h1>Nächste Lektion:</h1>
+        <div id="info">Lade Daten...</div>
+    </div>
 
+    <script>
+        // Ersetze die URL in deinem Skript hiermit:
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxCHPxDHj0Eoj1NXOgGR85ETN1m-cpRdAC5D1H0Ck27nm--PetaqyUpSbUsWUFUv3dF/exec?action=getPublicPlan";
+
+        async function updateDisplay() {
+            try {
+                const response = await fetch(WEB_APP_URL);
+                const data = await response.json();
+                
+                // Wir haben jetzt data.plan (Objekt mit Keys 1-60)
+                const plan = data.plan;
+                const now = new Date();
+                
+                // Wir suchen den ersten Slot, der belegt ist
+                // Hinweis: Da wir keine direkten Uhrzeiten in den Slots haben, 
+                // zeigt dies den ersten gefundenen Eintrag im Plan an.
+                let next = null;
+                for (let i = 1; i <= 60; i++) {
+                    if (plan[i] && plan[i].klasse && plan[i].klasse.trim() !== "") {
+                        next = plan[i];
+                        break; // Nimmt den ersten gefundenen Slot
+                    }
+                }
+
+                const div = document.getElementById('info');
+                if (next) {
+                    div.innerHTML = `
+                        <h2>${next.klasse}</h2>
+                        <p><strong>Halle:</strong> ${next.halle || "Nicht zugewiesen"}</p>
+                        <p><small>Stand: ${new Date().toLocaleTimeString()}</small></p>
+                    `;
+                } else {
+                    div.innerHTML = "<p>Aktuell keine Lektionen eingetragen.</p>";
+                }
+            } catch (e) {
+                console.error(e);
+                document.getElementById('info').innerText = "Fehler beim Laden.";
+            }
+        }
+        
+        // Jede Minute aktualisieren
+        updateDisplay();
+        setInterval(updateDisplay, 60000);
+    </script>
+</body>
+</html>
