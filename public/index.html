@@ -3,89 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nächste Lektionen - Block-Ansicht</title>
+    <title>BBZO Hallenbelegung</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #222; color: #fff; }
-        #info { background: #333; padding: 20px; border-radius: 10px; max-width: 450px; margin: 20px auto; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .block-titel { font-size: 1.1em; color: #aaa; margin-bottom: 15px; border-bottom: 1px solid #444; padding-bottom: 5px; }
-        .lektion-eintrag { background: #444; margin: 10px 0; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
-        .klasse { font-size: 1.4em; color: #e67e22; font-weight: bold; }
-        .halle { font-size: 1.1em; color: #ddd; }
-        .keine { color: #888; font-style: italic; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #111; color: #fff; }
+        #info { background: #222; padding: 25px; border-radius: 12px; max-width: 450px; margin: 20px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.5); min-height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .block-titel { font-size: 1.2em; color: #888; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; width: 100%; }
+        .lektion-eintrag { background: #333; margin: 8px 0; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #e67e22; width: 100%; box-sizing: border-box; }
+        .klasse { font-size: 1.5em; color: #e67e22; font-weight: bold; }
+        .halle { font-size: 1.2em; color: #ddd; font-weight: bold; }
+        .hinweis { color: #888; font-style: italic; margin-top: 15px; line-height: 1.4; }
+
+        /* --- COOLER SPINNER LOADER --- */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #e67e22;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
-    <h1>Aktuelles Zeitfenster</h1>
-    <div id="info">Lade Daten...</div>
+    <h1>Aktuelle Hallenbelegung</h1>
+    <div id="info">
+        <div class="spinner"></div>
+    </div>
 
     <script>
         const URL = "https://script.google.com/macros/s/AKfycbxCHPxDHj0Eoj1NXOgGR85ETN1m-cpRdAC5D1H0Ck27nm--PetaqyUpSbUsWUFUv3dF/exec?action=getPublicPlan";
 
-        // Definition der Startzeiten für die 12 Blöcke (1-5, 6-10, ...)
         const blockStartZeiten = [
-            { startStunde: 7, startMinute: 15, name: "Block 1 (07:15)" },
-            { startStunde: 8, startMinute: 5,  name: "Block 2 (08:05)" },
-            { startStunde: 9, startMinute: 0,  name: "Block 3 (09:00)" },
-            { startStunde: 9, startMinute: 55, name: "Block 4 (09:55)" },
+            { startStunde: 7,  startMinute: 15, name: "Block 1 (07:15)" },
+            { startStunde: 8,  startMinute: 5,  name: "Block 2 (08:05)" },
+            { startStunde: 8,  startMinute: 55, name: "Block 3 (08:55)" },
+            { startStunde: 10, startMinute: 0,  name: "Block 4 (10:00)" },
             { startStunde: 10, startMinute: 50, name: "Block 5 (10:50)" },
-            { startStunde: 11, startMinute: 45, name: "Block 6 (11:45)" },
-            { startStunde: 13, startMinute: 15, name: "Block 7 (13:15)" },
-            { startStunde: 14, startMinute: 10, name: "Block 8 (14:10)" },
-            { startStunde: 15, startMinute: 5,  name: "Block 9 (15:05)" },
-            { startStunde: 16, startMinute: 0,  name: "Block 10 (16:00)" },
-            { startStunde: 16, startMinute: 55, name: "Block 11 (16:55)" },
-            { startStunde: 17, startMinute: 50, name: "Block 12 (17:50)" }
+            { startStunde: 11, startMinute: 40, name: "Block 6 (11:40)" },
+            { startStunde: 12, startMinute: 50, name: "Block 7 (12:50)" },
+            { startStunde: 13, startMinute: 40, name: "Block 8 (13:40)" },
+            { startStunde: 14, startMinute: 30, name: "Block 9 (14:30)" },
+            { startStunde: 15, startMinute: 35, name: "Block 10 (15:35)" },
+            { startStunde: 16, startMinute: 25, name: "Block 11 (16:25)" },
+            { startStunde: 17, startMinute: 15, name: "Block 12 (17:15)" }
         ];
 
         async function updateDisplay() {
             try {
                 const response = await fetch(URL);
                 const data = await response.json();
-                const plan = data.plan; // Enthält z.B. { "1": {klasse: "...", halle: "..."}, ... }
+                const plan = data.plan;
 
                 const now = new Date();
                 const currentMinutesToday = now.getHours() * 60 + now.getMinutes();
 
-                // Finde heraus, welcher Block gerade aktiv ist oder als nächstes ansteht
-                let aktivBlockIndex = 0;
-                
+                let aktivBlockIndex = -1;
+
                 for (let i = 0; i < blockStartZeiten.length; i++) {
                     const b = blockStartZeiten[i];
-                    const bMinuten = b.startStunde * 60 + b.startMinute;
-                    
-                    // Wir aktivieren den Block 10 Minuten vor dem Start und lassen ihn 50 Minuten lang gültig
-                    if (currentMinutesToday <= bMinuten + 50) {
+                    const startMinuten = b.startStunde * 60 + b.startMinute;
+                    const sichtbarAbMinuten = startMinuten - 10;
+
+                    let gueltigBisMinuten = startMinuten + 50; 
+                    if (i < blockStartZeiten.length - 1) {
+                        const naechsterB = blockStartZeiten[i + 1];
+                        gueltigBisMinuten = naechsterB.startStunde * 60 + naechsterB.startMinute;
+                    }
+
+                    if (currentMinutesToday >= sichtbarAbMinuten && currentMinutesToday < gueltigBisMinuten) {
                         aktivBlockIndex = i;
                         break;
                     }
-                    // Wenn es schon nach dem letzten Block ist, bleibt es beim letzten Block des Tages
-                    if (i === blockStartZeiten.length - 1) {
-                        aktivBlockIndex = i;
-                    }
+                }
+
+                const div = document.getElementById('info');
+
+                if (aktivBlockIndex === -1) {
+                    div.innerHTML = `
+                        <div class="block-titel">Kein aktives Zeitfenster</div>
+                        <div class="hinweis">Die Hallenbelegung ist jeweils erst 10 Minuten vor Lektionsbeginn sichtbar.</div>
+                    `;
+                    return;
                 }
 
                 const aktuellerBlock = blockStartZeiten[aktivBlockIndex];
                 let startSlotId = (aktivBlockIndex * 5) + 1;
                 let endSlotId = startSlotId + 4;
 
-                // Sammle alle belegten Slots für diesen spezifischen 5er-Block
                 let gefundeneEintraege = [];
                 for (let s = startSlotId; s <= endSlotId; s++) {
                     if (plan[s] && plan[s].klasse && plan[s].klasse.trim() !== "") {
                         gefundeneEintraege.push({
-                            slot: s,
                             klasse: plan[s].klasse,
-                            halle: plan[s].halle || "Keine Halle"
+                            halle: plan[s].halle || "Offen"
                         });
                     }
                 }
 
-                const div = document.getElementById('info');
-                
                 let html = `<div class="block-titel">${aktuellerBlock.name}</div>`;
 
                 if (gefundeneEintraege.length > 0) {
-                    gefundeneEintraegeforEach = gefundeneEintraege.forEach; // Standard loop
                     gefundeneEintraege.forEach(item => {
                         html += `
                             <div class="lektion-eintrag">
@@ -95,19 +117,19 @@
                         `;
                     });
                 } else {
-                    html += `<div class="keine">Keine Buchungen in diesem Zeitfenster.</div>`;
+                    html += `<div class="hinweis">In diesem Zeitfenster sind aktuell keine Hallen belegt.</div>`;
                 }
 
                 div.innerHTML = html;
 
             } catch (e) {
                 console.error(e);
-                document.getElementById('info').innerText = "Fehler beim Laden.";
+                document.getElementById('info').innerHTML = `<div class="hinweis" style="color: #e74c3c;">Fehler beim Laden der Daten.</div>`;
             }
         }
 
         updateDisplay();
-        setInterval(updateDisplay, 30000); // Alle 30 Sekunden aktualisieren
+        setInterval(updateDisplay, 30000);
     </script>
 </body>
 </html>
