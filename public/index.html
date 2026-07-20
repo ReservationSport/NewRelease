@@ -3,90 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BBZO Sport - Nächste Lektion</title>
+    <title>Nächste Lektionen - Block-Ansicht</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background: #111; color: #fff; margin: 0; padding: 40px; }
-        .container { background: #222; border-radius: 12px; padding: 30px; max-width: 500px; margin: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        h1 { font-size: 1.2em; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; }
-        .klasse { font-size: 2.5em; color: #e67e22; font-weight: bold; margin: 10px 0; }
-        .details { font-size: 1.4em; color: #ddd; margin: 10px 0; }
-        .zeit { font-size: 1em; color: #aaa; margin-top: 20px; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #222; color: #fff; }
+        #info { background: #333; padding: 20px; border-radius: 10px; max-width: 450px; margin: 20px auto; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .block-titel { font-size: 1.1em; color: #aaa; margin-bottom: 15px; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        .lektion-eintrag { background: #444; margin: 10px 0; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
+        .klasse { font-size: 1.4em; color: #e67e22; font-weight: bold; }
+        .halle { font-size: 1.1em; color: #ddd; }
+        .keine { color: #888; font-style: italic; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Nächste Lektion</h1>
-        <div id="info">Lade Plan...</div>
-    </div>
+    <h1>Aktuelles Zeitfenster</h1>
+    <div id="info">Lade Daten...</div>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxCHPxDHj0Eoj1NXOgGR85ETN1m-cpRdAC5D1H0Ck27nm--PetaqyUpSbUsWUFUv3dF/exec?action=getPublicPlan";
+        const URL = "https://script.google.com/macros/s/AKfycbxCHPxDHj0Eoj1NXOgGR85ETN1m-cpRdAC5D1H0Ck27nm--PetaqyUpSbUsWUFUv3dF/exec?action=getPublicPlan";
 
-        // Definition deiner Startzeiten für die Slot-Blöcke (1-5 = Block 0, 6-10 = Block 1, etc.)
-        // Stunden und Minuten, wann der Unterricht startet:
+        // Definition der Startzeiten für die 12 Blöcke (1-5, 6-10, ...)
         const blockStartZeiten = [
-            { startStunde: 7, startMinute: 15 }, // Block 1 (Slots 1-5)
-            { startStunde: 8, startMinute: 5 },  // Block 2 (Slots 6-10)
-            { startStunde: 9, startMinute: 0 },  // Block 3 (Slots 11-15) - Passe die Minuten hier an deinen echten Stundenplan an!
-            { startStunde: 9, startMinute: 55 }, // Block 4 (Slots 16-20)
-            { startStunde: 10, startMinute: 50 },// Block 5 (Slots 21-25)
-            { startStunde: 11, startMinute: 45 },// Block 6 (Slots 26-30)
-            { startStunde: 13, startMinute: 15 },// Block 7 (Slots 31-35)
-            { startStunde: 14, startMinute: 10 },// Block 8 (Slots 36-40)
-            { startStunde: 15, startMinute: 5 }, // Block 9 (Slots 41-45)
-            { startStunde: 16, startMinute: 0 }, // Block 10 (Slots 46-50)
-            { startStunde: 16, startMinute: 55 },// Block 11 (Slots 51-55)
-            { startStunde: 17, startMinute: 50 } // Block 12 (Slots 56-60)
+            { startStunde: 7, startMinute: 15, name: "Block 1 (07:15)" },
+            { startStunde: 8, startMinute: 5,  name: "Block 2 (08:05)" },
+            { startStunde: 9, startMinute: 0,  name: "Block 3 (09:00)" },
+            { startStunde: 9, startMinute: 55, name: "Block 4 (09:55)" },
+            { startStunde: 10, startMinute: 50, name: "Block 5 (10:50)" },
+            { startStunde: 11, startMinute: 45, name: "Block 6 (11:45)" },
+            { startStunde: 13, startMinute: 15, name: "Block 7 (13:15)" },
+            { startStunde: 14, startMinute: 10, name: "Block 8 (14:10)" },
+            { startStunde: 15, startMinute: 5,  name: "Block 9 (15:05)" },
+            { startStunde: 16, startMinute: 0,  name: "Block 10 (16:00)" },
+            { startStunde: 16, startMinute: 55, name: "Block 11 (16:55)" },
+            { startStunde: 17, startMinute: 50, name: "Block 12 (17:50)" }
         ];
 
         async function updateDisplay() {
             try {
-                const response = await fetch(WEB_APP_URL);
+                const response = await fetch(URL);
                 const data = await response.json();
-                const plan = data.plan; // Enthält z.B. { "6": {klasse: "M1a", halle: "Halle 1"}, ... }
+                const plan = data.plan; // Enthält z.B. { "1": {klasse: "...", halle: "..."}, ... }
 
                 const now = new Date();
                 const currentMinutesToday = now.getHours() * 60 + now.getMinutes();
 
-                let naechsterSlot = null;
-                let anzeigeTextZeit = "";
-
-                // Wir suchen den ersten Block, der HEUTE noch kommt oder gerade läuft (abzüglich 10 Min Vorlauf)
-                for (let blockIndex = 0; blockIndex < blockStartZeiten.length; blockIndex++) {
-                    const block = blockStartZeiten[blockIndex];
-                    const blockMinuten = block.startStunde * 60 + block.startMinute;
+                // Finde heraus, welcher Block gerade aktiv ist oder als nächstes ansteht
+                let aktivBlockIndex = 0;
+                
+                for (let i = 0; i < blockStartZeiten.length; i++) {
+                    const b = blockStartZeiten[i];
+                    const bMinuten = b.startStunde * 60 + b.startMinute;
                     
-                    // Wir wollen, dass die Anzeige 10 Minuten vor dem Start umschaltet
-                    const schaltZeitMinuten = blockMinuten - 10;
+                    // Wir aktivieren den Block 10 Minuten vor dem Start und lassen ihn 50 Minuten lang gültig
+                    if (currentMinutesToday <= bMinuten + 50) {
+                        aktivBlockIndex = i;
+                        break;
+                    }
+                    // Wenn es schon nach dem letzten Block ist, bleibt es beim letzten Block des Tages
+                    if (i === blockStartZeiten.length - 1) {
+                        aktivBlockIndex = i;
+                    }
+                }
 
-                    if (currentMinutesToday <= schaltZeitMinuten + 45) { // Bleibt bis zum Ende des Blocks aktiv (ca. 45 min)
-                        // Prüfen, ob in diesem Block (5 Slots lang) irgendetwas gebucht ist
-                        let startSlotId = (blockIndex * 5) + 1;
-                        let endSlotId = startSlotId + 4;
+                const aktuellerBlock = blockStartZeiten[aktivBlockIndex];
+                let startSlotId = (aktivBlockIndex * 5) + 1;
+                let endSlotId = startSlotId + 4;
 
-                        for (let s = startSlotId; s <= endSlotId; s++) {
-                            if (plan[s] && plan[s].klasse && plan[s].klasse.trim() !== "") {
-                                naechsterSlot = plan[s];
-                                const h = String(block.startStunde).padStart(2, '0');
-                                const m = String(block.startMinute).padStart(2, '0');
-                                anzeigeTextZeit = `${h}:${m} Uhr`;
-                                break;
-                            }
-                        }
-                        if (naechsterSlot) break; // Gefunden, Schleife abbrechen
+                // Sammle alle belegten Slots für diesen spezifischen 5er-Block
+                let gefundeneEintraege = [];
+                for (let s = startSlotId; s <= endSlotId; s++) {
+                    if (plan[s] && plan[s].klasse && plan[s].klasse.trim() !== "") {
+                        gefundeneEintraege.push({
+                            slot: s,
+                            klasse: plan[s].klasse,
+                            halle: plan[s].halle || "Keine Halle"
+                        });
                     }
                 }
 
                 const div = document.getElementById('info');
-                if (naechsterSlot) {
-                    div.innerHTML = `
-                        <div class="klasse">${naechsterSlot.klasse}</div>
-                        <div class="details">Halle: <strong>${naechsterSlot.halle || "Nicht zugewiesen"}</strong></div>
-                        <div class="zeit">Beginn: ${anzeigeTextZeit}</div>
-                    `;
+                
+                let html = `<div class="block-titel">${aktuellerBlock.name}</div>`;
+
+                if (gefundeneEintraege.length > 0) {
+                    gefundeneEintraegeforEach = gefundeneEintraege.forEach; // Standard loop
+                    gefundeneEintraege.forEach(item => {
+                        html += `
+                            <div class="lektion-eintrag">
+                                <span class="klasse">${item.klasse}</span>
+                                <span class="halle">${item.halle}</span>
+                            </div>
+                        `;
+                    });
                 } else {
-                    div.innerHTML = `<div class="details" style="color: #888;">Aktuell keine anstehenden Lektionen.</div>`;
+                    html += `<div class="keine">Keine Buchungen in diesem Zeitfenster.</div>`;
                 }
+
+                div.innerHTML = html;
 
             } catch (e) {
                 console.error(e);
@@ -95,7 +107,7 @@
         }
 
         updateDisplay();
-        setInterval(updateDisplay, 30000); // Alle 30 Sekunden prüfen
+        setInterval(updateDisplay, 30000); // Alle 30 Sekunden aktualisieren
     </script>
 </body>
 </html>
