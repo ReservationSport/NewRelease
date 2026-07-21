@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BBZO Hallenbelegung</title>
+    <!-- Google Material Symbols für das Megaphon-Icon -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,1,0" />
     <style>
         body { 
             font-family: sans-serif; 
@@ -52,10 +54,12 @@
         }
 
         .news-icon {
-            font-size: 1.4em;
+            font-size: 1.6em;
+            color: #111; /* Schwarzes Megaphon-Icon */
             margin-right: 15px;
             flex-shrink: 0;
-            filter: grayscale(100%) brightness(0%); /* Färbt das Emoji komplett schwarz */
+            display: flex;
+            align-items: center;
             animation: pulse 1.5s infinite;
         }
 
@@ -156,9 +160,9 @@
     </style>
 </head>
 <body>
-    <!-- ID auf news-ticker-banner korrigiert -->
+    <!-- Oranges Band mit echtem Material-Symbol "campaign" ganz oben fixiert -->
     <div id="news-ticker-banner" class="news-ticker-container">
-        <span class="news-icon">📢</span>
+        <span class="news-icon material-symbols-outlined">campaign</span>
         <div class="ticker-wrapper">
             <div id="news-ticker-content" class="ticker-text"></div>
         </div>
