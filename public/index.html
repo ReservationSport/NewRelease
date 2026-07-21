@@ -89,7 +89,7 @@
     </style>
 </head>
 <body>
-    <h1>Aktuelle Hallenbelegung</h1>
+    <h1>Aktuelle Hallenbelegung - BBZO Sport</h1>
     <div id="datum" class="datum-untertitel"></div>
     
     <div id="info">
@@ -114,8 +114,6 @@
             { startStunde: 17, startMinute: 15, name: "Start 17:15" } // 11
         ];
 
-        let testBlockOverride = null;
-
         // Datum sofort beim Laden der Seite anzeigen (Client-seitig)
         const nowInitial = new Date();
         const optionsInitial = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -136,7 +134,7 @@
                     if (versuch === 0) {
                         await new Promise(resolve => setTimeout(resolve, 1500));
                     } else {
-                        div.innerHTML = `<div class="hinweis" style="color: #e74c3c;">Fehler beim Laden der Daten.</div>`;
+                        div.innerHTML = `<div class="hinweis" style="color: #e74c3c;">Fehler beim Laden der Daten...</div>`;
                         return;
                     }
                 }
@@ -152,32 +150,28 @@
 
             let aktivBlockIndex = -1;
 
-            if (testBlockOverride !== null) {
-                aktivBlockIndex = testBlockOverride;
-            } else {
-                for (let i = 0; i < blockStartZeiten.length; i++) {
-                    const b = blockStartZeiten[i];
-                    const startMinuten = b.startStunde * 60 + b.startMinute;
-                    const sichtbarAbMinuten = startMinuten - 10;
+            for (let i = 0; i < blockStartZeiten.length; i++) {
+                const b = blockStartZeiten[i];
+                const startMinuten = b.startStunde * 60 + b.startMinute;
+                const sichtbarAbMinuten = startMinuten - 10;
 
-                    let gueltigBisMinuten = startMinuten + 50; 
-                    if (i < blockStartZeiten.length - 1) {
-                        const naechsterB = blockStartZeiten[i + 1];
-                        const naechsterStartMinuten = naechsterB.startStunde * 60 + naechsterB.startMinute;
-                        gueltigBisMinuten = naechsterStartMinuten - 10;
-                    }
+                let gueltigBisMinuten = startMinuten + 50; 
+                if (i < blockStartZeiten.length - 1) {
+                    const naechsterB = blockStartZeiten[i + 1];
+                    const naechsterStartMinuten = naechsterB.startStunde * 60 + naechsterB.startMinute;
+                    gueltigBisMinuten = naechsterStartMinuten - 10;
+                }
 
-                    if (currentMinutesToday >= sichtbarAbMinuten && currentMinutesToday < gueltigBisMinuten) {
-                        aktivBlockIndex = i;
-                        break;
-                    }
+                if (currentMinutesToday >= sichtbarAbMinuten && currentMinutesToday < gueltigBisMinuten) {
+                    aktivBlockIndex = i;
+                    break;
                 }
             }
 
             if (aktivBlockIndex === -1) {
                 div.innerHTML = `
-                    <div class="block-titel">Kein aktives Zeitfenster</div>
-                    <div class="hinweis">Die Hallenbelegung ist jeweils erst 10 Minuten vor Lektionsbeginn sichtbar.</div>
+                    <div class="block-titel">Momentan keine Hallenbelegung aktiviert</div>
+                    <div class="hinweis">Die Hallenbelegung ist jeweils erst 10 Minuten vor Lektionsbeginn einsehbar...</div>
                 `;
                 return;
             }
@@ -214,20 +208,8 @@
             div.innerHTML = html;
         }
 
-        window.testBlock = function(index) {
-            testBlockOverride = index;
-            console.log("Test-Modus aktiv für Block Index: " + index);
-            updateDisplay();
-        };
-
-        window.resetTest = function() {
-            testBlockOverride = null;
-            console.log("Test-Modus deaktiviert. Zurück zum Echtzeit-Modus.");
-            updateDisplay();
-        };
-
         updateDisplay();
-        setInterval(updateDisplay, 30000);
+        setInterval(updateDisplay, 60000);
     </script>
 </body>
 </html>
