@@ -32,6 +32,53 @@
             z-index: -1;
         }
 
+        /* ============================================================
+           Bannermeldungen - Laufschrift (Ganz oben platziert)
+           ============================================================ */
+        .news-ticker-container {
+            background: rgba(34, 34, 34, 0.85);
+            backdrop-filter: blur(5px);
+            padding: 12px 20px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+            margin-bottom: 15px;
+            display: none; /* Wird per JS eingeblendet, wenn Meldungen da sind */
+            align-items: center;
+            gap: 12px;
+            box-sizing: border-box;
+            z-index: 1;
+            border-left: 5px solid #e67e22;
+            overflow: hidden;
+        }
+
+        .news-icon {
+            font-size: 1.4em;
+            flex-shrink: 0;
+        }
+
+        .ticker-wrapper {
+            overflow: hidden;
+            width: 100%;
+            white-space: nowrap;
+            box-sizing: border-box;
+        }
+
+        .ticker-text {
+            display: inline-block;
+            color: #fff;
+            font-size: 0.95em;
+            font-weight: 500;
+            padding-left: 100%;
+            animation: ticker 25s linear infinite;
+        }
+
+        @keyframes ticker {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+
         h1 {
             color: #fff;
             z-index: 1;
@@ -100,6 +147,14 @@
     </style>
 </head>
 <body>
+    <!-- Laufschrift-Banner ganz oben -->
+    <div id="news-ticker-banner" class="news-ticker-container">
+        <span class="news-icon">📢</span>
+        <div class="ticker-wrapper">
+            <div id="news-ticker-content" class="ticker-text"></div>
+        </div>
+    </div>
+
     <h1>BBZO Sport</h1>
     <div class="untertitel-titel">Aktuelle Hallenbelegung</div>
     <div id="datum" class="datum-untertitel"></div>
@@ -112,18 +167,18 @@
         const URL = "https://script.google.com/macros/s/AKfycbxCHPxDHj0Eoj1NXOgGR85ETN1m-cpRdAC5D1H0Ck27nm--PetaqyUpSbUsWUFUv3dF/exec?action=getPublicPlan";
 
         const blockStartZeiten = [
-            { startStunde: 7,  startMinute: 15, name: "Start 07:15" }, // 0
-            { startStunde: 8,  startMinute: 5,  name: "Start 08:05" }, // 1
-            { startStunde: 8,  startMinute: 55, name: "Start 08:55" }, // 2
-            { startStunde: 10, startMinute: 0,  name: "Start 10:00" }, // 3
-            { startStunde: 10, startMinute: 50, name: "Start 10:50" }, // 4
-            { startStunde: 11, startMinute: 40, name: "Start 11:40" }, // 5
-            { startStunde: 12, startMinute: 50, name: "Start 12:50" }, // 6
-            { startStunde: 13, startMinute: 40, name: "Start 13:40" }, // 7
-            { startStunde: 14, startMinute: 30, name: "Start 14:30" }, // 8
-            { startStunde: 15, startMinute: 35, name: "Start 15:35" },// 9
-            { startStunde: 16, startMinute: 25, name: "Start 16:25" },// 10
-            { startStunde: 17, startMinute: 15, name: "Start 17:15" } // 11
+            { startStunde: 7,  startMinute: 15, name: "Start 07:15" },
+            { startStunde: 8,  startMinute: 5,  name: "Start 08:05" },
+            { startStunde: 8,  startMinute: 55, name: "Start 08:55" },
+            { startStunde: 10, startMinute: 0,  name: "Start 10:00" },
+            { startStunde: 10, startMinute: 50, name: "Start 10:50" },
+            { startStunde: 11, startMinute: 40, name: "Start 11:40" },
+            { startStunde: 12, startMinute: 50, name: "Start 12:50" },
+            { startStunde: 13, startMinute: 40, name: "Start 13:40" },
+            { startStunde: 14, startMinute: 30, name: "Start 14:30" },
+            { startStunde: 15, startMinute: 35, name: "Start 15:35" },
+            { startStunde: 16, startMinute: 25, name: "Start 16:25" },
+            { startStunde: 17, startMinute: 15, name: "Start 17:15" }
         ];
 
         // Datum sofort beim Laden der Seite anzeigen (Client-seitig)
@@ -133,9 +188,29 @@
 
         async function updateDisplay() {
             const div = document.getElementById('info');
+            const tickerBanner = document.getElementById('news-ticker-banner');
+            const tickerContent = document.getElementById('news-ticker-content');
             let data = null;
 
-            // Automatischer Wiederholungsversuch (Retry) bei temporären CORS-/Netzwerk-Hängern
+            // --- Bannermeldungen für Public-Seite laden ---
+            try {
+                const bannerUrl = URL.split('?')[0] + "?action=getBannerPublic&t=" + Date.now();
+                const bannerRes = await fetch(bannerUrl);
+                const bannerData = await bannerRes.json();
+
+                if (bannerData && bannerData.length > 0) {
+                    const alleMeldungen = bannerData.map(b => b.text).join(" &nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp; ");
+                    tickerContent.innerHTML = alleMeldungen;
+                    tickerBanner.style.display = "flex";
+                } else {
+                    tickerBanner.style.display = "none";
+                }
+            } catch (err) {
+                console.warn("Konnte Banner nicht laden:", err);
+                tickerBanner.style.display = "none";
+            }
+
+            // Automatischer Wiederholungsversuch (Retry) bei temporären Netzwerkhängern
             for (let versuch = 0; versuch < 2; versuch++) {
                 try {
                     const response = await fetch(URL);
