@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -2152,6 +2152,92 @@ body {
 }
 
 
+
+/* ============================================================
+   21. Bannermeldungen-Verwaltung
+   ============================================================ */
+
+/* Overlay - Grundstruktur (teilt sich die Klassen .modal-overlay, falls vorhanden) */
+#banner-overlay, #new-banner-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: none; 
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+/* Modale Inhalte - Flex-Layout */
+#banner-overlay .modal-content, #new-banner-modal .modal-content {
+    background: #1e1e1e;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    color: white;
+    width: 95%;
+    max-width: 600px;
+    
+    /* Layout-Fix: Modal spannt sich zwischen 5% oben und unten auf */
+    position: fixed;
+    top: 5vh;
+    bottom: 5vh;
+    
+    display: flex;
+    flex-direction: column;
+}
+
+/* Banner-Liste - nimmt freien Platz ein */
+.banner-list {
+    margin: 10px 0;
+    flex: 1;           /* Nimmt den Platz zwischen Titel und Buttons ein */
+    overflow-y: auto;  /* Scrollt nur innerhalb dieses Bereichs */
+    padding-right: 5px;
+    min-height: 50px;
+}
+
+.banner-item {
+    background: #2c2c2c;
+    border-left: 4px solid #e67e22;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.banner-meta {
+    font-size: 0.75em;
+    color: #888;
+    margin-top: 5px;
+    display: block;
+}
+
+/* Textarea Fokus */
+#banner-text-input:focus {
+    outline: none;
+    border-color: #e67e22;
+}
+
+/* Landscape-Optimierung für kleine Bildschirme */
+@media screen and (max-height: 500px) {
+    #banner-overlay .modal-content, #new-banner-modal .modal-content {
+        padding: 10px;
+        top: 2.5vh;
+        bottom: 2.5vh;
+    }
+    .banner-list {
+        margin: 5px 0;
+    }
+}
+    
+
 /* ============================================================
    --- PASTE MODE HIGHLIGHTS (EINHEITLICHES DESIGN) ---
    ============================================================ */
@@ -2328,7 +2414,6 @@ body {
     <div class="menu-item" onclick="openMeldungen()">
         <span class="material-symbols-outlined">build</span> Meldungen (Defekte)
     </div>
-
     <div class="menu-item" onclick="console.log('Klick erfolgreich!'); openMaterialWunsche();">
         <span class="material-symbols-outlined">inventory_2</span> Materialwünsche
     </div>
@@ -2337,6 +2422,9 @@ body {
     </div>
     <div class="menu-item" onclick="openIdeen()">
         <span class="material-symbols-outlined">emoji_objects</span> Ideenbrett
+    </div>
+    <div class="menu-item" onclick="openBanner()">
+        <span class="material-symbols-outlined">campaign</span> Bannermeldungen
     </div>
     <div class="menu-item" onclick="openLinks()">
         <span class="material-symbols-outlined">link</span> Links
@@ -2548,6 +2636,44 @@ body {
     </div>
 </div>
 
+
+
+<!-- Bannermeldungen-Overlay (Hauptliste) -->
+<div id="banner-overlay" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        
+        <!-- Icon oben rechts -->
+        <div class="modal-header-icon">
+            <span class="material-symbols-outlined">campaign</span>
+        </div>
+
+        <h2>Bannermeldungen-Verwaltung</h2>
+        
+        <div id="banner-container" class="banner-list">
+            <!-- Hier werden die aktiven Banner dynamisch eingefügt -->
+        </div>
+        
+        <div class="modal-actions">
+            <button class="btn-action btn-primary" onclick="openNewBannerModal()">Banner erfassen</button>
+            <button class="btn-action btn-secondary" onclick="closeModal('banner-overlay')">Schliessen</button>
+        </div>
+    </div>
+</div>
+
+<!-- Neues Eingabe-Modal für Bannermeldungen -->
+<div id="new-banner-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <h3>Bannermeldung erfassen</h3>
+        <textarea id="banner-text-input" placeholder="Nachricht für Lernende (z.B. Halle 2 gesperrt, Unterricht draussen)..." style="width: 100%; height: 100px; padding: 12px; margin: 10px 0; border: 1px solid #444; border-radius: 4px; background: #2c2c2c; color: white; box-sizing: border-box; resize: none;"></textarea>
+        
+        <div class="modal-actions">
+            <button class="btn-action btn-primary" onclick="saveBanner()">Speichern</button>
+            <button class="btn-action btn-secondary" onclick="closeModal('new-banner-modal')">Abbrechen</button>
+        </div>
+    </div>
+</div>
+
+    
     
     
 </body>
@@ -6444,6 +6570,136 @@ window.markKrueckeResolved = function(id, btnElement) {
     });
 };
 
+/* ============================================================
+   19. Bannermeldungen
+   ============================================================ */
+
+window.openBanner = function() {
+    console.log("Starte openBanner...");
+    
+    // 1. Menü schließen
+    const extraMenu = document.getElementById('extra-menu');
+    if (extraMenu) {
+        extraMenu.style.display = 'none';
+    }
+
+    // 2. Overlay suchen
+    const overlay = document.getElementById('banner-overlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+        renderBanner(); 
+    } else {
+        console.error("Fehler: Element mit ID 'banner-overlay' existiert nicht!");
+    }
+};
+
+window.openNewBannerModal = function() {
+    const modal = document.getElementById('new-banner-modal');
+    const input = document.getElementById('banner-text-input'); // Fokus auf Textfeld
+    modal.style.display = 'flex';
+    input.value = ''; // Optional zurücksetzen beim Öffnen
+    setTimeout(() => input.focus(), 100);
+};
+
+window.renderBanner = function() {
+    const container = document.getElementById('banner-container');
+    
+    container.innerHTML = `
+        <div class="loader-container">
+            <div class="littlespinner"></div>
+            <span>Bannermeldungen werden geladen...</span>
+        </div>
+    `;
+
+    fetch(`${url}?action=getBanner&pw=${encodeURIComponent(userPw)}&t=${Date.now()}`)
+        .then(res => res.json())
+        .then(data => {
+            if (!data || data.length === 0) {
+                container.innerHTML = "<p>Keine aktiven Bannermeldungen.</p>";
+                return;
+            }
+            
+            container.innerHTML = data.map(b => {
+                const dateObj = new Date(b.datum);
+                const formattedDate = dateObj.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+                return `
+                    <div class="banner-item">
+                        <div>
+                            <strong>${b.text}</strong>
+                            <span class="banner-meta">${b.verfasser} | ${formattedDate}</span>
+                        </div>
+                        <button class="btn-erledigt" onclick="markBannerResolved('${b.id}', this)" title="Löschen / Erledigt">
+                            <span class="material-symbols-outlined">check</span>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        })
+        .catch(e => {
+            container.innerHTML = "Fehler beim Laden.";
+            console.error(e);
+        });
+};
+
+window.saveBanner = function() {
+    const text = document.getElementById('banner-text-input').value.trim();
+    const saveBtn = document.querySelector('#new-banner-modal .btn-primary');
+    
+    if (!text) {
+        alert("Bitte eine Nachricht eingeben.");
+        return;
+    }
+
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerText = "Wird gesendet...";
+    }
+
+    fetch(url, {
+        method: "POST",
+        body: JSON.stringify({ 
+            action: "saveBanner", 
+            text: text,
+            user: typeof userKuerzel !== 'undefined' ? userKuerzel : "LP", 
+            pw: userPw 
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.innerText = "Speichern"; }
+        
+        if(data.status === "success") {
+            document.getElementById('banner-text-input').value = '';
+            closeModal('new-banner-modal');
+            renderBanner();
+        } else {
+            alert("Fehler: " + data.msg);
+        }
+    })
+    .catch(e => {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.innerText = "Speichern"; }
+        console.error("Fehler:", e);
+    });
+};
+
+window.markBannerResolved = function(id, btnElement) {
+    btnElement.classList.add('is-success');
+    fetch(url, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'markBannerResolved', id: id, pw: userPw })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            setTimeout(() => renderBanner(), 300);
+        } else {
+            alert("Fehler: " + data.msg);
+            btnElement.classList.remove('is-success');
+        }
+    });
+};
+            
 
 /* ============================================================
    19. LINKS
