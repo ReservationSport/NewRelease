@@ -33,18 +33,17 @@
         }
 
         /* ============================================================
-           Bannermeldungen - Fixierter Laufschrift-Ticker (ganz oben)
-           Hebt sich bewusst im Look von der Klassenbox ab!
+           Bannermeldungen - Oranges Band ganz oben fixiert
            ============================================================ */
         .news-ticker-container {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            background: linear-gradient(135deg, #2c3e50, #1a252f);
-            border-bottom: 3px solid #f39c12;
-            padding: 10px 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            background: #e67e22; /* Kräftiges Orange */
+            border-bottom: 3px solid #d35400;
+            padding: 12px 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
             display: none; /* Wird per JS eingeblendet, wenn Meldungen da sind */
             align-items: center;
             box-sizing: border-box;
@@ -53,9 +52,10 @@
         }
 
         .news-icon {
-            font-size: 1.3em;
-            margin-right: 12px;
+            font-size: 1.4em;
+            margin-right: 15px;
             flex-shrink: 0;
+            filter: grayscale(100%) brightness(0%); /* Färbt das Emoji komplett schwarz */
             animation: pulse 1.5s infinite;
         }
 
@@ -74,8 +74,8 @@
 
         .ticker-text {
             display: inline-block;
-            color: #f1c40f;
-            font-size: 1.05em;
+            color: #111; /* Satte schwarze Schrift */
+            font-size: 1.1em;
             font-weight: bold;
             letter-spacing: 0.5px;
             text-transform: uppercase;
@@ -91,7 +91,7 @@
         h1 {
             color: #fff;
             z-index: 1;
-            margin: 40px 0 5px 0; /* Etwas Abstand nach oben wegen des fixierten Banners */
+            margin: 45px 0 5px 0; /* Platzhalter nach oben wegen des fixierten Banners */
             text-transform: uppercase;
             letter-spacing: 2px;
             font-size: 2.2em;
@@ -156,9 +156,9 @@
     </style>
 </head>
 <body>
-    <!-- Fixiertes Laufschrift-Banner ganz oben im Browserfenster -->
+    <!-- Oranges Band mit schwarzem Megaphon ganz oben fixiert -->
     <div id="news-ticker-banner" class="news-ticker-container">
-        <span class="news-icon">🚨</span>
+        <span class="news-icon">📢</span>
         <div class="ticker-wrapper">
             <div id="news-ticker-content" class="ticker-text"></div>
         </div>
@@ -197,7 +197,7 @@
 
         async function updateDisplay() {
             const div = document.getElementById('info');
-            const tickerBanner = document.getElementById('news-ticker-banner');
+            const tickerBanner = document.getElementById('news-ticker-container');
             const tickerContent = document.getElementById('news-ticker-content');
             let data = null;
 
