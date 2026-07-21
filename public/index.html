@@ -91,7 +91,7 @@
         h1 {
             color: #fff;
             z-index: 1;
-            margin: 45px 0 5px 0; /* Platzhalter nach oben wegen des fixierten Banners */
+            margin: 45px 0 5px 0;
             text-transform: uppercase;
             letter-spacing: 2px;
             font-size: 2.2em;
@@ -156,7 +156,7 @@
     </style>
 </head>
 <body>
-    <!-- Oranges Band mit schwarzem Megaphon ganz oben fixiert -->
+    <!-- ID auf news-ticker-banner korrigiert -->
     <div id="news-ticker-banner" class="news-ticker-container">
         <span class="news-icon">📢</span>
         <div class="ticker-wrapper">
@@ -197,7 +197,7 @@
 
         async function updateDisplay() {
             const div = document.getElementById('info');
-            const tickerBanner = document.getElementById('news-ticker-container');
+            const tickerBanner = document.getElementById('news-ticker-banner');
             const tickerContent = document.getElementById('news-ticker-content');
             let data = null;
 
