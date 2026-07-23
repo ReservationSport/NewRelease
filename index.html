@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO</title>
+    <title>Reservation Sport - BBZO1111</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -3680,15 +3680,15 @@ window.starteAbklebenWorkflow = function(time, slot, klasse) {
     const currentSlot = parseInt(slot);
     const aktuelleHalle = (window.lastPlanData && window.lastPlanData[currentSlot]?.halle) || "";
     
-    // Partner-Suche
+    // Partner-Suche (NUR nach Klasse prüfen, unabhängig von der Halle!)
     const nextSlot = currentSlot + 5;
     const prevSlot = currentSlot - 5;
     const nextSlotData = (window.lastPlanData && window.lastPlanData[nextSlot]) || {};
     const prevSlotData = (window.lastPlanData && window.lastPlanData[prevSlot]) || {};
 
     let partnerSlot = null;
-    if (nextSlotData.klasse === klasse && nextSlotData.halle === aktuelleHalle) partnerSlot = nextSlot;
-    else if (prevSlotData.klasse === klasse && prevSlotData.halle === aktuelleHalle) partnerSlot = prevSlot;
+    if (nextSlotData.klasse && nextSlotData.klasse.trim().toLowerCase() === klasse.trim().toLowerCase()) partnerSlot = nextSlot;
+    else if (prevSlotData.klasse && prevSlotData.klasse.trim().toLowerCase() === klasse.trim().toLowerCase()) partnerSlot = prevSlot;
 
     // 1. Direkt zum Security Check, wenn keine Doppellektion
     if (!partnerSlot) {
