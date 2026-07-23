@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Sport - BBZO1111</title>
+    <title>Reservation Sport - BBZO</title>
 
    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -5582,9 +5582,13 @@ function getDoppellektionPartnerSlot(currentSlot) {
         return;
     }
 
-    // 2. Konflikt-Logik
+    // 2. Konflikt-Logik (NUR bei aktiven Hallen-Buchungen, NICHT beim Abkleben/Beenden!)
     let partnerKonfliktKlasse = null;
-    if (payload.halle && payload.halle.trim() !== "") {
+    
+    // WICHTIG: Wenn abgeklebt wird (halle === "beendet") oder keine Halle da ist, gibt es keinen Konflikt!
+    const istAbklebenOderLoeschen = !payload.halle || payload.halle.trim() === "" || payload.halle === "beendet";
+
+    if (!istAbklebenOderLoeschen && payload.halle && payload.halle.trim() !== "") {
         const rowIndex = Math.floor((partnerSlot - 1) / 5);
         const startSlot = (rowIndex * 5) + 1;
         const endSlot = startSlot + 4;
